@@ -16,29 +16,35 @@ object Fixture {
 
   val event: Event.Temperature = Event.Temperature(
     timestamp = java.time.Instant.now(),
-    temperature = calespiga.model.event.TemperatureRelated.BatteryTemperatureMeasured(25.0)
+    temperature =
+      calespiga.model.event.TemperatureRelated.BatteryTemperatureMeasured(25.0)
   )
 
   val allTemperatureRelatedEvents: List[Event.Temperature] = List(
     Event.Temperature(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated.BatteryTemperatureMeasured(25.0)
+      temperature = calespiga.model.event.TemperatureRelated
+        .BatteryTemperatureMeasured(25.0)
     ),
     Event.Temperature(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated.ElectronicsTemperatureMeasured(35.0)
+      temperature = calespiga.model.event.TemperatureRelated
+        .ElectronicsTemperatureMeasured(35.0)
     ),
     Event.Temperature(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated.ExternalTemperatureMeasured(15.0)
+      temperature = calespiga.model.event.TemperatureRelated
+        .ExternalTemperatureMeasured(15.0)
     ),
     Event.Temperature(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated.BatteryFanSwitchReported(true)
+      temperature =
+        calespiga.model.event.TemperatureRelated.BatteryFanSwitchReported(true)
     ),
     Event.Temperature(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated.ElectronicsFanSwitchReported(false)
+      temperature = calespiga.model.event.TemperatureRelated
+        .ElectronicsFanSwitchReported(false)
     )
   )
 
