@@ -25,7 +25,10 @@ object StateProcessor {
     }
   }
 
-  def apply(temperatureRelatedProcessor: TemperatureRelatedProcessor = TemperatureRelatedProcessor()): StateProcessor = Impl(
+  def apply(
+      temperatureRelatedProcessor: TemperatureRelatedProcessor =
+        TemperatureRelatedProcessor()
+  ): StateProcessor = Impl(
     temperatureRelatedProcessor
   )
 

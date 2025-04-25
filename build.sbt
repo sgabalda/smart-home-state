@@ -15,5 +15,10 @@ lazy val root = (project in file(".")).settings(
     "org.typelevel" %% "cats-effect-std" % "3.5.3",
     "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
     //quicklens
-    "com.softwaremill.quicklens" %% "quicklens" % "1.9.12")
+    "com.softwaremill.quicklens" %% "quicklens" % "1.9.12",
+    // "fs2" for MQTT
+    "net.sigusr" %% "fs2-mqtt" % "1.0.1",
+    "co.fs2" %% "fs2-io" % "3.10.2",
+    "co.fs2" %% "fs2-scodec" % "3.12.0",
+  )
 )
