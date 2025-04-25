@@ -1,10 +1,12 @@
 package calespiga.config
 
-case class ApplicationConfig(
-    mqttSourceConfig: MqttSourceConfig
-)
+import pureconfig.ConfigReader
 
-case class MqttSourceConfig(
+final case class ApplicationConfig(
+    mqttSourceConfig: MqttSourceConfig
+) derives ConfigReader
+
+final case class MqttSourceConfig(
     host: String,
     port: Int,
     clientId: String,
