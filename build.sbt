@@ -20,6 +20,11 @@ lazy val root = (project in file(".")).settings(
     "net.sigusr" %% "fs2-mqtt" % "1.0.1",
     "co.fs2" %% "fs2-io" % "3.12.0",
     "co.fs2" %% "fs2-scodec" % "3.12.0",
-    "com.github.pureconfig" %% "pureconfig-core" % "0.17.9"
+    "com.github.pureconfig" %% "pureconfig-core" % "0.17.9",
+
+    "org.typelevel" %% "log4cats-core"    % "2.7.0",    // Logging frontend
+    "org.typelevel" %% "log4cats-slf4j"   % "2.7.0",    // SLF4J bridge
+    "ch.qos.logback" % "logback-classic"  % "1.5.18",    // Logging backend
+    "org.codehaus.janino" % "janino" % "3.1.12"
   )
 )

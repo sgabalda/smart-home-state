@@ -3,7 +3,7 @@ package calespiga.config
 import cats.effect.{IO, Resource, ResourceIO}
 import pureconfig.*
 
-object ConfigLoader{
+object ConfigLoader {
   private def load: IO[ApplicationConfig] =
     ConfigSource.default.load[ApplicationConfig] match {
       case Right(config) => IO.pure(config)
