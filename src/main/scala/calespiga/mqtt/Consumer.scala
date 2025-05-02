@@ -1,5 +1,6 @@
 package calespiga.mqtt
 
+import calespiga.ErrorManager
 import calespiga.config.MqttSourceConfig
 import calespiga.model.Event
 import calespiga.model.event.TemperatureRelated
@@ -16,7 +17,8 @@ import retry.RetryPolicies
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
 trait Consumer {
-  def startConsumer(): Stream[IO, Either[Throwable, Event]]
+  def startConsumer()
+      : Stream[IO, Either[ErrorManager.Error.MqttInputError, Event]]
 }
 
 object Consumer {
@@ -24,14 +26,17 @@ object Consumer {
   private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   private final case class Impl(session: Session[IO]) extends Consumer {
-    override def startConsumer(): Stream[IO, Either[Throwable, Event]] = {
+    override def startConsumer()
+        : Stream[IO, Either[ErrorManager.Error.MqttInputError, Event]] = {
       session.messages.evalMap { case Message(topic, payload) =>
         logger.info(s"Received message on topic $topic: ${payload.toString}") *>
           IO.realTimeInstant.map { timestamp =>
             Right(
               Event.Temperature(
                 timestamp,
-                TemperatureRelated.BatteryTemperatureMeasured(5.0)
+                TemperatureRelated.BatteryTemperatureMeasured(
+                  (timestamp.toEpochMilli % 40).toDouble
+                )
               )
             )
           }

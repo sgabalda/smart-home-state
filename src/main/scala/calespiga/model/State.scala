@@ -8,6 +8,9 @@ case class State(
 )
 
 object State {
+
+  val empty: State = State(Temperatures(-100, -100, -100), Fans(false, false))
+
   case class Temperatures(
       externalTemperature: Double,
       batteriesTemperature: Double,

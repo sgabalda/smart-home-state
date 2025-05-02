@@ -18,10 +18,14 @@ object StateProcessor {
         state: State,
         event: Event
     ): (State, Set[Action]) = {
-      event match {
+      val (newState, actions) = event match {
         case Event.Temperature(timestamp, temperature) =>
           TemperatureRelatedProcessor.process(state, temperature)
       }
+
+      // TODO get the diff of both states, and add the actions for the changes if they are to be reported
+
+      (newState, actions)
     }
   }
 
