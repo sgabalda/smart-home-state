@@ -2,13 +2,12 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
+import calespiga.openhab.APIClient
 import cats.effect.kernel.Resource
 import cats.effect.{IO, ResourceIO}
-import cats.implicits.toFoldableOps
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import cats.implicits.catsSyntaxParallelTraverse1
 
-trait Executor {
+sealed trait Executor {
 
   def execute(actions: Set[Action]): IO[List[ErrorManager.Error.ExecutionError]]
 
@@ -16,16 +15,28 @@ trait Executor {
 
 object Executor {
 
-  private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+  final case class Impl(openHabApiClient: APIClient) extends Executor {
 
-  final case class Impl() extends Executor {
+    private def processSingleAction(
+        action: Action
+    ): IO[Unit] = {
+      action match {
+        case Action.SetOpenHabItemValue(item, value) =>
+          openHabApiClient.changeItem(item, value)
+      }
+    }
+
     override def execute(
         actions: Set[Action]
     ): IO[List[ErrorManager.Error.ExecutionError]] =
-      actions.toList.foldM(List.empty)((prevErrors, action) =>
-        logger.info(s"Would be executing the action $action").as(prevErrors)
-      )
+      actions.toList.parTraverse(action => processSingleAction(action).attempt.map((_, action))).map {
+        _.collect {
+          case (Left(throwable),action) =>
+            ErrorManager.Error.ExecutionError(throwable, action)
+        }
+      }
   }
 
-  def apply(): ResourceIO[Executor] = Resource.pure(Impl())
+  def apply(openHabApiClient: APIClient): ResourceIO[Executor] =
+    Resource.pure(Impl(openHabApiClient))
 }

@@ -4,6 +4,7 @@ import calespiga.config.{ApplicationConfig, ConfigLoader}
 import calespiga.executor.Executor
 import calespiga.model.State
 import calespiga.mqtt.Consumer
+import calespiga.openhab.APIClient
 import calespiga.processor.StateProcessor
 import cats.effect.{IO, IOApp, ResourceIO}
 
@@ -15,7 +16,8 @@ object Main extends IOApp.Simple {
     for {
       appConfig <- ConfigLoader.loadResource
       mqttConsumer <- Consumer(appConfig.mqttSourceConfig)
-      executor <- Executor()
+      openHabApiClient <- APIClient(appConfig.openHabConfig)
+      executor <- Executor(openHabApiClient)
       errorManager <- ErrorManager()
     } yield (appConfig, mqttConsumer, executor, errorManager)
 

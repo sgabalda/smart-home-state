@@ -1,7 +1,12 @@
 package calespiga.model
 
-import java.time.Instant
+sealed trait Action
 
-sealed trait Action {
-  def timestamp: Instant
+object Action {
+
+  case class SetOpenHabItemValue(
+      item: String,
+      value: String
+  ) extends Action
+
 }

@@ -19,7 +19,12 @@ object TemperatureRelatedProcessor {
         case TemperatureRelated.BatteryTemperatureMeasured(temperature) =>
           val newState =
             state.modify(_.temperatures.batteriesTemperature).setTo(temperature)
-          (newState, Set.empty)
+          (newState, Set(
+            Action.SetOpenHabItemValue(
+              "BateriesTemperatura",
+              temperature.toString
+            )
+          ))
 
         case TemperatureRelated.ElectronicsTemperatureMeasured(temperature) =>
           val newState = state

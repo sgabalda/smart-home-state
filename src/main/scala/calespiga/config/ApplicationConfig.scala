@@ -3,7 +3,8 @@ package calespiga.config
 import pureconfig.ConfigReader
 
 final case class ApplicationConfig(
-    mqttSourceConfig: MqttSourceConfig
+    mqttSourceConfig: MqttSourceConfig,
+    openHabConfig: OpenHabConfig
 ) derives ConfigReader
 
 final case class MqttSourceConfig(
@@ -14,4 +15,9 @@ final case class MqttSourceConfig(
     cleanSession: Boolean,
     traceMessages: Boolean,
     topics: List[String]
+)
+
+final case class OpenHabConfig(
+    host: String,
+    port: Int
 )

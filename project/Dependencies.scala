@@ -16,9 +16,11 @@ object Dependencies {
 
     val munit = "2.1.0"
 
+    val pureconfig = "0.17.9"
+
     val quicklens = "1.9.12"
 
-    val pureconfig = "0.17.9"
+    val sttp = "4.0.3"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
@@ -33,7 +35,9 @@ object Dependencies {
     "org.typelevel" %% "log4cats-slf4j" % Versions.log4cats,
     "ch.qos.logback" % "logback-classic" % Versions.logback,
     "com.github.pureconfig" %% "pureconfig-core" % Versions.pureconfig,
-    "com.softwaremill.quicklens" %% "quicklens" % Versions.quicklens
+    "com.softwaremill.quicklens" %% "quicklens" % Versions.quicklens,
+    "com.softwaremill.sttp.client4" %% "core" % Versions.sttp,
+    "com.softwaremill.sttp.client4" %% "cats" % Versions.sttp
   )
 
   val testing: Seq[ModuleID] = Seq(
