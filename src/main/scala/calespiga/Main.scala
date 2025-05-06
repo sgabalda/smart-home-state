@@ -3,7 +3,7 @@ package calespiga
 import calespiga.config.{ApplicationConfig, ConfigLoader}
 import calespiga.executor.Executor
 import calespiga.model.{Event, State}
-import calespiga.mqtt.Consumer
+import calespiga.mqtt.{Consumer, InputTopicsManager, MqttToEventInputProcessor}
 import calespiga.openhab.APIClient
 import calespiga.processor.StateProcessor
 import calespiga.userinput.UserInputManager
@@ -12,24 +12,49 @@ import cats.effect.{IO, IOApp, ResourceIO}
 object Main extends IOApp.Simple {
 
   private type Resources =
-    (ApplicationConfig, Consumer, UserInputManager, Executor, ErrorManager)
+    (
+        ApplicationConfig,
+        MqttToEventInputProcessor,
+        UserInputManager,
+        Executor,
+        ErrorManager
+    )
 
   private def resources: ResourceIO[Resources] =
     for {
       appConfig <- ConfigLoader.loadResource
-      mqttConsumer <- Consumer(appConfig.mqttSourceConfig)
+      inputTopicsManager = InputTopicsManager.apply
+      mqttConsumer <- Consumer(
+        appConfig.mqttSourceConfig,
+        inputTopicsManager.inputTopics
+      )
+      mqttInputProcessor = MqttToEventInputProcessor(
+        mqttConsumer,
+        inputTopicsManager.inputTopicsConversions
+      )
       openHabApiClient <- APIClient(appConfig.openHabConfig)
       userInputManager = UserInputManager(openHabApiClient)
       executor <- Executor(openHabApiClient)
       errorManager <- ErrorManager()
-    } yield (appConfig, mqttConsumer, userInputManager, executor, errorManager)
+    } yield (
+      appConfig,
+      mqttInputProcessor,
+      userInputManager,
+      executor,
+      errorManager
+    )
 
   def run: IO[Unit] = {
     resources.use {
-      case (config, consumer, userInputManager, executor, errorManager) =>
+      case (
+            config,
+            mqttInputProcessor,
+            userInputManager,
+            executor,
+            errorManager
+          ) =>
         val processor = StateProcessor()
-        consumer
-          .startConsumer()
+        mqttInputProcessor.inputEventsStream
           .merge(
             userInputManager
               .userInputEventsStream()

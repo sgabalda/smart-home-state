@@ -13,8 +13,7 @@ final case class MqttSourceConfig(
     clientId: String,
     keepAlive: Int,
     cleanSession: Boolean,
-    traceMessages: Boolean,
-    topics: List[String]
+    traceMessages: Boolean
 )
 
 final case class OpenHabConfig(

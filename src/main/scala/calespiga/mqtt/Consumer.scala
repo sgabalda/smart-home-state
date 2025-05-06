@@ -1,53 +1,32 @@
 package calespiga.mqtt
 
-import calespiga.ErrorManager
 import calespiga.config.MqttSourceConfig
-import calespiga.model.Event
 import cats.effect.{IO, ResourceIO}
 import com.comcast.ip4s.{Host, Port}
 import fs2.Stream
 import net.sigusr.mqtt.api.*
 import net.sigusr.mqtt.api.QualityOfService.AtLeastOnce
 import net.sigusr.mqtt.api.RetryConfig.Custom
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryPolicies
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
 trait Consumer {
-  def startConsumer()
-      : Stream[IO, Either[ErrorManager.Error.MqttInputError, Event]]
+  def startConsumer(): Stream[IO, Message]
 }
 
 object Consumer {
 
-  private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-
   private final case class Impl(session: Session[IO]) extends Consumer {
-    override def startConsumer()
-        : Stream[IO, Either[ErrorManager.Error.MqttInputError, Event]] = {
-      session.messages.evalMap { case Message(topic, payload) =>
-        logger.info(s"Received message on topic $topic: ${payload.toString}") *>
-          IO.realTimeInstant.map { timestamp =>
-            Right(
-              Event(
-                timestamp,
-                Event.Temperature.BatteryTemperatureMeasured(
-                  (timestamp.toEpochMilli % 40).toDouble
-                )
-              )
-            )
-          }
-      }
-    }
+    override def startConsumer(): Stream[IO, Message] = session.messages
   }
 
   def apply(
-      config: MqttSourceConfig
+      config: MqttSourceConfig,
+      topics: Set[String]
   ): ResourceIO[Consumer] = {
 
-    val subscribedTopics = config.topics.map((_, AtLeastOnce)).toVector
+    val subscribedTopics = topics.map((_, AtLeastOnce)).toVector
 
     val retryConfig: Custom[IO] = Custom[IO](
       RetryPolicies
@@ -62,7 +41,7 @@ object Consumer {
         // 8883,
         // tlsConfig = Some(TLSConfig(TLSContextKind.System)),
         retryConfig = retryConfig,
-        traceMessages = true
+        traceMessages = config.traceMessages
       )
     val sessionConfig =
       SessionConfig(
