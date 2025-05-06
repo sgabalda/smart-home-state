@@ -19,5 +19,6 @@ final case class MqttSourceConfig(
 
 final case class OpenHabConfig(
     host: String,
-    port: Int
+    port: Int,
+    apiToken: String
 )

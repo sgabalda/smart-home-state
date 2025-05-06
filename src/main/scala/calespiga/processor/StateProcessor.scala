@@ -19,7 +19,7 @@ object StateProcessor {
         event: Event
     ): (State, Set[Action]) = {
       val (newState, actions) = event match {
-        case Event.Temperature(timestamp, temperature) =>
+        case Event(timestamp, temperature: Event.Temperature.TemperatureData) =>
           TemperatureRelatedProcessor.process(state, temperature)
       }
 

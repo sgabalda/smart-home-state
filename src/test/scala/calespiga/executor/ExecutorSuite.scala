@@ -12,16 +12,18 @@ class ExecutorSuite extends CatsEffectSuite {
 
     val item = "TestItem"
     val value = "TestValue"
-    
-    for{
-     called <- IO.ref(false)
-        apiClient = ApiClientStub(
-            changeItem = (item: String, value: String) => called.set(true)
-        )
-        executorResource = Executor(apiClient)
-        _ <- executorResource.use{executor => executor.execute(Set(Action.SetOpenHabItemValue(item, value)))}
-        calledValue <- called.get
-    }yield{
+
+    for {
+      called <- IO.ref(false)
+      apiClient = ApiClientStub(
+        changeItemStub = (item: String, value: String) => called.set(true)
+      )
+      executorResource = Executor(apiClient)
+      _ <- executorResource.use { executor =>
+        executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
+      }
+      calledValue <- called.get
+    } yield {
       assertEquals(calledValue, true, "APIClient was not called")
     }
   }
@@ -34,15 +36,17 @@ class ExecutorSuite extends CatsEffectSuite {
     val error = new Exception("API error")
     val action = Action.SetOpenHabItemValue(item, value)
 
-    Executor(ApiClientStub(
-      changeItem = (item: String, value: String) => IO.raiseError(error)
-    )).use{      executor =>
-        executor.execute(Set(action)).map {
-          case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
-            assertEquals(throwable, error, "The throwable was not propagated")
-            assertEquals(act, action, "The action was not propagated")
-          case _ => fail("The error was not propagated")
-        }
+    Executor(
+      ApiClientStub(
+        changeItemStub = (item: String, value: String) => IO.raiseError(error)
+      )
+    ).use { executor =>
+      executor.execute(Set(action)).map {
+        case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
+          assertEquals(throwable, error, "The throwable was not propagated")
+          assertEquals(act, action, "The action was not propagated")
+        case _ => fail("The error was not propagated")
+      }
     }
   }
 
@@ -53,12 +57,14 @@ class ExecutorSuite extends CatsEffectSuite {
 
     val action = Action.SetOpenHabItemValue(item, value)
 
-    Executor(ApiClientStub(
-      changeItem = (item: String, value: String) => IO.unit
-    )).use { executor =>
+    Executor(
+      ApiClientStub(
+        changeItemStub = (item: String, value: String) => IO.unit
+      )
+    ).use { executor =>
       executor.execute(Set(action)).map {
         case some :: _ => fail("The error was not propagated")
-        case Nil => // No error, as expected
+        case Nil       => // No error, as expected
       }
     }
   }

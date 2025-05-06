@@ -10,25 +10,27 @@ import sttp.model.StatusCode
 
 class APIClientSuite extends CatsEffectSuite {
 
+  private val config = OpenHabConfig(
+    host = "localhost",
+    port = 8080,
+    apiToken = "testToken"
+  )
+
   test("APIClient should process properly a success") {
 
     val item = "TestItem"
     val value = "TestValue"
-    
-    val backend = HttpClientCatsBackend.stub[IO]
+
+    val backend = HttpClientCatsBackend
+      .stub[IO]
       .whenRequestMatches(_.uri.path.endsWith(List("TestItem")))
       .thenRespond(ResponseStub.ok(Adjust("")))
-    
-    val config = OpenHabConfig (
-      host = "localhost",
-      port = 8080
-    )
-    
+
     APIClient(config, Resource.pure(backend)).use { apiClient =>
       // Mock the API client to simulate a successful response
       for {
         response <- apiClient.changeItem(item, value)
-      }yield {
+      } yield {
         // Verify that the request was sent with the correct item and value
         assertEquals(response, ())
       }
@@ -39,14 +41,10 @@ class APIClientSuite extends CatsEffectSuite {
     val item = "TestItem"
     val value = "TestValue"
 
-    val backend = HttpClientCatsBackend.stub[IO]
+    val backend = HttpClientCatsBackend
+      .stub[IO]
       .whenRequestMatches(_.uri.path.endsWith(List("TestItem")))
       .thenRespond(ResponseStub(Adjust(""), StatusCode.NotFound))
-
-    val config = OpenHabConfig(
-      host = "localhost",
-      port = 8080
-    )
 
     APIClient(config, Resource.pure(backend)).use { apiClient =>
       for {

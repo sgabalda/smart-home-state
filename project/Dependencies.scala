@@ -4,6 +4,8 @@ object Dependencies {
   object Versions {
     val cats_effect = "3.6.1"
 
+    val circe = "0.14.7"
+
     val fs2 = "3.12.0"
 
     val fs2_mqtt = "1.0.1"
@@ -27,6 +29,9 @@ object Dependencies {
     "org.typelevel" %% "cats-effect" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-kernel" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-std" % Versions.cats_effect,
+    "io.circe" %% "circe-core" % Versions.circe,        // Core functionality
+    "io.circe" %% "circe-generic" % Versions.circe,     // Auto-derivation for case classes
+    "io.circe" %% "circe-parser" % Versions.circe,
     "co.fs2" %% "fs2-io" % Versions.fs2,
     "co.fs2" %% "fs2-scodec" % Versions.fs2,
     "net.sigusr" %% "fs2-mqtt" % Versions.fs2_mqtt,
@@ -37,7 +42,8 @@ object Dependencies {
     "com.github.pureconfig" %% "pureconfig-core" % Versions.pureconfig,
     "com.softwaremill.quicklens" %% "quicklens" % Versions.quicklens,
     "com.softwaremill.sttp.client4" %% "core" % Versions.sttp,
-    "com.softwaremill.sttp.client4" %% "cats" % Versions.sttp
+    "com.softwaremill.sttp.client4" %% "cats" % Versions.sttp,
+    "com.softwaremill.sttp.client4" %% "fs2" % Versions.sttp
   )
 
   val testing: Seq[ModuleID] = Seq(

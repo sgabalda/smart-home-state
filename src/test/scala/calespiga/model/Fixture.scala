@@ -14,37 +14,39 @@ object Fixture {
     )
   )
 
-  val event: Event.Temperature = Event.Temperature(
+  val event: Event = Event(
     timestamp = java.time.Instant.now(),
-    temperature =
-      calespiga.model.event.TemperatureRelated.BatteryTemperatureMeasured(25.0)
+    data = Event.Temperature.BatteryTemperatureMeasured(25.0)
   )
 
-  val allTemperatureRelatedEvents: List[Event.Temperature] = List(
-    Event.Temperature(
+  val allTemperatureRelatedEvents: List[Event] = List(
+    Event(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated
-        .BatteryTemperatureMeasured(25.0)
+      data = Event.Temperature.BatteryTemperatureMeasured(25.0)
     ),
-    Event.Temperature(
+    Event(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated
-        .ElectronicsTemperatureMeasured(35.0)
+      data = Event.Temperature.ElectronicsTemperatureMeasured(25.0)
     ),
-    Event.Temperature(
+    Event(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated
-        .ExternalTemperatureMeasured(15.0)
+      data = Event.Temperature.ExternalTemperatureMeasured(25.0)
     ),
-    Event.Temperature(
+    Event(
       timestamp = java.time.Instant.now(),
-      temperature =
-        calespiga.model.event.TemperatureRelated.BatteryFanSwitchReported(true)
+      data = Event.Temperature.Fans.BatteryFanSwitchManualChanged(false)
     ),
-    Event.Temperature(
+    Event(
       timestamp = java.time.Instant.now(),
-      temperature = calespiga.model.event.TemperatureRelated
-        .ElectronicsFanSwitchReported(false)
+      data = Event.Temperature.Fans.BatteryFanSwitchReported(false)
+    ),
+    Event(
+      timestamp = java.time.Instant.now(),
+      data = Event.Temperature.Fans.ElectronicsFanSwitchManualChanged(false)
+    ),
+    Event(
+      timestamp = java.time.Instant.now(),
+      data = Event.Temperature.Fans.ElectronicsFanSwitchReported(false)
     )
   )
 

@@ -3,13 +3,12 @@ package calespiga.mqtt
 import calespiga.ErrorManager
 import calespiga.config.MqttSourceConfig
 import calespiga.model.Event
-import calespiga.model.event.TemperatureRelated
 import cats.effect.{IO, ResourceIO}
 import com.comcast.ip4s.{Host, Port}
 import fs2.Stream
+import net.sigusr.mqtt.api.*
 import net.sigusr.mqtt.api.QualityOfService.AtLeastOnce
 import net.sigusr.mqtt.api.RetryConfig.Custom
-import net.sigusr.mqtt.api.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryPolicies
@@ -32,9 +31,9 @@ object Consumer {
         logger.info(s"Received message on topic $topic: ${payload.toString}") *>
           IO.realTimeInstant.map { timestamp =>
             Right(
-              Event.Temperature(
+              Event(
                 timestamp,
-                TemperatureRelated.BatteryTemperatureMeasured(
+                Event.Temperature.BatteryTemperatureMeasured(
                   (timestamp.toEpochMilli % 40).toDouble
                 )
               )

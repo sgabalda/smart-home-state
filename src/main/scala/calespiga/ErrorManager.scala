@@ -22,6 +22,7 @@ object ErrorManager {
   sealed trait Error
   object Error {
     case class MqttInputError(throwable: Throwable, topic: String) extends Error
+    case class OpenHabInputError(throwable: Throwable) extends Error
     case class ExecutionError(throwable: Throwable, action: Action)
         extends Error
   }
@@ -32,8 +33,16 @@ object ErrorManager {
         logger.error(throwable)(
           s"Error in topic $topic: ${throwable.getMessage}"
         )
+
       case Error.ExecutionError(throwable, action) =>
-        logger.error(throwable)(s"Execution error: ${throwable.getMessage}")
+        logger.error(throwable)(
+          s"Execution error for action $action: ${throwable.getMessage}"
+        )
+
+      case Error.OpenHabInputError(throwable) =>
+        logger.error(throwable)(
+          s"Error in openHab input: ${throwable.getMessage}"
+        )
     }
   }
 

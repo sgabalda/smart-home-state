@@ -29,12 +29,15 @@ object Executor {
     override def execute(
         actions: Set[Action]
     ): IO[List[ErrorManager.Error.ExecutionError]] =
-      actions.toList.parTraverse(action => processSingleAction(action).attempt.map((_, action))).map {
-        _.collect {
-          case (Left(throwable),action) =>
+      actions.toList
+        .parTraverse(action =>
+          processSingleAction(action).attempt.map((_, action))
+        )
+        .map {
+          _.collect { case (Left(throwable), action) =>
             ErrorManager.Error.ExecutionError(throwable, action)
+          }
         }
-      }
   }
 
   def apply(openHabApiClient: APIClient): ResourceIO[Executor] =

@@ -1,13 +1,24 @@
 package calespiga.openhab
 
+import calespiga.openhab.APIClient.ItemChangedEvent
 import cats.effect.IO
 
 object ApiClientStub {
-  
-  def apply(): APIClient = (item: String, value: String) => IO.unit
-  
-  def apply(
-      changeItem: (String, String) => IO[Unit]
-  ): APIClient = (item: String, value: String) => changeItem(item, value)
 
+  def apply(
+      changeItemStub: (String, String) => IO[Unit] = (_, _) => IO.unit,
+      itemChangesStub: Set[String] => fs2.Stream[IO, Either[
+        Throwable,
+        ItemChangedEvent
+      ]] = _ => fs2.Stream.empty
+  ): APIClient = new APIClient {
+    override def changeItem(item: String, value: String): IO[Unit] =
+      changeItemStub(item, value)
+    override def itemChanges(
+        items: Set[String]
+    ): fs2.Stream[IO, Either[Throwable, ItemChangedEvent]] = itemChangesStub(
+      items
+    )
+
+  }
 }
