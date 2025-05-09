@@ -2,6 +2,7 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
+import calespiga.mqtt.ActionToMqttProducerStub
 import calespiga.openhab.ApiClientStub
 import cats.effect.IO
 import munit.CatsEffectSuite
@@ -18,10 +19,8 @@ class ExecutorSuite extends CatsEffectSuite {
       apiClient = ApiClientStub(
         changeItemStub = (item: String, value: String) => called.set(true)
       )
-      executorResource = Executor(apiClient)
-      _ <- executorResource.use { executor =>
-        executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
-      }
+      executor = Executor(apiClient, ActionToMqttProducerStub())
+      _ <- executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
       calledValue <- called.get
     } yield {
       assertEquals(calledValue, true, "APIClient was not called")
@@ -39,14 +38,13 @@ class ExecutorSuite extends CatsEffectSuite {
     Executor(
       ApiClientStub(
         changeItemStub = (item: String, value: String) => IO.raiseError(error)
-      )
-    ).use { executor =>
-      executor.execute(Set(action)).map {
-        case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
-          assertEquals(throwable, error, "The throwable was not propagated")
-          assertEquals(act, action, "The action was not propagated")
-        case _ => fail("The error was not propagated")
-      }
+      ),
+      ActionToMqttProducerStub()
+    ).execute(Set(action)).map {
+      case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
+        assertEquals(throwable, error, "The throwable was not propagated")
+        assertEquals(act, action, "The action was not propagated")
+      case _ => fail("The error was not propagated")
     }
   }
 
@@ -60,12 +58,74 @@ class ExecutorSuite extends CatsEffectSuite {
     Executor(
       ApiClientStub(
         changeItemStub = (item: String, value: String) => IO.unit
+      ),
+      ActionToMqttProducerStub()
+    ).execute(Set(action)).map {
+      case some :: _ => fail("The error was not propagated")
+      case Nil       => // No error, as expected
+    }
+  }
+
+  test(
+    "Executor should request to the ActionToMqttProducer on SendMqttStringMessage"
+  ) {
+
+    val action = Action.SendMqttStringMessage(
+      topic = "TestTopic",
+      message = "TestMessage"
+    )
+
+    for {
+      called <- IO.ref(false)
+      actionToMqtt = ActionToMqttProducerStub(
+        actionToMqttStub =
+          (action: Action.SendMqttStringMessage) => called.set(true)
       )
-    ).use { executor =>
-      executor.execute(Set(action)).map {
-        case some :: _ => fail("The error was not propagated")
-        case Nil       => // No error, as expected
-      }
+      executor = Executor(ApiClientStub(), actionToMqtt)
+      _ <- executor.execute(Set(action))
+      calledValue <- called.get
+    } yield {
+      assertEquals(calledValue, true, "ActionToMqttProducer was not called")
+    }
+  }
+
+  test("Executor should return an error on failure of SendMqttStringMessage") {
+
+    val error = new Exception("Mqtt error")
+    val action = Action.SendMqttStringMessage(
+      topic = "TestTopic",
+      message = "TestMessage"
+    )
+
+    Executor(
+      ApiClientStub(),
+      ActionToMqttProducerStub(
+        actionToMqttStub =
+          (action: Action.SendMqttStringMessage) => IO.raiseError(error)
+      )
+    ).execute(Set(action)).map {
+      case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
+        assertEquals(throwable, error, "The throwable was not propagated")
+        assertEquals(act, action, "The action was not propagated")
+      case _ => fail("The error was not propagated")
+    }
+  }
+
+  test("Executor should return no error on success of SendMqttStringMessage") {
+
+    val action = Action.SendMqttStringMessage(
+      topic = "TestTopic",
+      message = "TestMessage"
+    )
+
+    Executor(
+      ApiClientStub(),
+      ActionToMqttProducerStub(
+        actionToMqttStub = (action: Action.SendMqttStringMessage) => IO.unit
+      )
+    ).execute(Set(action)).map {
+      case some :: _ => fail("The error was not propagated")
+      case Nil       => // No error, as expected
     }
   }
 }

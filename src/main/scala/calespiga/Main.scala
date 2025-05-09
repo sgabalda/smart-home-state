@@ -3,7 +3,13 @@ package calespiga
 import calespiga.config.{ApplicationConfig, ConfigLoader}
 import calespiga.executor.Executor
 import calespiga.model.{Event, State}
-import calespiga.mqtt.{Consumer, InputTopicsManager, MqttToEventInputProcessor}
+import calespiga.mqtt.{
+  ActionToMqttProducer,
+  Consumer,
+  InputTopicsManager,
+  MqttToEventInputProcessor,
+  Producer
+}
 import calespiga.openhab.APIClient
 import calespiga.processor.StateProcessor
 import calespiga.userinput.UserInputManager
@@ -25,16 +31,18 @@ object Main extends IOApp.Simple {
       appConfig <- ConfigLoader.loadResource
       inputTopicsManager = InputTopicsManager.apply
       mqttConsumer <- Consumer(
-        appConfig.mqttSourceConfig,
+        appConfig.mqttConfig,
         inputTopicsManager.inputTopics
       )
       mqttInputProcessor = MqttToEventInputProcessor(
         mqttConsumer,
         inputTopicsManager.inputTopicsConversions
       )
+      mqttProducer <- Producer(appConfig.mqttConfig)
+      mqttActionToProducer = ActionToMqttProducer(mqttProducer)
       openHabApiClient <- APIClient(appConfig.openHabConfig)
       userInputManager = UserInputManager(openHabApiClient)
-      executor <- Executor(openHabApiClient)
+      executor = Executor(openHabApiClient, mqttActionToProducer)
       errorManager <- ErrorManager()
     } yield (
       appConfig,
@@ -75,8 +83,6 @@ object Main extends IOApp.Simple {
           }
           .compile
           .drain
-
     }
   }
-
 }

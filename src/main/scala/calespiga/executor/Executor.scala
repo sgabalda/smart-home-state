@@ -2,9 +2,9 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
+import calespiga.mqtt.ActionToMqttProducer
 import calespiga.openhab.APIClient
-import cats.effect.kernel.Resource
-import cats.effect.{IO, ResourceIO}
+import cats.effect.IO
 import cats.implicits.catsSyntaxParallelTraverse1
 
 sealed trait Executor {
@@ -15,7 +15,10 @@ sealed trait Executor {
 
 object Executor {
 
-  final case class Impl(openHabApiClient: APIClient) extends Executor {
+  final case class Impl(
+      openHabApiClient: APIClient,
+      mqttProducer: ActionToMqttProducer
+  ) extends Executor {
 
     private def processSingleAction(
         action: Action
@@ -23,6 +26,8 @@ object Executor {
       action match {
         case Action.SetOpenHabItemValue(item, value) =>
           openHabApiClient.changeItem(item, value)
+        case a: Action.SendMqttStringMessage =>
+          mqttProducer.actionToMqtt(a)
       }
     }
 
@@ -40,6 +45,9 @@ object Executor {
         }
   }
 
-  def apply(openHabApiClient: APIClient): ResourceIO[Executor] =
-    Resource.pure(Impl(openHabApiClient))
+  def apply(
+      openHabApiClient: APIClient,
+      mqttProducer: ActionToMqttProducer
+  ): Executor =
+    Impl(openHabApiClient, mqttProducer)
 }

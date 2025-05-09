@@ -22,9 +22,10 @@ object InputTopicsManager {
       Set("diposit1/temperature/batteries")
         .map(t => {
           val topic = t
-          val conversion: Vector[Byte] => Either[Throwable, Event.EventData] = v =>
-            Try(new String(v.toArray, "UTF-8").toDouble).toEither
-              .map(v => Event.Temperature.BatteryTemperatureMeasured(v))
+          val conversion: Vector[Byte] => Either[Throwable, Event.EventData] =
+            v =>
+              Try(new String(v.toArray, "UTF-8").toDouble).toEither
+                .map(v => Event.Temperature.BatteryTemperatureMeasured(v))
           (topic, conversion)
         })
         .toMap // TODO do this in base of annotations on the events definitions

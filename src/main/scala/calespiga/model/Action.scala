@@ -9,4 +9,9 @@ object Action {
       value: String
   ) extends Action
 
+  case class SendMqttStringMessage(
+      topic: String,
+      message: String
+  ) extends Action
+
 }
