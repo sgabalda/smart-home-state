@@ -3,21 +3,19 @@ package calespiga.model
 import calespiga.model.State.{Fans, Temperatures}
 
 case class State(
-    temperatures: Temperatures,
-    fans: Fans
+    temperatures: Temperatures = Temperatures(),
+    fans: Fans = Fans()
 )
 
 object State {
 
-  val empty: State = State(Temperatures(-100, -100, -100), Fans(false, false))
-
   case class Temperatures(
-      externalTemperature: Double,
-      batteriesTemperature: Double,
-      electronicsTemperature: Double
+      externalTemperature: Double = -100,
+      batteriesTemperature: Double = -100,
+      electronicsTemperature: Double = -100
   )
   case class Fans(
-      fanBatteries: Boolean,
-      fanElectronics: Boolean
+      fanBatteries: Boolean = false,
+      fanElectronics: Boolean = false
   )
 }

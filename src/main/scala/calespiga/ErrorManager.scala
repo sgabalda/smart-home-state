@@ -25,6 +25,14 @@ object ErrorManager {
     case class OpenHabInputError(throwable: Throwable) extends Error
     case class ExecutionError(throwable: Throwable, action: Action)
         extends Error
+
+    sealed trait StateLoadingError extends Error
+    case class StateReadingFileError(path: String, throwable: Throwable)
+        extends StateLoadingError
+    case class StateParsingError(path: String, error: Throwable)
+        extends StateLoadingError
+    case class StateFileUpdateError(path: String, error: Throwable)
+        extends Error
   }
 
   private final case class Impl() extends ErrorManager {
@@ -42,6 +50,18 @@ object ErrorManager {
       case Error.OpenHabInputError(throwable) =>
         logger.error(throwable)(
           s"Error in openHab input: ${throwable.getMessage}"
+        )
+
+      case Error.StateReadingFileError(path, throwable) =>
+        logger.error(throwable)(s"State file not found: $path")
+
+      case Error.StateParsingError(path, error) =>
+        logger.error(error)(
+          s"Error parsing state file $path: ${error.getMessage}"
+        )
+      case Error.StateFileUpdateError(path, error) =>
+        logger.error(error)(
+          s"Error updating state file $path: ${error.getMessage}"
         )
     }
   }

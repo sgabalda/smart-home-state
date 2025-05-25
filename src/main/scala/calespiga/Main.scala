@@ -11,9 +11,11 @@ import calespiga.mqtt.{
   Producer
 }
 import calespiga.openhab.APIClient
+import calespiga.persistence.StatePersistence
 import calespiga.processor.StateProcessor
 import calespiga.userinput.UserInputManager
 import cats.effect.{IO, IOApp, ResourceIO}
+import fs2.Stream
 
 object Main extends IOApp.Simple {
 
@@ -23,6 +25,7 @@ object Main extends IOApp.Simple {
         MqttToEventInputProcessor,
         UserInputManager,
         Executor,
+        StatePersistence,
         ErrorManager
     )
 
@@ -44,11 +47,16 @@ object Main extends IOApp.Simple {
       userInputManager = UserInputManager(openHabApiClient)
       executor = Executor(openHabApiClient, mqttActionToProducer)
       errorManager <- ErrorManager()
+      statePersistence <- StatePersistence(
+        appConfig.statePersistenceConfig,
+        errorManager
+      )
     } yield (
       appConfig,
       mqttInputProcessor,
       userInputManager,
       executor,
+      statePersistence,
       errorManager
     )
 
@@ -59,27 +67,36 @@ object Main extends IOApp.Simple {
             mqttInputProcessor,
             userInputManager,
             executor,
+            statePersistence,
             errorManager
           ) =>
         val processor = StateProcessor()
-        mqttInputProcessor.inputEventsStream
-          .merge(
-            userInputManager
-              .userInputEventsStream()
-          )
-          .evalMapFilter {
-            case Left(value) =>
-              errorManager.manageError(value).as(None)
-            case Right(value) =>
-              IO.pure(Some(value))
-          }
-          .evalMapAccumulate(State.empty) { case (current, event) =>
-            IO.pure(processor.process(current, event))
-          }
-          .evalMap { (_, actions) =>
-            executor.execute(actions).flatMap { errors =>
-              errorManager.manageErrors(errors)
-            }
+        Stream
+          .eval(statePersistence.loadState.flatMap {
+            case Left(value)  => errorManager.manageError(value).as(State())
+            case Right(value) => IO.pure(value)
+          })
+          .flatMap { initialState =>
+            mqttInputProcessor.inputEventsStream
+              .merge(
+                userInputManager
+                  .userInputEventsStream()
+              )
+              .evalMapFilter {
+                case Left(value) =>
+                  errorManager.manageError(value).as(None)
+                case Right(value) =>
+                  IO.pure(Some(value))
+              }
+              .evalMapAccumulate(initialState) { case (current, event) =>
+                IO.pure(processor.process(current, event))
+              }
+              .evalMap { (state, actions) =>
+                statePersistence.saveState(state) *> executor.execute(actions).flatMap { errors =>
+                  errorManager.manageErrors(errors)
+                }
+              }
+
           }
           .compile
           .drain

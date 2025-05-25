@@ -2,9 +2,12 @@ package calespiga.config
 
 import pureconfig.ConfigReader
 
+import scala.concurrent.duration.FiniteDuration
+
 final case class ApplicationConfig(
     mqttConfig: MqttConfig,
-    openHabConfig: OpenHabConfig
+    openHabConfig: OpenHabConfig,
+    statePersistenceConfig: StatePersistenceConfig
 ) derives ConfigReader
 
 final case class MqttConfig(
@@ -20,4 +23,9 @@ final case class OpenHabConfig(
     host: String,
     port: Int,
     apiToken: String
+)
+
+final case class StatePersistenceConfig(
+    path: String,
+    storePeriod: FiniteDuration
 )

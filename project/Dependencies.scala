@@ -4,7 +4,7 @@ object Dependencies {
   object Versions {
     val cats_effect = "3.6.1"
 
-    val circe = "0.14.7"
+    val circe = "0.14.13"
 
     val fs2 = "3.12.0"
 
@@ -22,7 +22,7 @@ object Dependencies {
 
     val quicklens = "1.9.12"
 
-    val sttp = "4.0.3"
+    val sttp = "4.0.7"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
@@ -47,6 +47,7 @@ object Dependencies {
   )
 
   val testing: Seq[ModuleID] = Seq(
-    "org.typelevel" %% "munit-cats-effect" % Versions.munit
+    "org.typelevel" %% "munit-cats-effect" % Versions.munit,
+    "org.typelevel" %% "cats-effect-testkit" % Versions.cats_effect,
   ).map(_ % Test)
 }
