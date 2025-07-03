@@ -53,6 +53,9 @@ object MqttToEventInputProcessor {
       consumer: Consumer,
       topicMessagesConverter: TopicMessagesConverter
   ): MqttToEventInputProcessor = {
+    println(
+      s"****** Creating MqttToEventInputProcessor with ${topicMessagesConverter.size} topic conversions: ${topicMessagesConverter.keys.mkString(", ")}"
+    )
     Impl(consumer, topicMessagesConverter)
   }
 
