@@ -3,5 +3,6 @@ ThisBuild / scalaVersion := "3.4.0"
 
 lazy val root = (project in file(".")).settings(
   name := "smart-home-state",
-  libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing
+  libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing,
+  Global / semanticdbEnabled := true
 )

@@ -87,6 +87,10 @@ object InputOHItemsMapper {
               val convertedValueExpr = '{ (valueStr: String) => valueStr }
               getNewExpr(convertedValueExpr)
 
+            case tpe if tpe =:= TypeRepr.of[calespiga.model.Switch.Status] =>
+              val convertedValueExpr = '{ (valueStr: String) => calespiga.model.Switch.statusFromString(valueStr) }
+              getNewExpr(convertedValueExpr)
+
             case _ =>
               report.errorAndAbort(
                 s"Unsupported parameter type: ${paramType.show}"

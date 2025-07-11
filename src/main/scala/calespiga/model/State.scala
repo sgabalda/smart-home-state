@@ -15,7 +15,7 @@ object State {
       electronicsTemperature: Double = -100
   )
   case class Fans(
-      fanBatteries: Boolean = false,
-      fanElectronics: Boolean = false
+      fanBatteries: Switch.Status = Switch.Off,
+      fanElectronics: Switch.Status = Switch.Off
   )
 }

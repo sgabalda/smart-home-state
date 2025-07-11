@@ -45,21 +45,22 @@ object Event {
 
       @InputEventOHItem("VentiladorBateriesManual")
       case class BatteryFanSwitchManualChanged(
-          on: Boolean
+          status: Switch.Status //TODO this should be a command, implement a conversion
       ) extends FanData
 
       @InputEventMqtt("fan/batteries/status")
       case class BatteryFanSwitchReported(
-          on: Boolean
+          status: Switch.Status
       ) extends FanData
 
       @InputEventOHItem("VentiladorElectronicaManual")
       case class ElectronicsFanSwitchManualChanged(
-          on: Boolean
+          status: Switch.Status //TODO this should be a command, implement a conversion
       ) extends FanData
+
       @InputEventMqtt("fan/electronics/status")
       case class ElectronicsFanSwitchReported(
-          on: Boolean
+          status: Switch.Status
       ) extends FanData
     }
   }

@@ -5,6 +5,7 @@ import calespiga.model.{Action, Event, Fixture, State}
 import calespiga.model.Event.Temperature.*
 import munit.CatsEffectSuite
 import com.softwaremill.quicklens.*
+import calespiga.model.Switch
 
 class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
 
@@ -43,52 +44,52 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
         case e @ Fans.BatteryFanSwitchReported(_) =>
           List(
             (
-              e.modify(_.on).setTo(true),
-              _.modify(_.fans.fanBatteries).setTo(true),
+              e.modify(_.status).setTo(Switch.On),
+              _.modify(_.fans.fanBatteries).setTo(Switch.On),
               Set.empty
             ),
             (
-              e.modify(_.on).setTo(false),
-              _.modify(_.fans.fanBatteries).setTo(false),
+              e.modify(_.status).setTo(Switch.Off),
+              _.modify(_.fans.fanBatteries).setTo(Switch.Off),
               Set.empty
             )
           )
         case e @ Fans.ElectronicsFanSwitchReported(_) =>
           List(
             (
-              e.modify(_.on).setTo(true),
-              _.modify(_.fans.fanElectronics).setTo(true),
+              e.modify(_.status).setTo(Switch.On),
+              _.modify(_.fans.fanElectronics).setTo(Switch.On),
               Set.empty
             ),
             (
-              e.modify(_.on).setTo(false),
-              _.modify(_.fans.fanElectronics).setTo(false),
+              e.modify(_.status).setTo(Switch.Off),
+              _.modify(_.fans.fanElectronics).setTo(Switch.Off),
               Set.empty
             )
           )
         case e @ Fans.BatteryFanSwitchManualChanged(_) =>
           List(
             (
-              e.modify(_.on).setTo(true),
-              _.modify(_.fans.fanElectronics).setTo(false),
+              e.modify(_.status).setTo(Switch.On),
+              _.modify(_.fans.fanElectronics).setTo(Switch.Off),
               Set.empty
             ),
             (
-              e.modify(_.on).setTo(false),
-              _.modify(_.fans.fanElectronics).setTo(false),
+              e.modify(_.status).setTo(Switch.Off),
+              _.modify(_.fans.fanElectronics).setTo(Switch.Off),
               Set.empty
             )
           )
         case e @ Fans.ElectronicsFanSwitchManualChanged(_) =>
           List(
             (
-              e.modify(_.on).setTo(true),
-              _.modify(_.fans.fanElectronics).setTo(false),
+              e.modify(_.status).setTo(Switch.On),
+              _.modify(_.fans.fanElectronics).setTo(Switch.Off),
               Set.empty
             ),
             (
-              e.modify(_.on).setTo(false),
-              _.modify(_.fans.fanElectronics).setTo(false),
+              e.modify(_.status).setTo(Switch.Off),
+              _.modify(_.fans.fanElectronics).setTo(Switch.Off),
               Set.empty // TODO add to the state remote switch
             )
           )

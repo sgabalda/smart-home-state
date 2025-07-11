@@ -6,6 +6,7 @@ import calespiga.openhab.APIClient.ItemChangedEvent
 import calespiga.openhab.ApiClientStub
 import cats.effect.IO
 import munit.CatsEffectSuite
+import calespiga.model.Switch
 import fs2.Stream
 
 class UserInputManagerSuite extends CatsEffectSuite {
@@ -95,7 +96,7 @@ class UserInputManagerSuite extends CatsEffectSuite {
       itemChangesStub = _ => Stream(Right(itemInfo))
     )
     val resultEventData =
-      Event.Temperature.Fans.BatteryFanSwitchManualChanged(true)
+      Event.Temperature.Fans.BatteryFanSwitchManualChanged(Switch.On)
     val itemsConverter: UserInputManager.OpenHabItemsConverter =
       Map("TestItem" -> (_ => Right(resultEventData)))
     val sut = UserInputManager(apiClient, itemsConverter)
@@ -107,7 +108,7 @@ class UserInputManagerSuite extends CatsEffectSuite {
               Right(
                 Event(
                   ts,
-                  Event.Temperature.Fans.BatteryFanSwitchManualChanged(true)
+                  Event.Temperature.Fans.BatteryFanSwitchManualChanged(Switch.On)
                 )
               )
             ) =>

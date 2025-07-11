@@ -9,8 +9,8 @@ object Fixture {
       electronicsTemperature = 40.0
     ),
     State.Fans(
-      fanBatteries = true,
-      fanElectronics = false
+      fanBatteries = Switch.Off,
+      fanElectronics = Switch.Off
     )
   )
 
@@ -34,19 +34,19 @@ object Fixture {
     ),
     Event(
       timestamp = java.time.Instant.now(),
-      data = Event.Temperature.Fans.BatteryFanSwitchManualChanged(false)
+      data = Event.Temperature.Fans.BatteryFanSwitchManualChanged(Switch.Off)
     ),
     Event(
       timestamp = java.time.Instant.now(),
-      data = Event.Temperature.Fans.BatteryFanSwitchReported(false)
+      data = Event.Temperature.Fans.BatteryFanSwitchReported(Switch.Off)
     ),
     Event(
       timestamp = java.time.Instant.now(),
-      data = Event.Temperature.Fans.ElectronicsFanSwitchManualChanged(false)
+      data = Event.Temperature.Fans.ElectronicsFanSwitchManualChanged(Switch.Off)
     ),
     Event(
       timestamp = java.time.Instant.now(),
-      data = Event.Temperature.Fans.ElectronicsFanSwitchReported(false)
+      data = Event.Temperature.Fans.ElectronicsFanSwitchReported(Switch.Off)
     )
   )
 

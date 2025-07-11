@@ -116,7 +116,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     Ref[IO].of[Option[(String, String)]](None).flatMap { ref =>
       val anotherState = someState
         .modify(_.fans.fanElectronics)
-        .setTo(!someState.fans.fanElectronics)
+        .setTo(someState.fans.fanElectronics.turn)
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(),
