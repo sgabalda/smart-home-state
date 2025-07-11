@@ -18,6 +18,7 @@ object StateProcessor {
         state: State,
         event: Event
     ): (State, Set[Action]) = {
+      println(s"Received event $event")
       val (newState, actions) = event match {
         case Event(timestamp, temperature: Event.Temperature.TemperatureData) =>
           TemperatureRelatedProcessor.process(state, temperature)

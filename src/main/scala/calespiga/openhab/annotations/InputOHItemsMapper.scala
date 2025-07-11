@@ -1,29 +1,27 @@
-package calespiga.mqtt.annotations
+package calespiga.openhab.annotations
 
 import scala.quoted.*
 import calespiga.model.Event.EventData
 
-object InputTopicMapper {
+object InputOHItemsMapper {
 
-  inline def generateTopicMap(): List[(String, String => EventData)] =
-    ${ generateTopicMapImpl }
+  inline def generateItemsMap(): List[(String, String => EventData)] =
+    ${ generateItemsMapImpl }
 
-  private def generateTopicMapImpl(using
+  private def generateItemsMapImpl(using
       Quotes
   ): Expr[List[(String, String => EventData)]] =
     import quotes.reflect.*
 
     def recursiveCheck(sym: quotes.reflect.Symbol): List[(Symbol, String)] =
       sym.declaredTypes.flatMap { inner =>
-        // println(s"Checking symbol: ${sym.fullName}")
         inner.annotations.flatMap { annotation =>
-          // println(s"Found annotation: ${annotation.symbol.fullName}")
           annotation match {
             case Apply(
-                  Select(New(TypeIdent("InputEventMqtt")), _),
-                  List(Literal(StringConstant(topic)))
+                  Select(New(TypeIdent("InputEventOHItem")), _),
+                  List(Literal(StringConstant(itemName)))
                 ) =>
-              List((inner, topic))
+              List((inner, itemName))
             case _ =>
               List.empty
           }
@@ -31,7 +29,7 @@ object InputTopicMapper {
       }
     val symbol = Symbol.spliceOwner.owner.owner
     val annotatedClasses = recursiveCheck(symbol)
-    // println(s"annotations for MQTT found are $annotatedClasses")
+
     val mapEntries = annotatedClasses.map { (cls, topic) =>
       val classType = cls.typeRef
       val typeTree = TypeTree.of(using classType.asType)

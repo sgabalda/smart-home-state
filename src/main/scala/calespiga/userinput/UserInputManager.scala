@@ -5,6 +5,7 @@ import calespiga.model.Event
 import calespiga.openhab.APIClient
 import cats.effect.IO
 import fs2.Stream
+import scala.util.Try
 
 trait UserInputManager {
 
@@ -54,17 +55,14 @@ object UserInputManager {
 
   type OpenHabItemsConverter =
     Map[String, String => Either[Throwable, Event.EventData]]
-  // TODO get the items from the configuration or annotations
+
   private val openHabItems: OpenHabItemsConverter =
-    Map[String, String => Either[Throwable, Event.EventData]](
-      "VentiladorBateriesManual" -> (v =>
-        Right(
-          Event.Temperature.Fans.BatteryFanSwitchManualChanged(
-            "ON".equals(v)
-          )
-        )
-      )
-    )
+    Event.eventsOpenHabInputItemsConverter.map {
+      case (itemName, constructorOfString) =>
+        val conversion: String => Either[Throwable, Event.EventData] =
+          i => Try(constructorOfString(i)).toEither
+        (itemName, conversion)
+    }.toMap
 
   def apply(
       openhabApiClient: APIClient,

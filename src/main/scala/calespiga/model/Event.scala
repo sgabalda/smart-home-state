@@ -4,6 +4,8 @@ import calespiga.mqtt.annotations.InputEventMqtt
 
 import java.time.Instant
 import calespiga.mqtt.annotations.InputTopicMapper
+import calespiga.openhab.annotations.InputEventOHItem
+import calespiga.openhab.annotations.InputOHItemsMapper
 
 case class Event(
     timestamp: Instant,
@@ -12,7 +14,11 @@ case class Event(
 
 object Event {
 
-  lazy val eventsMqttMessagesConverter: List[(String, String => EventData)] = InputTopicMapper.generateTopicMap()
+  lazy val eventsMqttMessagesConverter: List[(String, String => EventData)] =
+    InputTopicMapper.generateTopicMap()
+  lazy val eventsOpenHabInputItemsConverter
+      : List[(String, String => EventData)] =
+    InputOHItemsMapper.generateItemsMap()
 
   sealed trait EventData
 
@@ -34,25 +40,27 @@ object Event {
         celsius: Double
     ) extends TemperatureData
 
-  
     object Fans {
-        sealed trait FanData extends TemperatureData
-        case class BatteryFanSwitchManualChanged(
-            on: Boolean
-        ) extends FanData
+      sealed trait FanData extends TemperatureData
 
-        @InputEventMqtt("fan/batteries/status")
-        case class BatteryFanSwitchReported(
-            on: Boolean
-        ) extends FanData
+      @InputEventOHItem("VentiladorBateriesManual")
+      case class BatteryFanSwitchManualChanged(
+          on: Boolean
+      ) extends FanData
 
-        case class ElectronicsFanSwitchManualChanged(
-            on: Boolean
-        ) extends FanData
-        @InputEventMqtt("fan/electronics/status")
-        case class ElectronicsFanSwitchReported(
-            on: Boolean
-        ) extends FanData
+      @InputEventMqtt("fan/batteries/status")
+      case class BatteryFanSwitchReported(
+          on: Boolean
+      ) extends FanData
+
+      @InputEventOHItem("VentiladorElectronicaManual")
+      case class ElectronicsFanSwitchManualChanged(
+          on: Boolean
+      ) extends FanData
+      @InputEventMqtt("fan/electronics/status")
+      case class ElectronicsFanSwitchReported(
+          on: Boolean
+      ) extends FanData
     }
   }
 }

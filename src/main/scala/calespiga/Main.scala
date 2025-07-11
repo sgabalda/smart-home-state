@@ -92,8 +92,10 @@ object Main extends IOApp.Simple {
                 IO.pure(processor.process(current, event))
               }
               .evalMap { (state, actions) =>
-                statePersistence.saveState(state) *> executor.execute(actions).flatMap { errors =>
-                  errorManager.manageErrors(errors)
+                statePersistence
+                  .saveState(state) *> executor.execute(actions).flatMap {
+                  errors =>
+                    errorManager.manageErrors(errors)
                 }
               }
 

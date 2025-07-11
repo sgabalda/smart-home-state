@@ -19,15 +19,15 @@ object InputTopicsManager {
     override def inputTopics: Set[String] = inputTopicsConversions.keySet
 
     override def inputTopicsConversions: TopicMessagesConverter =
-      Event.eventsMqttMessagesConverter
-        .map{case (topic, constructorOfString) => {
-          
+      Event.eventsMqttMessagesConverter.map {
+        case (topic, constructorOfString) => {
+
           val conversion: Vector[Byte] => Either[Throwable, Event.EventData] =
             v =>
               Try(constructorOfString(new String(v.toArray, "UTF-8"))).toEither
           (topic, conversion)
-        }}
-        .toMap
+        }
+      }.toMap
   }
 
 }
