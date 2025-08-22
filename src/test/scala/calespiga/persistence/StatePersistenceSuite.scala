@@ -14,6 +14,7 @@ import com.softwaremill.quicklens.*
 
 import scala.concurrent.duration.*
 import scala.language.postfixOps
+import calespiga.model.RemoteState
 
 class StatePersistenceSuite extends CatsEffectSuite {
 
@@ -115,8 +116,8 @@ class StatePersistenceSuite extends CatsEffectSuite {
   test("StatePersistence should store the last state, not the previous one") {
     Ref[IO].of[Option[(String, String)]](None).flatMap { ref =>
       val anotherState = someState
-        .modify(_.fans.fanElectronics)
-        .setTo(someState.fans.fanElectronics.turn)
+        .modify(_.temperatures.batteriesClosetTemperature)
+        .setTo(someState.temperatures.batteriesClosetTemperature + 1)
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(),

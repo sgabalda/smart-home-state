@@ -88,9 +88,11 @@ object InputTopicMapper {
             case tpe if tpe =:= TypeRepr.of[String] =>
               val convertedValueExpr = '{ (valueStr: String) => valueStr }
               getNewExpr(convertedValueExpr)
-            
+
             case tpe if tpe =:= TypeRepr.of[calespiga.model.Switch.Status] =>
-              val convertedValueExpr = '{ (valueStr: String) => calespiga.model.Switch.statusFromString(valueStr) }
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.Switch.statusFromString(valueStr)
+              }
               getNewExpr(convertedValueExpr)
 
             case _ =>

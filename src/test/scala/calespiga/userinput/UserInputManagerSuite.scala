@@ -108,7 +108,8 @@ class UserInputManagerSuite extends CatsEffectSuite {
               Right(
                 Event(
                   ts,
-                  Event.Temperature.Fans.BatteryFanSwitchManualChanged(Switch.On)
+                  Event.Temperature.Fans
+                    .BatteryFanSwitchManualChanged(Switch.On)
                 )
               )
             ) =>

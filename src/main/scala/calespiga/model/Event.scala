@@ -30,6 +30,11 @@ object Event {
         celsius: Double
     ) extends TemperatureData
 
+    @InputEventMqtt("diposit1/temperature/batteriescloset")
+    case class BatteryClosetTemperatureMeasured(
+        celsius: Double
+    ) extends TemperatureData
+
     @InputEventMqtt("diposit1/temperature/electronics")
     case class ElectronicsTemperatureMeasured(
         celsius: Double
@@ -45,7 +50,7 @@ object Event {
 
       @InputEventOHItem("VentiladorBateriesManual")
       case class BatteryFanSwitchManualChanged(
-          status: Switch.Status //TODO this should be a command, implement a conversion
+          status: Switch.Status // TODO this should be a command, implement a conversion
       ) extends FanData
 
       @InputEventMqtt("fan/batteries/status")
@@ -55,7 +60,7 @@ object Event {
 
       @InputEventOHItem("VentiladorElectronicaManual")
       case class ElectronicsFanSwitchManualChanged(
-          status: Switch.Status //TODO this should be a command, implement a conversion
+          status: Switch.Status // TODO this should be a command, implement a conversion
       ) extends FanData
 
       @InputEventMqtt("fan/electronics/status")
