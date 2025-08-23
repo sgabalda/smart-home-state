@@ -2,25 +2,23 @@ package calespiga.processor
 
 import calespiga.model.Fixture
 import munit.CatsEffectSuite
-import java.time.Instant
+import calespiga.processor.StateProcessor.SingleProcessor
 
 class StateProcessorSuite extends CatsEffectSuite {
-
-  private val now = Instant.now()
 
   test(
     "Events of type TemperatureRelated are forwarded to the provided TemperatureRelatedProcessor"
   ) {
-    Fixture.allTemperatureRelatedEvents.foreach { event =>
+    Fixture.allEvents.foreach { event =>
       var executed = false
-      val temperatureRelatedProcessor: TemperatureRelatedProcessor =
+      val temperatureRelatedProcessor: SingleProcessor =
         (state, _, _) => {
           executed = true
           (state, Set.empty)
         }
       val sut = StateProcessor(temperatureRelatedProcessor)
       assertEquals(
-        sut.process(Fixture.state, event, now),
+        sut.process(Fixture.state, event),
         (Fixture.state, Set.empty)
       )
       assertEquals(

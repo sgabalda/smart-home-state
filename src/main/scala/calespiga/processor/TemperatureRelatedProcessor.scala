@@ -8,27 +8,19 @@ import calespiga.processor.RemoteStateProcessor.*
 import calespiga.processor.RemoteStateActionProducer.*
 import calespiga.model.Switch
 
-trait TemperatureRelatedProcessor {
-  def process(
-      state: State,
-      event: Event.Temperature.TemperatureData,
-      timestamp: Instant
-  ): (State, Set[Action])
-}
-
 object TemperatureRelatedProcessor {
 
   private final case class Impl(
       batteryFanActionProducer: RemoteSwitchActionProducer,
       electronicsFanActionProducer: RemoteSwitchActionProducer
-  ) extends TemperatureRelatedProcessor {
+  ) extends StateProcessor.SingleProcessor {
 
     def process(
         state: State,
-        event: Event.Temperature.TemperatureData,
+        eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = {
-      event match {
+      eventData match {
         case Event.Temperature.BatteryTemperatureMeasured(temperature)
             if temperature != state.temperatures.batteriesTemperature =>
           val newState =
@@ -148,7 +140,7 @@ object TemperatureRelatedProcessor {
           "VentiladorElectronicaStatusSHS",
           "fan/electronics/set"
         )
-  ): TemperatureRelatedProcessor = Impl(
+  ): StateProcessor.SingleProcessor = Impl(
     batteryFanActionProducer = batteryFanActionProducer,
     electronicsFanActionProducer = electronicsFanActionProducer
   )

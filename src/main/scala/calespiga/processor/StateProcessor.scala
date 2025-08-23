@@ -2,41 +2,46 @@ package calespiga.processor
 
 import calespiga.model.{Action, Event, State}
 import java.time.Instant
+import calespiga.model.Event.EventData
 
 trait StateProcessor {
   def process(
       state: State,
-      event: Event,
-      timestamp: Instant
+      event: Event
   ): (State, Set[Action])
 }
 
 object StateProcessor {
 
+  trait SingleProcessor {
+    def process(
+        state: State,
+        eventData: EventData,
+        timestamp: Instant
+    ): (State, Set[Action])
+  }
+
   private final case class Impl(
-      TemperatureRelatedProcessor: TemperatureRelatedProcessor
+      processors: List[SingleProcessor]
   ) extends StateProcessor {
     override def process(
         state: State,
-        event: Event,
-        timestamp: Instant
+        event: Event
     ): (State, Set[Action]) = {
-      val (newState, actions) = event match {
-        case Event(timestamp, temperature: Event.Temperature.TemperatureData) =>
-          TemperatureRelatedProcessor.process(state, temperature, timestamp)
+      processors.foldLeft((state, Set.empty[Action])) {
+        case ((currentState, currentActions), processor) =>
+          val (newState, newActions) =
+            processor.process(currentState, event.data, event.timestamp)
+          (newState, currentActions ++ newActions)
       }
-
-      // TODO get the diff of both states, and add the actions for the changes if they are to be reported
-
-      (newState, actions)
     }
   }
 
   def apply(
-      temperatureRelatedProcessor: TemperatureRelatedProcessor =
+      temperatureRelatedProcessor: SingleProcessor =
         TemperatureRelatedProcessor()
   ): StateProcessor = Impl(
-    temperatureRelatedProcessor
+    List(temperatureRelatedProcessor)
   )
 
 }

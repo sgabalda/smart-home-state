@@ -89,9 +89,7 @@ object Main extends IOApp.Simple {
                   IO.pure(Some(value))
               }
               .evalMapAccumulate(initialState) { case (current, event) =>
-                IO.realTimeInstant.flatMap { timestamp =>
-                  IO.pure(processor.process(current, event, timestamp))
-                }
+                IO.pure(processor.process(current, event))
               }
               .evalMap { (state, actions) =>
                 statePersistence
@@ -100,7 +98,6 @@ object Main extends IOApp.Simple {
                     errorManager.manageErrors(errors)
                 }
               }
-
           }
           .compile
           .drain

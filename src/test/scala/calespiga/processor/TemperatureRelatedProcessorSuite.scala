@@ -14,8 +14,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.now
 
-  Fixture.allTemperatureRelatedEvents
-    .flatMap[(Event.Temperature.TemperatureData, State => State, Set[Action])](
+  Fixture.allEvents
+    .flatMap[(Event.EventData, State => State, Set[Action])](
       _.data match {
         case e @ BatteryTemperatureMeasured(_) =>
           List(
@@ -202,6 +202,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               )
             )
           )
+        // case e => List((e, s => s, Set.empty)) for when more events are to be defined
       }
     )
     .foreach { (event, newState, expectedActions) =>
