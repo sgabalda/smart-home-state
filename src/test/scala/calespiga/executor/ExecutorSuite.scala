@@ -2,130 +2,246 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
-import calespiga.mqtt.ActionToMqttProducerStub
-import calespiga.openhab.ApiClientStub
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import munit.CatsEffectSuite
+import scala.concurrent.duration._
 
 class ExecutorSuite extends CatsEffectSuite {
 
-  test("Executor should request to the APIClient on SetOpenHabItemValue") {
+  // Simple stubs for testing
+  case class DirectExecutorStub(
+      executeStub: Set[Action.Direct] => IO[
+        List[ErrorManager.Error.ExecutionError]
+      ] = _ => IO.pure(List.empty),
+      onExecute: Set[Action.Direct] => IO[Unit] = _ => IO.unit
+  ) extends DirectExecutor {
+    override def execute(
+        actions: Set[Action.Direct]
+    ): IO[List[ErrorManager.Error.ExecutionError]] =
+      onExecute(actions) *> executeStub(actions)
+  }
 
-    val item = "TestItem"
-    val value = "TestValue"
+  case class ScheduledExecutorStub(
+      executeStub: Set[Action.Scheduled] => IO[
+        List[ErrorManager.Error.ExecutionError]
+      ] = _ => IO.pure(List.empty),
+      onExecute: Set[Action.Scheduled] => IO[Unit] = _ => IO.unit
+  ) extends ScheduledExecutor {
+    override def execute(
+        actions: Set[Action.Scheduled]
+    ): IO[List[ErrorManager.Error.ExecutionError]] =
+      onExecute(actions) *> executeStub(actions)
+  }
+
+  test("Executor delegates direct actions to DirectExecutor") {
+    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction2 = Action.SendMqttStringMessage("topic", "message")
+    val scheduledAction = Action.Delayed("id1", directAction1, 1.second)
+
+    val actions = Set[Action](directAction1, directAction2, scheduledAction)
 
     for {
-      called <- IO.ref(false)
-      apiClient = ApiClientStub(
-        changeItemStub = (item: String, value: String) => called.set(true)
+      receivedDirectActions <- Ref.of[IO, Set[Action.Direct]](Set.empty)
+      receivedScheduledActions <- Ref.of[IO, Set[Action.Scheduled]](Set.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = actions => receivedDirectActions.set(actions)
       )
-      executor = Executor(apiClient, ActionToMqttProducerStub())
-      _ <- executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
-      calledValue <- called.get
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = actions => receivedScheduledActions.set(actions)
+      )
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      _ <- executor.execute(actions)
+
+      actualDirectActions <- receivedDirectActions.get
+      actualScheduledActions <- receivedScheduledActions.get
     } yield {
-      assertEquals(calledValue, true, "APIClient was not called")
+      assertEquals(actualDirectActions, Set(directAction1, directAction2))
+      assertEquals(actualScheduledActions, Set(scheduledAction))
     }
   }
 
-  test("Executor should return an error on failure of SetOpenHabItemValue") {
+  test("Executor executes direct actions before scheduled actions") {
+    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val scheduledAction = Action.Delayed("id1", directAction, 1.second)
 
-    val item = "TestItem"
-    val value = "TestValue"
-
-    val error = new Exception("API error")
-    val action = Action.SetOpenHabItemValue(item, value)
-
-    Executor(
-      ApiClientStub(
-        changeItemStub = (item: String, value: String) => IO.raiseError(error)
-      ),
-      ActionToMqttProducerStub()
-    ).execute(Set(action)).map {
-      case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
-        assertEquals(throwable, error, "The throwable was not propagated")
-        assertEquals(act, action, "The action was not propagated")
-      case _ => fail("The error was not propagated")
-    }
-  }
-
-  test("Executor should return no error on success of SetOpenHabItemValue") {
-
-    val item = "TestItem"
-    val value = "TestValue"
-
-    val action = Action.SetOpenHabItemValue(item, value)
-
-    Executor(
-      ApiClientStub(
-        changeItemStub = (item: String, value: String) => IO.unit
-      ),
-      ActionToMqttProducerStub()
-    ).execute(Set(action)).map {
-      case some :: _ => fail("The error was not propagated")
-      case Nil       => // No error, as expected
-    }
-  }
-
-  test(
-    "Executor should request to the ActionToMqttProducer on SendMqttStringMessage"
-  ) {
-
-    val action = Action.SendMqttStringMessage(
-      topic = "TestTopic",
-      message = "TestMessage"
-    )
+    val actions = Set[Action](directAction, scheduledAction)
 
     for {
-      called <- IO.ref(false)
-      actionToMqtt = ActionToMqttProducerStub(
-        actionToMqttStub =
-          (action: Action.SendMqttStringMessage) => called.set(true)
+      executionOrder <- Ref.of[IO, List[String]](List.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = _ => executionOrder.update(_ :+ "direct")
       )
-      executor = Executor(ApiClientStub(), actionToMqtt)
-      _ <- executor.execute(Set(action))
-      calledValue <- called.get
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = _ => executionOrder.update(_ :+ "scheduled")
+      )
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      _ <- executor.execute(actions)
+
+      order <- executionOrder.get
     } yield {
-      assertEquals(calledValue, true, "ActionToMqttProducer was not called")
+      assertEquals(order, List("direct", "scheduled"))
     }
   }
 
-  test("Executor should return an error on failure of SendMqttStringMessage") {
+  test("Executor handles both Delayed and Periodic scheduled actions") {
+    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val delayedAction = Action.Delayed("id1", directAction, 1.second)
+    val periodicAction = Action.Periodic("id2", directAction, 5.seconds)
 
-    val error = new Exception("Mqtt error")
-    val action = Action.SendMqttStringMessage(
-      topic = "TestTopic",
-      message = "TestMessage"
-    )
+    val actions = Set[Action](directAction, delayedAction, periodicAction)
 
-    Executor(
-      ApiClientStub(),
-      ActionToMqttProducerStub(
-        actionToMqttStub =
-          (action: Action.SendMqttStringMessage) => IO.raiseError(error)
+    for {
+      receivedScheduledActions <- Ref.of[IO, Set[Action.Scheduled]](Set.empty)
+
+      directExecutor = DirectExecutorStub()
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = actions => receivedScheduledActions.set(actions)
       )
-    ).execute(Set(action)).map {
-      case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
-        assertEquals(throwable, error, "The throwable was not propagated")
-        assertEquals(act, action, "The action was not propagated")
-      case _ => fail("The error was not propagated")
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      _ <- executor.execute(actions)
+
+      actualScheduledActions <- receivedScheduledActions.get
+    } yield {
+      assertEquals(actualScheduledActions, Set(delayedAction, periodicAction))
     }
   }
 
-  test("Executor should return no error on success of SendMqttStringMessage") {
+  test("Executor merges errors from both executors") {
+    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val scheduledAction = Action.Delayed("id1", directAction, 1.second)
 
-    val action = Action.SendMqttStringMessage(
-      topic = "TestTopic",
-      message = "TestMessage"
+    val actions = Set[Action](directAction, scheduledAction)
+
+    val directError = ErrorManager.Error.ExecutionError(
+      new Exception("Direct error"),
+      directAction
+    )
+    val scheduledError = ErrorManager.Error.ExecutionError(
+      new Exception("Scheduled error"),
+      scheduledAction
     )
 
-    Executor(
-      ApiClientStub(),
-      ActionToMqttProducerStub(
-        actionToMqttStub = (action: Action.SendMqttStringMessage) => IO.unit
+    val directExecutor = DirectExecutorStub(
+      executeStub = _ => IO.pure(List(directError))
+    )
+    val scheduledExecutor = ScheduledExecutorStub(
+      executeStub = _ => IO.pure(List(scheduledError))
+    )
+
+    val executor = Executor(directExecutor, scheduledExecutor)
+
+    for {
+      errors <- executor.execute(actions)
+    } yield {
+      assertEquals(errors.length, 2)
+      assert(errors.contains(directError))
+      assert(errors.contains(scheduledError))
+    }
+  }
+
+  test("Executor returns empty list when no errors occur") {
+    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val scheduledAction = Action.Delayed("id1", directAction, 1.second)
+
+    val actions = Set[Action](directAction, scheduledAction)
+
+    val directExecutor = DirectExecutorStub()
+    val scheduledExecutor = ScheduledExecutorStub()
+
+    val executor = Executor(directExecutor, scheduledExecutor)
+
+    for {
+      errors <- executor.execute(actions)
+    } yield {
+      assertEquals(errors, List.empty)
+    }
+  }
+
+  test("Executor handles empty action set") {
+    val actions = Set.empty[Action]
+
+    for {
+      receivedDirectActions <- Ref.of[IO, Set[Action.Direct]](Set.empty)
+      receivedScheduledActions <- Ref.of[IO, Set[Action.Scheduled]](Set.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = actions => receivedDirectActions.set(actions)
       )
-    ).execute(Set(action)).map {
-      case some :: _ => fail("The error was not propagated")
-      case Nil       => // No error, as expected
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = actions => receivedScheduledActions.set(actions)
+      )
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      errors <- executor.execute(actions)
+
+      actualDirectActions <- receivedDirectActions.get
+      actualScheduledActions <- receivedScheduledActions.get
+    } yield {
+      assertEquals(actualDirectActions, Set.empty)
+      assertEquals(actualScheduledActions, Set.empty)
+      assertEquals(errors, List.empty)
+    }
+  }
+
+  test("Executor handles only direct actions") {
+    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction2 = Action.SendMqttStringMessage("topic", "message")
+
+    val actions = Set[Action](directAction1, directAction2)
+
+    for {
+      receivedDirectActions <- Ref.of[IO, Set[Action.Direct]](Set.empty)
+      receivedScheduledActions <- Ref.of[IO, Set[Action.Scheduled]](Set.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = actions => receivedDirectActions.set(actions)
+      )
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = actions => receivedScheduledActions.set(actions)
+      )
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      _ <- executor.execute(actions)
+
+      actualDirectActions <- receivedDirectActions.get
+      actualScheduledActions <- receivedScheduledActions.get
+    } yield {
+      assertEquals(actualDirectActions, Set(directAction1, directAction2))
+      assertEquals(actualScheduledActions, Set.empty)
+    }
+  }
+
+  test("Executor handles only scheduled actions") {
+    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val delayedAction = Action.Delayed("id1", directAction, 1.second)
+    val periodicAction = Action.Periodic("id2", directAction, 5.seconds)
+
+    val actions = Set[Action](delayedAction, periodicAction)
+
+    for {
+      receivedDirectActions <- Ref.of[IO, Set[Action.Direct]](Set.empty)
+      receivedScheduledActions <- Ref.of[IO, Set[Action.Scheduled]](Set.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = actions => receivedDirectActions.set(actions)
+      )
+      scheduledExecutor = ScheduledExecutorStub(
+        onExecute = actions => receivedScheduledActions.set(actions)
+      )
+
+      executor = Executor(directExecutor, scheduledExecutor)
+      _ <- executor.execute(actions)
+
+      actualDirectActions <- receivedDirectActions.get
+      actualScheduledActions <- receivedScheduledActions.get
+    } yield {
+      assertEquals(actualDirectActions, Set.empty)
+      assertEquals(actualScheduledActions, Set(delayedAction, periodicAction))
     }
   }
 }

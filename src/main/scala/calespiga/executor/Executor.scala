@@ -1,53 +1,36 @@
 package calespiga.executor
 
-import calespiga.ErrorManager
 import calespiga.model.Action
-import calespiga.mqtt.ActionToMqttProducer
-import calespiga.openhab.APIClient
+import calespiga.ErrorManager
 import cats.effect.IO
-import cats.implicits.catsSyntaxParallelTraverse1
 
-sealed trait Executor {
-
+trait Executor {
   def execute(actions: Set[Action]): IO[List[ErrorManager.Error.ExecutionError]]
-
 }
 
 object Executor {
-
-  final case class Impl(
-      openHabApiClient: APIClient,
-      mqttProducer: ActionToMqttProducer
+  private final case class Impl(
+      directExecutor: DirectExecutor,
+      scheduledExecutor: ScheduledExecutor
   ) extends Executor {
-
-    private def processSingleAction(
-        action: Action
-    ): IO[Unit] = {
-      action match {
-        case Action.SetOpenHabItemValue(item, value) =>
-          openHabApiClient.changeItem(item, value)
-        case a: Action.SendMqttStringMessage =>
-          mqttProducer.actionToMqtt(a)
-      }
-    }
-
     override def execute(
         actions: Set[Action]
-    ): IO[List[ErrorManager.Error.ExecutionError]] =
-      actions.toList
-        .parTraverse(action =>
-          processSingleAction(action).attempt.map((_, action))
-        )
-        .map {
-          _.collect { case (Left(throwable), action) =>
-            ErrorManager.Error.ExecutionError(throwable, action)
-          }
-        }
+    ): IO[List[ErrorManager.Error.ExecutionError]] = {
+      val (direct, scheduled) = actions.toList.partitionMap {
+        case d: Action.Direct     => Left(d)
+        case dl: Action.Scheduled => Right(dl)
+      }
+
+      for {
+        directErrors <- directExecutor.execute(direct.toSet)
+        scheduledErrors <- scheduledExecutor.execute(scheduled.toSet)
+      } yield directErrors ++ scheduledErrors
+    }
   }
 
   def apply(
-      openHabApiClient: APIClient,
-      mqttProducer: ActionToMqttProducer
+      directExecutor: DirectExecutor,
+      scheduledExecutor: ScheduledExecutor
   ): Executor =
-    Impl(openHabApiClient, mqttProducer)
+    Impl(directExecutor, scheduledExecutor)
 }

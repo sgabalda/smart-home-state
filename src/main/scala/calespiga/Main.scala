@@ -1,7 +1,7 @@
 package calespiga
 
 import calespiga.config.{ApplicationConfig, ConfigLoader}
-import calespiga.executor.Executor
+import calespiga.executor.{DirectExecutor, ScheduledExecutor, Executor}
 import calespiga.model.{Event, State}
 import calespiga.mqtt.{
   ActionToMqttProducer,
@@ -45,8 +45,10 @@ object Main extends IOApp.Simple {
       mqttActionToProducer = ActionToMqttProducer(mqttProducer)
       openHabApiClient <- APIClient(appConfig.openHabConfig)
       userInputManager = UserInputManager(openHabApiClient)
-      executor = Executor(openHabApiClient, mqttActionToProducer)
+      directExecutor = DirectExecutor(openHabApiClient, mqttActionToProducer)
       errorManager <- ErrorManager()
+      scheduledExecutor <- ScheduledExecutor(directExecutor, errorManager)
+      executor = Executor(directExecutor, scheduledExecutor)
       statePersistence <- StatePersistence(
         appConfig.statePersistenceConfig,
         errorManager
