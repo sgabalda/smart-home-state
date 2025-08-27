@@ -45,19 +45,19 @@ object ScheduledExecutor {
               _ <- fibersRef.update(_ - delayed.id)
             } yield ()
             newFiber <- delayedExecution.start
-            
+
             // Store the new fiber in the map
             _ <- fibersRef.update(_ + (delayed.id -> newFiber))
           } yield ()
 
         case periodic: Action.Periodic =>
           // Define the recursive periodic execution function
-          def periodicExecution: IO[Unit] = 
+          def periodicExecution: IO[Unit] =
             IO.sleep(periodic.period) *>
-            directExecutor.execute(Set(periodic.action)).flatMap { errors =>
-              errorManager.manageErrors(errors) *> periodicExecution
-            }
-          
+              directExecutor.execute(Set(periodic.action)).flatMap { errors =>
+                errorManager.manageErrors(errors) *> periodicExecution
+              }
+
           for {
             // Cancel existing fiber with the same ID if it exists
             _ <- fibersRef.get.flatMap { fibers =>
@@ -68,10 +68,10 @@ object ScheduledExecutor {
                   IO.unit
               }
             }
-            
+
             // Start the periodic execution fiber
             newFiber <- periodicExecution.start
-            
+
             // Store the new fiber in the map
             _ <- fibersRef.update(_ + (periodic.id -> newFiber))
           } yield ()

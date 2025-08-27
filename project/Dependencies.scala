@@ -29,8 +29,8 @@ object Dependencies {
     "org.typelevel" %% "cats-effect" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-kernel" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-std" % Versions.cats_effect,
-    "io.circe" %% "circe-core" % Versions.circe,        // Core functionality
-    "io.circe" %% "circe-generic" % Versions.circe,     // Auto-derivation for case classes
+    "io.circe" %% "circe-core" % Versions.circe, // Core functionality
+    "io.circe" %% "circe-generic" % Versions.circe, // Auto-derivation for case classes
     "io.circe" %% "circe-parser" % Versions.circe,
     "co.fs2" %% "fs2-io" % Versions.fs2,
     "co.fs2" %% "fs2-scodec" % Versions.fs2,
@@ -48,6 +48,6 @@ object Dependencies {
 
   val testing: Seq[ModuleID] = Seq(
     "org.typelevel" %% "munit-cats-effect" % Versions.munit,
-    "org.typelevel" %% "cats-effect-testkit" % Versions.cats_effect,
+    "org.typelevel" %% "cats-effect-testkit" % Versions.cats_effect
   ).map(_ % Test)
 }
