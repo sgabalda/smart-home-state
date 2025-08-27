@@ -18,6 +18,7 @@ object State {
       goalTemperature: Double = -100
   )
   case class Fans(
+      fanManagementAutomatic: Switch.Status = Switch.Off,
       fanBatteries: RemoteSwitch = RemoteSwitch(),
       fanElectronics: RemoteSwitch = RemoteSwitch()
   )

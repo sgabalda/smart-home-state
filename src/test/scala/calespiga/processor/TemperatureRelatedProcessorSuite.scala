@@ -1,18 +1,36 @@
 package calespiga.processor
 
-import calespiga.model.{Action, Event, Fixture, State}
+import calespiga.model.{Action, Event, Fixture, State, RemoteState}
 import calespiga.model.Event.Temperature.*
 import munit.CatsEffectSuite
 import com.softwaremill.quicklens.*
 import calespiga.model.Switch
 import java.time.Instant
 import calespiga.model.RemoteSwitch
-import calespiga.model.Action.SetOpenHabItemValue
-import calespiga.model.Action.SendMqttStringMessage
+import calespiga.processor.RemoteStateActionProducer.*
 
 class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.now
+
+  // Stub action producers that return predictable, simple actions for testing isolation
+  private val batteryFanActionProducerStub: RemoteSwitchActionProducer = 
+    new RemoteStateActionProducer[Switch.Status] {
+      def produceActionsForConfirmed(remoteState: RemoteState[Switch.Status], timestamp: Instant): Set[Action] =
+        Set(Action.SetOpenHabItemValue("battery-fan-confirmed", remoteState.confirmed.toStatusString))
+      
+      def produceActionsForCommand(remoteState: RemoteState[Switch.Status], timestamp: Instant): Set[Action] =
+        Set(Action.SetOpenHabItemValue("battery-fan-command", remoteState.latestCommand.toCommandString))
+    }
+
+  private val electronicsFanActionProducerStub: RemoteSwitchActionProducer = 
+    new RemoteStateActionProducer[Switch.Status] {
+      def produceActionsForConfirmed(remoteState: RemoteState[Switch.Status], timestamp: Instant): Set[Action] =
+        Set(Action.SetOpenHabItemValue("electronics-fan-confirmed", remoteState.confirmed.toStatusString))
+      
+      def produceActionsForCommand(remoteState: RemoteState[Switch.Status], timestamp: Instant): Set[Action] =
+        Set(Action.SetOpenHabItemValue("electronics-fan-command", remoteState.latestCommand.toCommandString))
+    }
 
   Fixture.allEvents
     .flatMap[(Event.EventData, State => State, Set[Action])](
@@ -77,14 +95,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanBatteries)
                 .setTo(RemoteSwitch(Switch.On, Switch.Off, Some(now))),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorBateriesStatusSHS",
-                  value = "on"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/batteries/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("battery-fan-confirmed", "on")
               )
             ),
             (
@@ -92,14 +103,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanBatteries)
                 .setTo(RemoteSwitch(Switch.Off, Switch.Off)),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorBateriesStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/batteries/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("battery-fan-confirmed", "off")
               )
             )
           )
@@ -110,14 +114,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanElectronics)
                 .setTo(RemoteSwitch(Switch.On, Switch.Off, Some(now))),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorElectronicaStatusSHS",
-                  value = "on"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/electronics/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("electronics-fan-confirmed", "on")
               )
             ),
             (
@@ -125,14 +122,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanElectronics)
                 .setTo(RemoteSwitch(Switch.Off, Switch.Off)),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorElectronicaStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/electronics/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("electronics-fan-confirmed", "off")
               )
             )
           )
@@ -143,14 +133,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanBatteries)
                 .setTo(RemoteSwitch(Switch.Off, Switch.On, Some(now))),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorBateriesStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/batteries/set",
-                  message = "start"
-                )
+                Action.SetOpenHabItemValue("battery-fan-command", "start")
               )
             ),
             (
@@ -158,14 +141,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanBatteries)
                 .setTo(RemoteSwitch(Switch.Off, Switch.Off)),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorBateriesStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/batteries/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("battery-fan-command", "stop")
               )
             )
           )
@@ -176,14 +152,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanElectronics)
                 .setTo(RemoteSwitch(Switch.Off, Switch.On, Some(now))),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorElectronicaStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/electronics/set",
-                  message = "start"
-                )
+                Action.SetOpenHabItemValue("electronics-fan-command", "start")
               )
             ),
             (
@@ -191,14 +160,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               _.modify(_.fans.fanElectronics)
                 .setTo(RemoteSwitch(Switch.Off, Switch.Off)),
               Set(
-                SetOpenHabItemValue(
-                  item = "VentiladorElectronicaStatusSHS",
-                  value = "off"
-                ),
-                SendMqttStringMessage(
-                  topic = "fan/electronics/set",
-                  message = "stop"
-                )
+                Action.SetOpenHabItemValue("electronics-fan-command", "stop")
               )
             )
           )
@@ -209,7 +171,10 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
       test(
         s"TemperatureRelatedProcessor processes $event"
       ) {
-        val sut = TemperatureRelatedProcessor()
+        val sut = TemperatureRelatedProcessor(
+          batteryFanActionProducer = batteryFanActionProducerStub,
+          electronicsFanActionProducer = electronicsFanActionProducerStub
+        )
         val (state, actions) = sut.process(Fixture.state, event, now)
         assertEquals(state, newState(Fixture.state))
         assertEquals(actions, expectedActions)

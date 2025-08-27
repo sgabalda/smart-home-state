@@ -85,8 +85,8 @@ object TemperatureRelatedProcessor {
             .using(_.process(RemoteState.Event(stateFan), timestamp))
           (
             newState,
-            batteryFanActionProducer.produceActionsFor(
-              newState.fans.fanBatteries
+            batteryFanActionProducer.produceActionsForConfirmed(
+              newState.fans.fanBatteries, timestamp
             )
           )
         case Event.Temperature.Fans.ElectronicsFanSwitchReported(stateFan) =>
@@ -95,8 +95,8 @@ object TemperatureRelatedProcessor {
             .using(_.process(RemoteState.Event(stateFan), timestamp))
           (
             newState,
-            electronicsFanActionProducer.produceActionsFor(
-              newState.fans.fanElectronics
+            electronicsFanActionProducer.produceActionsForConfirmed(
+              newState.fans.fanElectronics, timestamp
             )
           )
         case Event.Temperature.Fans.BatteryFanSwitchManualChanged(status) =>
@@ -105,8 +105,8 @@ object TemperatureRelatedProcessor {
             .using(_.process(RemoteState.Command(status), timestamp))
           (
             newState,
-            batteryFanActionProducer.produceActionsFor(
-              newState.fans.fanBatteries
+            batteryFanActionProducer.produceActionsForCommand(
+              newState.fans.fanBatteries, timestamp
             )
           )
         case Event.Temperature.Fans.ElectronicsFanSwitchManualChanged(status) =>
@@ -115,8 +115,8 @@ object TemperatureRelatedProcessor {
             .using(_.process(RemoteState.Command(status), timestamp))
           (
             newState,
-            electronicsFanActionProducer.produceActionsFor(
-              newState.fans.fanElectronics
+            electronicsFanActionProducer.produceActionsForCommand(
+              newState.fans.fanElectronics, timestamp
             )
           )
         case _ =>
@@ -131,14 +131,18 @@ object TemperatureRelatedProcessor {
 
   def apply(
       batteryFanActionProducer: RemoteSwitchActionProducer =
-        RemoteStateActionProducer.forSwitchWithUIItems(
+        RemoteStateActionProducer(
           "VentiladorBateriesStatusSHS",
-          "fan/batteries/set"
+          "fan/batteries/set",
+          "VentiladorsInconsistencySHS",
+          "ventilador-bateries"
         ),
       electronicsFanActionProducer: RemoteSwitchActionProducer =
-        RemoteStateActionProducer.forSwitchWithUIItems(
+        RemoteStateActionProducer(
           "VentiladorElectronicaStatusSHS",
-          "fan/electronics/set"
+          "fan/electronics/set",
+          "VentiladorsInconsistencySHS",
+          "ventilador-electronica"
         )
   ): StateProcessor.SingleProcessor = Impl(
     batteryFanActionProducer = batteryFanActionProducer,
