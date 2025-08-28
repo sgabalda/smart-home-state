@@ -45,17 +45,20 @@ object Event {
         celsius: Double
     ) extends TemperatureData
 
+    @InputEventOHItem("TemperaturaObjectiuSHS")
+    case class GoalTemperatureChanged(
+        celsius: Double
+    ) extends TemperatureData
+
     object Fans {
       sealed trait FanData extends TemperatureData
 
-    /*  @InputEventOHItem("VentiladorGestio")
+      @InputEventOHItem("VentiladorGestio")
       case class FanManagementChanged(
           status: Switch.Status
       ) extends FanData
-*/
 
-
-      @InputEventOHItem("VentiladorBateriesManual")
+      @InputEventOHItem("VentiladorBateriesSetSHS")
       case class BatteryFanSwitchManualChanged(
           status: Switch.Status
       ) extends FanData
@@ -65,7 +68,7 @@ object Event {
           status: Switch.Status
       ) extends FanData
 
-      @InputEventOHItem("VentiladorElectronicaManual")
+      @InputEventOHItem("VentiladorElectronicaSetSHS")
       case class ElectronicsFanSwitchManualChanged(
           status: Switch.Status
       ) extends FanData

@@ -24,19 +24,27 @@ class RemoteStateActionProducerSuite extends FunSuite {
     timeoutInterval = timeoutInterval
   )
 
-  test("produceActionsForCommand - produces MQTT command with correct parameters") {
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, None)
+  test(
+    "produceActionsForCommand - produces MQTT command with correct parameters"
+  ) {
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, None)
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val mqttAction = actions.collectFirst { case a: Action.SendMqttStringMessage => a }
+    val mqttAction = actions.collectFirst {
+      case a: Action.SendMqttStringMessage => a
+    }
     assert(mqttAction.isDefined, "Should produce MQTT command action")
     assertEquals(mqttAction.get.topic, mqttTopicForCommand)
     assertEquals(mqttAction.get.message, "start") // Switch.On.toCommandString
   }
 
-  test("produceActionsForCommand - produces periodic resend with correct parameters") {
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, None)
+  test(
+    "produceActionsForCommand - produces periodic resend with correct parameters"
+  ) {
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, None)
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
@@ -44,7 +52,7 @@ class RemoteStateActionProducerSuite extends FunSuite {
     assert(periodicAction.isDefined, "Should produce periodic resend action")
     assertEquals(periodicAction.get.id, s"$id-command")
     assertEquals(periodicAction.get.period, resendInterval)
-    
+
     // The periodic action should wrap the same MQTT command
     periodicAction.get.action match {
       case Action.SendMqttStringMessage(topic, message) =>
@@ -54,13 +62,18 @@ class RemoteStateActionProducerSuite extends FunSuite {
     }
   }
 
-  test("produceActionsForCommand - no inconsistency, sets online and cancels timeout") {
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, None)
+  test(
+    "produceActionsForCommand - no inconsistency, sets online and cancels timeout"
+  ) {
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, None)
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Online") if item == inconsistencyUIItem => item
+    val setOnlineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Online")
+          if item == inconsistencyUIItem =>
+        item
     }
     assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
 
@@ -69,66 +82,98 @@ class RemoteStateActionProducerSuite extends FunSuite {
     assertEquals(cancelAction.get.id, s"$id-timeout")
   }
 
-  test("produceActionsForCommand - recent inconsistency, sets online and schedules timeout") {
-    val inconsistencyStart = now.minusSeconds(30) // 30 seconds ago, less than 2 minutes timeout
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
+  test(
+    "produceActionsForCommand - recent inconsistency, sets online and schedules timeout"
+  ) {
+    val inconsistencyStart =
+      now.minusSeconds(30) // 30 seconds ago, less than 2 minutes timeout
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Online") if item == inconsistencyUIItem => item
+    val setOnlineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Online")
+          if item == inconsistencyUIItem =>
+        item
     }
     assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
 
     val delayedAction = actions.collectFirst { case a: Action.Delayed => a }
     assert(delayedAction.isDefined, "Should schedule timeout")
     assertEquals(delayedAction.get.id, s"$id-timeout")
-    
+
     // Check the delayed action sets offline
     delayedAction.get.action match {
-      case Action.SetOpenHabItemValue(item, "Offline") if item == inconsistencyUIItem => 
+      case Action.SetOpenHabItemValue(item, "Offline")
+          if item == inconsistencyUIItem =>
         // Verify delay is approximately correct (timeout - elapsed time)
         val expectedDelay = timeoutInterval - 30.seconds
-        assert(delayedAction.get.delay.toSeconds >= expectedDelay.toSeconds - 1, "Delay should be approximately correct (lower bound)")
-        assert(delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1, "Delay should be approximately correct (upper bound)")
+        assert(
+          delayedAction.get.delay.toSeconds >= expectedDelay.toSeconds - 1,
+          "Delay should be approximately correct (lower bound)"
+        )
+        assert(
+          delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1,
+          "Delay should be approximately correct (upper bound)"
+        )
       case _ => fail("Delayed action should set inconsistency item to Offline")
     }
   }
 
-  test("produceActionsForCommand - old inconsistency past timeout, sets offline and cancels timeout") {
-    val inconsistencyStart = now.minusSeconds(180) // 3 minutes ago, past 2 minutes timeout
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
+  test(
+    "produceActionsForCommand - old inconsistency past timeout, sets offline and cancels timeout"
+  ) {
+    val inconsistencyStart =
+      now.minusSeconds(180) // 3 minutes ago, past 2 minutes timeout
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOfflineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Offline") if item == inconsistencyUIItem => item
+    val setOfflineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Offline")
+          if item == inconsistencyUIItem =>
+        item
     }
-    assert(setOfflineAction.isDefined, "Should set inconsistency item to Offline")
+    assert(
+      setOfflineAction.isDefined,
+      "Should set inconsistency item to Offline"
+    )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }
     assert(cancelAction.isDefined, "Should cancel timeout")
     assertEquals(cancelAction.get.id, s"$id-timeout")
   }
 
-  test("produceActionsForConfirmed - produces UI update with correct parameters") {
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.On, Switch.Off, None)
+  test(
+    "produceActionsForConfirmed - produces UI update with correct parameters"
+  ) {
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.On, Switch.Off, None)
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val uiAction = actions.collectFirst { case a: Action.SetOpenHabItemValue => a }
+    val uiAction = actions.collectFirst { case a: Action.SetOpenHabItemValue =>
+      a
+    }
     assert(uiAction.isDefined, "Should produce UI update action")
     assertEquals(uiAction.get.item, confirmedStateUIItem)
     assertEquals(uiAction.get.value, "on") // Switch.On.toStatusString
   }
 
-  test("produceActionsForConfirmed - no inconsistency, sets online and cancels timeout") {
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.On, Switch.Off, None)
+  test(
+    "produceActionsForConfirmed - no inconsistency, sets online and cancels timeout"
+  ) {
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.On, Switch.Off, None)
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Online") if item == inconsistencyUIItem => item
+    val setOnlineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Online")
+          if item == inconsistencyUIItem =>
+        item
     }
     assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
 
@@ -137,42 +182,64 @@ class RemoteStateActionProducerSuite extends FunSuite {
     assertEquals(cancelAction.get.id, s"$id-timeout")
   }
 
-  test("produceActionsForConfirmed - recent inconsistency, sets online and schedules timeout") {
-    val inconsistencyStart = now.minusSeconds(45) // 45 seconds ago, less than 2 minutes timeout
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.On, Switch.Off, Some(inconsistencyStart))
+  test(
+    "produceActionsForConfirmed - recent inconsistency, sets online and schedules timeout"
+  ) {
+    val inconsistencyStart =
+      now.minusSeconds(45) // 45 seconds ago, less than 2 minutes timeout
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.On, Switch.Off, Some(inconsistencyStart))
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Online") if item == inconsistencyUIItem => item
+    val setOnlineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Online")
+          if item == inconsistencyUIItem =>
+        item
     }
     assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
 
     val delayedAction = actions.collectFirst { case a: Action.Delayed => a }
     assert(delayedAction.isDefined, "Should schedule timeout")
     assertEquals(delayedAction.get.id, s"$id-timeout")
-    
+
     // Check the delayed action sets offline
     delayedAction.get.action match {
-      case Action.SetOpenHabItemValue(item, "Offline") if item == inconsistencyUIItem => 
+      case Action.SetOpenHabItemValue(item, "Offline")
+          if item == inconsistencyUIItem =>
         // Verify delay is approximately correct (timeout - elapsed time)
         val expectedDelay = timeoutInterval - 45.seconds
-        assert(delayedAction.get.delay.toSeconds >= expectedDelay.toSeconds - 1, "Delay should be approximately correct (lower bound)")
-        assert(delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1, "Delay should be approximately correct (upper bound)")
+        assert(
+          delayedAction.get.delay.toSeconds >= expectedDelay.toSeconds - 1,
+          "Delay should be approximately correct (lower bound)"
+        )
+        assert(
+          delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1,
+          "Delay should be approximately correct (upper bound)"
+        )
       case _ => fail("Delayed action should set inconsistency item to Offline")
     }
   }
 
-  test("produceActionsForConfirmed - old inconsistency past timeout, sets offline and cancels timeout") {
-    val inconsistencyStart = now.minusSeconds(150) // 2.5 minutes ago, past 2 minutes timeout
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
+  test(
+    "produceActionsForConfirmed - old inconsistency past timeout, sets offline and cancels timeout"
+  ) {
+    val inconsistencyStart =
+      now.minusSeconds(150) // 2.5 minutes ago, past 2 minutes timeout
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, Some(inconsistencyStart))
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOfflineAction = actions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, "Offline") if item == inconsistencyUIItem => item
+    val setOfflineAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(item, "Offline")
+          if item == inconsistencyUIItem =>
+        item
     }
-    assert(setOfflineAction.isDefined, "Should set inconsistency item to Offline")
+    assert(
+      setOfflineAction.isDefined,
+      "Should set inconsistency item to Offline"
+    )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }
     assert(cancelAction.isDefined, "Should cancel timeout")
@@ -183,50 +250,70 @@ class RemoteStateActionProducerSuite extends FunSuite {
     val customProducer = RemoteStateActionProducer(
       confirmedStateUIItem = "custom-ui",
       mqttTopicForCommand = "custom/topic",
-      inconsistencyUIItem = "custom-inconsistency", 
+      inconsistencyUIItem = "custom-inconsistency",
       id = "custom-id",
       resendInterval = 45.seconds,
       timeoutInterval = 3.minutes
     )
 
-    val remoteState: RemoteState[Switch.Status] = RemoteState(Switch.Off, Switch.On, None)
+    val remoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.Off, Switch.On, None)
 
     // Test command actions use custom parameters
-    val commandActions = customProducer.produceActionsForCommand(remoteState, now)
-    val mqttAction = commandActions.collectFirst { case a: Action.SendMqttStringMessage => a }.get
+    val commandActions =
+      customProducer.produceActionsForCommand(remoteState, now)
+    val mqttAction = commandActions.collectFirst {
+      case a: Action.SendMqttStringMessage => a
+    }.get
     assertEquals(mqttAction.topic, "custom/topic")
-    
-    val periodicAction = commandActions.collectFirst { case a: Action.Periodic => a }.get
+
+    val periodicAction = commandActions.collectFirst {
+      case a: Action.Periodic => a
+    }.get
     assertEquals(periodicAction.id, "custom-id-command")
     assertEquals(periodicAction.period, 45.seconds)
 
-    val cancelAction = commandActions.collectFirst { case a: Action.Cancel => a }.get
+    val cancelAction = commandActions.collectFirst { case a: Action.Cancel =>
+      a
+    }.get
     assertEquals(cancelAction.id, "custom-id-timeout")
 
     // Test confirmed actions use custom parameters
-    val confirmedActions = customProducer.produceActionsForConfirmed(remoteState, now)
-    val uiAction = confirmedActions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, _) if item == "custom-ui" => item 
+    val confirmedActions =
+      customProducer.produceActionsForConfirmed(remoteState, now)
+    val uiAction = confirmedActions.collectFirst {
+      case Action.SetOpenHabItemValue(item, _) if item == "custom-ui" => item
     }
     assert(uiAction.isDefined, "Should use custom UI item")
 
-    val inconsistencyAction = confirmedActions.collectFirst { 
-      case Action.SetOpenHabItemValue(item, _) if item == "custom-inconsistency" => item 
+    val inconsistencyAction = confirmedActions.collectFirst {
+      case Action.SetOpenHabItemValue(item, _)
+          if item == "custom-inconsistency" =>
+        item
     }
-    assert(inconsistencyAction.isDefined, "Should use custom inconsistency item")
+    assert(
+      inconsistencyAction.isDefined,
+      "Should use custom inconsistency item"
+    )
   }
 
   test("switch status conversion in actions") {
     // Test Switch.Off command
-    val offRemoteState: RemoteState[Switch.Status] = RemoteState(Switch.On, Switch.Off, None)
+    val offRemoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.On, Switch.Off, None)
     val offActions = producer.produceActionsForCommand(offRemoteState, now)
-    val offMqttAction = offActions.collectFirst { case a: Action.SendMqttStringMessage => a }.get
+    val offMqttAction = offActions.collectFirst {
+      case a: Action.SendMqttStringMessage => a
+    }.get
     assertEquals(offMqttAction.message, "stop") // Switch.Off.toCommandString
 
     // Test Switch.On confirmed state
-    val onRemoteState: RemoteState[Switch.Status] = RemoteState(Switch.On, Switch.Off, None)
+    val onRemoteState: RemoteState[Switch.Status] =
+      RemoteState(Switch.On, Switch.Off, None)
     val onActions = producer.produceActionsForConfirmed(onRemoteState, now)
-    val onUiAction = onActions.collectFirst { case a: Action.SetOpenHabItemValue => a }.get
+    val onUiAction = onActions.collectFirst {
+      case a: Action.SetOpenHabItemValue => a
+    }.get
     assertEquals(onUiAction.value, "on") // Switch.On.toStatusString
   }
 
