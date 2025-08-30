@@ -12,6 +12,7 @@ import calespiga.processor.RemoteStateActionProducer.*
 class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.now
+  val dummyGoalTemp = 21.0
 
   // Default configuration for testing
   private val defaultConfig: calespiga.config.TemperatureRelatedConfig = {
@@ -145,8 +146,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
         case e @ GoalTemperatureChanged(_) =>
           List(
             (
-              e.modify(_.celsius).setTo(22d),
-              _.modify(_.temperatures.goalTemperature).setTo(22d),
+              e.modify(_.celsius).setTo(dummyGoalTemp),
+              _.modify(_.temperatures.goalTemperature).setTo(dummyGoalTemp),
               Set.empty[Action]
             )
           )
@@ -239,9 +240,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
             (
               Event.System.StartupEvent,
               s => s, // State may be updated if inconsistency timestamps exist
-              Set.empty[
-                Action
-              ] // Actions depend on the actual state, which varies in tests
+              Set.empty[Action]
+              // Actions depend on the actual state, which varies in tests
             )
           )
         // case e => List((e, s => s, Set.empty)) for when more events are to be defined

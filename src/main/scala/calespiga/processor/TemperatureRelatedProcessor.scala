@@ -242,7 +242,9 @@ object TemperatureRelatedProcessor {
         timestamp: Instant
     )(actionProducer: RemoteSwitch => Set[Action]): Set[Action] = {
       // Check if valid temperatures are available
-      if (currentTemp > -100 && externalTemp > -100 && goalTemp > -100) {
+      if (
+        currentTemp > State.sentinelTemp && externalTemp > State.sentinelTemp && goalTemp > State.sentinelTemp
+      ) {
         val shouldTurnOn = shouldTurnOnFan(currentTemp, externalTemp, goalTemp)
         val desiredStatus = if (shouldTurnOn) Switch.On else Switch.Off
 

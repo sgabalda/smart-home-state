@@ -10,12 +10,13 @@ case class State(
 
 object State {
 
+  val sentinelTemp = -100.0
   case class Temperatures(
-      externalTemperature: Double = -100,
-      batteriesTemperature: Double = -100,
-      batteriesClosetTemperature: Double = -100,
-      electronicsTemperature: Double = -100,
-      goalTemperature: Double = -100
+      externalTemperature: Double = sentinelTemp,
+      batteriesTemperature: Double = sentinelTemp,
+      batteriesClosetTemperature: Double = sentinelTemp,
+      electronicsTemperature: Double = sentinelTemp,
+      goalTemperature: Double = sentinelTemp
   )
   case class Fans(
       fanManagementAutomatic: Switch.Status = Switch.Off,
