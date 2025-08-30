@@ -117,7 +117,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     Ref[IO].of[Option[(String, String)]](None).flatMap { ref =>
       val anotherState = someState
         .modify(_.temperatures.batteriesClosetTemperature)
-        .setTo(someState.temperatures.batteriesClosetTemperature + 1)
+        .setTo(someState.temperatures.batteriesClosetTemperature.map(_ + 1))
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(),

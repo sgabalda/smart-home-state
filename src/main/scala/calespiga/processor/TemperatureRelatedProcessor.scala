@@ -24,9 +24,11 @@ object TemperatureRelatedProcessor {
     ): (State, Set[Action]) = {
       eventData match {
         case Event.Temperature.BatteryTemperatureMeasured(temperature)
-            if temperature != state.temperatures.batteriesTemperature =>
+            if !state.temperatures.batteriesTemperature.contains(temperature) =>
           val newState =
-            state.modify(_.temperatures.batteriesTemperature).setTo(temperature)
+            state
+              .modify(_.temperatures.batteriesTemperature)
+              .setTo(Some(temperature))
           val tempActions = Set(
             Action.SetOpenHabItemValue(
               config.batteryTemperatureItem,
@@ -42,11 +44,13 @@ object TemperatureRelatedProcessor {
 
           (newState, tempActions ++ automaticActions)
         case Event.Temperature.BatteryClosetTemperatureMeasured(temperature)
-            if temperature != state.temperatures.batteriesClosetTemperature =>
+            if !state.temperatures.batteriesClosetTemperature.contains(
+              temperature
+            ) =>
           val newState =
             state
               .modify(_.temperatures.batteriesClosetTemperature)
-              .setTo(temperature)
+              .setTo(Some(temperature))
           val tempActions = Set(
             Action.SetOpenHabItemValue(
               config.batteryClosetTemperatureItem,
@@ -63,10 +67,12 @@ object TemperatureRelatedProcessor {
           (newState, tempActions ++ automaticActions)
 
         case Event.Temperature.ElectronicsTemperatureMeasured(temperature)
-            if temperature != state.temperatures.electronicsTemperature =>
+            if !state.temperatures.electronicsTemperature.contains(
+              temperature
+            ) =>
           val newState = state
             .modify(_.temperatures.electronicsTemperature)
-            .setTo(temperature)
+            .setTo(Some(temperature))
           val tempActions = Set(
             Action.SetOpenHabItemValue(
               config.electronicsTemperatureItem,
@@ -83,9 +89,11 @@ object TemperatureRelatedProcessor {
           (newState, tempActions ++ automaticActions)
 
         case Event.Temperature.ExternalTemperatureMeasured(temperature)
-            if temperature != state.temperatures.externalTemperature =>
+            if !state.temperatures.externalTemperature.contains(temperature) =>
           val newState =
-            state.modify(_.temperatures.externalTemperature).setTo(temperature)
+            state
+              .modify(_.temperatures.externalTemperature)
+              .setTo(Some(temperature))
           val tempActions = Set(
             Action.SetOpenHabItemValue(
               config.externalTemperatureItem,
@@ -103,9 +111,11 @@ object TemperatureRelatedProcessor {
           (newState, tempActions ++ automaticActions)
 
         case Event.Temperature.GoalTemperatureChanged(temperature)
-            if temperature != state.temperatures.goalTemperature =>
+            if !state.temperatures.goalTemperature.contains(temperature) =>
           val newState =
-            state.modify(_.temperatures.goalTemperature).setTo(temperature)
+            state
+              .modify(_.temperatures.goalTemperature)
+              .setTo(Some(temperature))
 
           // If automatic mode is enabled, re-evaluate both fans with new goal temperature
           val automaticActions =
@@ -235,28 +245,28 @@ object TemperatureRelatedProcessor {
     }
 
     private def automaticFanControl(
-        currentTemp: Double,
-        externalTemp: Double,
+        currentTemp: Option[Double],
+        externalTemp: Option[Double],
         currentFanState: RemoteSwitch,
-        goalTemp: Double,
+        goalTemp: Option[Double],
         timestamp: Instant
     )(actionProducer: RemoteSwitch => Set[Action]): Set[Action] = {
       // Check if valid temperatures are available
-      if (
-        currentTemp > State.sentinelTemp && externalTemp > State.sentinelTemp && goalTemp > State.sentinelTemp
-      ) {
-        val shouldTurnOn = shouldTurnOnFan(currentTemp, externalTemp, goalTemp)
-        val desiredStatus = if (shouldTurnOn) Switch.On else Switch.Off
+      (currentTemp, externalTemp, goalTemp) match {
+        case (Some(current), Some(external), Some(goal)) =>
+          val shouldTurnOn = shouldTurnOnFan(current, external, goal)
+          val desiredStatus = if (shouldTurnOn) Switch.On else Switch.Off
 
-        // Only send command if the desired state differs from current command
-        if (desiredStatus != currentFanState.latestCommand) {
-          val newFanState = currentFanState.process(
-            RemoteState.Command(desiredStatus),
-            timestamp
-          )
-          actionProducer(newFanState)
-        } else Set.empty
-      } else Set.empty
+          // Only send command if the desired state differs from current command
+          if (desiredStatus != currentFanState.latestCommand) {
+            val newFanState = currentFanState.process(
+              RemoteState.Command(desiredStatus),
+              timestamp
+            )
+            actionProducer(newFanState)
+          } else Set.empty
+        case _ => Set.empty // Missing temperature data
+      }
     }
 
     private def automaticBatteryFanControl(
