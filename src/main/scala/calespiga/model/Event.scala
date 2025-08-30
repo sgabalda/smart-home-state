@@ -22,6 +22,13 @@ object Event {
 
   sealed trait EventData
 
+  object System {
+    sealed trait SystemData extends EventData
+
+    // Event triggered when the system starts and state is restored from persistence
+    case object StartupEvent extends SystemData
+  }
+
   object Temperature {
     sealed trait TemperatureData extends EventData
 

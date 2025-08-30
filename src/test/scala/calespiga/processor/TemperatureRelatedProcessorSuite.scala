@@ -234,6 +234,16 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               Set.empty[Action]
             )
           )
+        case Event.System.StartupEvent =>
+          List(
+            (
+              Event.System.StartupEvent,
+              s => s, // State may be updated if inconsistency timestamps exist
+              Set.empty[
+                Action
+              ] // Actions depend on the actual state, which varies in tests
+            )
+          )
         // case e => List((e, s => s, Set.empty)) for when more events are to be defined
       }
     )
@@ -241,7 +251,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
       test(
         s"TemperatureRelatedProcessor processes $event"
       ) {
-        val sut = TemperatureRelatedProcessor(defaultConfig,
+        val sut = TemperatureRelatedProcessor(
+          defaultConfig,
           batteryFanActionProducer = batteryFanActionProducerStub,
           electronicsFanActionProducer = electronicsFanActionProducerStub
         )
@@ -258,7 +269,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryTemperatureMeasured does not trigger fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -291,7 +303,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryClosetTemperatureMeasured triggers fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -321,7 +334,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsTemperatureMeasured triggers fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -351,7 +365,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ExternalTemperatureMeasured triggers both fans control"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -391,7 +406,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - no fan action when temperatures don't warrant it"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -418,7 +434,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryFanSwitchManualChanged is ignored when command matches state"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -441,7 +458,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryFanSwitchManualChanged corrects OH item when command differs"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -468,7 +486,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsFanSwitchManualChanged is ignored when command matches state"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -495,7 +514,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsFanSwitchManualChanged corrects OH item when command differs"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -525,7 +545,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - FanManagementChanged from On to Off"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -541,7 +562,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - bug fix: external=5°C, internal=30°C should turn fan ON"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -573,7 +595,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - GoalTemperatureChanged triggers fan re-evaluation"
   ) {
-    val sut = TemperatureRelatedProcessor(defaultConfig, 
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -603,6 +626,48 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
         Action.SetOpenHabItemValue("battery-fan-command", "stop")
       )
     )
+  }
+
+  test("TemperatureRelatedProcessor handles StartupEvent correctly") {
+    val sut = TemperatureRelatedProcessor(
+      defaultConfig,
+      batteryFanActionProducer = batteryFanActionProducerStub,
+      electronicsFanActionProducer = electronicsFanActionProducerStub
+    )
+
+    // Create test state with inconsistency and different command vs confirmed state
+    val testState = Fixture.state
+      .modify(_.fans.fanBatteries)
+      .setTo(RemoteSwitch(Switch.Off, Switch.On, Some(now.minusSeconds(30))))
+      .modify(_.fans.fanElectronics)
+      .setTo(RemoteSwitch(Switch.On, Switch.Off, Some(now.minusSeconds(10))))
+
+    val (state, actions) =
+      sut.process(testState, Event.System.StartupEvent, now)
+
+    // State should be updated with reset inconsistency timestamps
+    assertEquals(state.fans.fanBatteries.currentInconsistencyStart, Some(now))
+    assertEquals(state.fans.fanElectronics.currentInconsistencyStart, Some(now))
+
+    // Command and confirmed states should remain unchanged
+    assertEquals(state.fans.fanBatteries.latestCommand, Switch.On)
+    assertEquals(state.fans.fanBatteries.confirmed, Switch.Off)
+    assertEquals(state.fans.fanElectronics.latestCommand, Switch.Off)
+    assertEquals(state.fans.fanElectronics.confirmed, Switch.On)
+
+    // Should produce actions for both fans due to inconsistencies and command states
+    assert(actions.nonEmpty)
+
+    // Should have exactly 4 actions: 2 for each fan (confirmed + command)
+    assertEquals(actions.size, 4)
+
+    // Should include actions for both fans
+    val batteryFanActions = actions.filter(_.toString.contains("battery-fan"))
+    val electronicsFanActions =
+      actions.filter(_.toString.contains("electronics-fan"))
+
+    assertEquals(batteryFanActions.size, 2)
+    assertEquals(electronicsFanActions.size, 2)
   }
 
 }

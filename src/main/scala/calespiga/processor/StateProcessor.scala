@@ -45,9 +45,10 @@ object StateProcessor {
 
   def apply(
       config: calespiga.config.ProcessorConfig
-  ): StateProcessor = 
+  ): StateProcessor =
     this.apply(
-      temperatureRelatedProcessor = TemperatureRelatedProcessor(config.temperatureRelated)
+      temperatureRelatedProcessor =
+        TemperatureRelatedProcessor(config.temperatureRelated)
     )
 
 }

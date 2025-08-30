@@ -206,6 +206,26 @@ object TemperatureRelatedProcessor {
               )
             )
           }
+        case Event.System.StartupEvent =>
+          // Handle system startup: initialize inconsistency tracking and periodic actions
+          val (newBatteryFan, batteryFanActions) = handleStartupForFan(
+            state.fans.fanBatteries,
+            timestamp,
+            batteryFanActionProducer
+          )
+          val (newElectronicsFan, electronicsFanActions) = handleStartupForFan(
+            state.fans.fanElectronics,
+            timestamp,
+            electronicsFanActionProducer
+          )
+
+          val finalState = state
+            .modify(_.fans.fanBatteries)
+            .setTo(newBatteryFan)
+            .modify(_.fans.fanElectronics)
+            .setTo(newElectronicsFan)
+
+          (finalState, batteryFanActions ++ electronicsFanActions)
         case _ =>
           (
             state,
@@ -281,6 +301,39 @@ object TemperatureRelatedProcessor {
       }
     }
 
+    private def handleStartupForFan(
+        fanState: RemoteSwitch,
+        timestamp: Instant,
+        actionProducer: RemoteSwitchActionProducer
+    ): (RemoteSwitch, Set[Action]) = {
+      val actions = scala.collection.mutable.Set[Action]()
+
+      // If there's an inconsistency timestamp, reset it to startup time to trigger timeout handling
+      val updatedFanState = fanState.currentInconsistencyStart match {
+        case Some(_) =>
+          // Reset inconsistency start to current time so it will trigger timeout after the configured interval
+          fanState.copy(currentInconsistencyStart = Some(timestamp))
+        case None =>
+          fanState
+      }
+
+      // Generate actions for the current state (this handles inconsistency tracking)
+      actions ++= actionProducer.produceActionsForConfirmed(
+        updatedFanState,
+        timestamp
+      )
+
+      // Add periodic action for the last command
+      if (fanState.latestCommand != fanState.confirmed) {
+        actions ++= actionProducer.produceActionsForCommand(
+          updatedFanState,
+          timestamp
+        )
+      }
+
+      (updatedFanState, actions.toSet)
+    }
+
   }
 
   def apply(
@@ -292,8 +345,9 @@ object TemperatureRelatedProcessor {
       temperatureRelatedConfig.fansInconsistencyItem,
       temperatureRelatedConfig.batteryFanId,
       temperatureRelatedConfig.resendInterval,
-      temperatureRelatedConfig.timeoutInterval)
-    
+      temperatureRelatedConfig.timeoutInterval
+    )
+
     val electronicsFanProducer = RemoteStateActionProducer(
       temperatureRelatedConfig.electronicsFanStatusItem,
       temperatureRelatedConfig.electronicsFanMqttTopic,
@@ -302,7 +356,7 @@ object TemperatureRelatedProcessor {
       temperatureRelatedConfig.resendInterval,
       temperatureRelatedConfig.timeoutInterval
     )
-    
+
     Impl(
       batteryFanActionProducer = batteryFanProducer,
       electronicsFanActionProducer = electronicsFanProducer,
