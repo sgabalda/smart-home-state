@@ -22,6 +22,13 @@ object Event {
 
   sealed trait EventData
 
+  object System {
+    sealed trait SystemData extends EventData
+
+    // Event triggered when the system starts and state is restored from persistence
+    case object StartupEvent extends SystemData
+  }
+
   object Temperature {
     sealed trait TemperatureData extends EventData
 
@@ -45,12 +52,22 @@ object Event {
         celsius: Double
     ) extends TemperatureData
 
+    @InputEventOHItem("TemperaturaObjectiuSHS")
+    case class GoalTemperatureChanged(
+        celsius: Double
+    ) extends TemperatureData
+
     object Fans {
       sealed trait FanData extends TemperatureData
 
-      @InputEventOHItem("VentiladorBateriesManual")
+      @InputEventOHItem("VentiladorGestio")
+      case class FanManagementChanged(
+          status: Switch.Status
+      ) extends FanData
+
+      @InputEventOHItem("VentiladorBateriesSetSHS")
       case class BatteryFanSwitchManualChanged(
-          status: Switch.Status // TODO this should be a command, implement a conversion
+          status: Switch.Status
       ) extends FanData
 
       @InputEventMqtt("fan/batteries/status")
@@ -58,9 +75,9 @@ object Event {
           status: Switch.Status
       ) extends FanData
 
-      @InputEventOHItem("VentiladorElectronicaManual")
+      @InputEventOHItem("VentiladorElectronicaSetSHS")
       case class ElectronicsFanSwitchManualChanged(
-          status: Switch.Status // TODO this should be a command, implement a conversion
+          status: Switch.Status
       ) extends FanData
 
       @InputEventMqtt("fan/electronics/status")

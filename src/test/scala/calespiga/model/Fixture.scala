@@ -8,7 +8,8 @@ object Fixture {
     State.Temperatures(
       externalTemperature = 20.0,
       batteriesTemperature = 30.0,
-      electronicsTemperature = 40.0
+      electronicsTemperature = 40.0,
+      goalTemperature = 20.0
     ),
     State.Fans(
       fanBatteries = RemoteSwitch(),
@@ -39,6 +40,10 @@ object Fixture {
     Event(
       timestamp = now,
       data = Event.Temperature.ExternalTemperatureMeasured(25.0)
+    ),
+    Event(
+      timestamp = now,
+      data = Event.Temperature.GoalTemperatureChanged(22.0)
     ),
     Event(
       timestamp = now,

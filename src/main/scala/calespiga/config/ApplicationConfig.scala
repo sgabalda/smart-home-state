@@ -7,7 +7,8 @@ import scala.concurrent.duration.FiniteDuration
 final case class ApplicationConfig(
     mqttConfig: MqttConfig,
     openHabConfig: OpenHabConfig,
-    statePersistenceConfig: StatePersistenceConfig
+    statePersistenceConfig: StatePersistenceConfig,
+    processor: ProcessorConfig
 ) derives ConfigReader
 
 final case class MqttConfig(
@@ -29,3 +30,29 @@ final case class StatePersistenceConfig(
     path: String,
     storePeriod: FiniteDuration
 )
+
+final case class ProcessorConfig(
+    temperatureRelated: TemperatureRelatedConfig
+) derives ConfigReader
+
+final case class TemperatureRelatedConfig(
+    resendInterval: FiniteDuration,
+    timeoutInterval: FiniteDuration,
+    // OpenHAB item names for temperature readings
+    batteryTemperatureItem: String,
+    batteryClosetTemperatureItem: String,
+    electronicsTemperatureItem: String,
+    externalTemperatureItem: String,
+    // Fan control OpenHAB items
+    batteryFanStatusItem: String,
+    batteryFanCommandItem: String,
+    electronicsFanStatusItem: String,
+    electronicsFanCommandItem: String,
+    fansInconsistencyItem: String,
+    // MQTT topics
+    batteryFanMqttTopic: String,
+    electronicsFanMqttTopic: String,
+    // Internal IDs for action tracking
+    batteryFanId: String,
+    electronicsFanId: String
+) derives ConfigReader
