@@ -94,7 +94,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
           List(
             (
               e.modify(_.celsius).setTo(11d),
-              _.modify(_.temperatures.batteriesTemperature).setTo(11d),
+              _.modify(_.temperatures.batteriesTemperature).setTo(Some(11d)),
               Set(
                 Action.SetOpenHabItemValue(
                   "BateriesTemperaturaSHS",
@@ -107,7 +107,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
           List(
             (
               e.modify(_.celsius).setTo(11d),
-              _.modify(_.temperatures.batteriesClosetTemperature).setTo(11d),
+              _.modify(_.temperatures.batteriesClosetTemperature)
+                .setTo(Some(11d)),
               Set(
                 Action.SetOpenHabItemValue(
                   "BateriesTemperaturaAdosadaSHS",
@@ -121,7 +122,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
           List(
             (
               e.modify(_.celsius).setTo(11d),
-              _.modify(_.temperatures.electronicsTemperature).setTo(11d),
+              _.modify(_.temperatures.electronicsTemperature).setTo(Some(11d)),
               Set(
                 Action.SetOpenHabItemValue(
                   "ElectronicaTemperaturaSHS",
@@ -134,7 +135,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
           List(
             (
               e.modify(_.celsius).setTo(11d),
-              _.modify(_.temperatures.externalTemperature).setTo(11d),
+              _.modify(_.temperatures.externalTemperature).setTo(Some(11d)),
               Set(
                 Action.SetOpenHabItemValue(
                   "ExteriorArmarisTemperaturaSHS",
@@ -147,7 +148,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
           List(
             (
               e.modify(_.celsius).setTo(dummyGoalTemp),
-              _.modify(_.temperatures.goalTemperature).setTo(dummyGoalTemp),
+              _.modify(_.temperatures.goalTemperature)
+                .setTo(Some(dummyGoalTemp)),
               Set.empty[Action]
             )
           )
@@ -279,9 +281,9 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // So it should NOT trigger automatic fan control (which uses batteriesClosetTemperature)
     val testState = automaticModeState
       .modify(_.temperatures.externalTemperature)
-      .setTo(15.0)
+      .setTo(Some(15.0))
       .modify(_.temperatures.batteriesTemperature)
-      .setTo(25.0) // Change from default 30.0
+      .setTo(Some(25.0)) // Change from default 30.0
 
     val event = BatteryTemperatureMeasured(
       35.0
@@ -289,7 +291,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update temperature but NOT trigger fan control
-    assertEquals(state.temperatures.batteriesTemperature, 35.0)
+    assertEquals(state.temperatures.batteriesTemperature, Some(35.0))
     // Check that the temperature update action is there
     val expectedTempAction =
       Action.SetOpenHabItemValue("BateriesTemperaturaSHS", "35.0")
@@ -312,13 +314,13 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Set up scenario: high closet temperature (30°C) vs low external (15°C) - should turn fan ON
     val testState = automaticModeState
       .modify(_.temperatures.externalTemperature)
-      .setTo(15.0)
+      .setTo(Some(15.0))
 
     val event = BatteryClosetTemperatureMeasured(30.0)
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update temperature and trigger fan control
-    assertEquals(state.temperatures.batteriesClosetTemperature, 30.0)
+    assertEquals(state.temperatures.batteriesClosetTemperature, Some(30.0))
     assert(
       actions.contains(
         Action.SetOpenHabItemValue("BateriesTemperaturaAdosadaSHS", "30.0")
@@ -343,13 +345,13 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Set up scenario: high electronics temperature (30°C) vs low external (15°C) - should turn fan ON
     val testState = automaticModeState
       .modify(_.temperatures.externalTemperature)
-      .setTo(15.0)
+      .setTo(Some(15.0))
 
     val event = ElectronicsTemperatureMeasured(30.0)
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update temperature and trigger fan control
-    assertEquals(state.temperatures.electronicsTemperature, 30.0)
+    assertEquals(state.temperatures.electronicsTemperature, Some(30.0))
     assert(
       actions.contains(
         Action.SetOpenHabItemValue("ElectronicaTemperaturaSHS", "30.0")
@@ -375,9 +377,9 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Goal is 20°C, so fans should turn on when external temp is closer to 20 than internal temps
     val testState = automaticModeState
       .modify(_.temperatures.batteriesClosetTemperature)
-      .setTo(30.0) // 10°C away from goal
+      .setTo(Some(30.0)) // 10°C away from goal
       .modify(_.temperatures.electronicsTemperature)
-      .setTo(28.0) // 8°C away from goal
+      .setTo(Some(28.0)) // 8°C away from goal
 
     val event = ExternalTemperatureMeasured(
       19.0
@@ -385,7 +387,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update external temperature and trigger both fans
-    assertEquals(state.temperatures.externalTemperature, 19.0)
+    assertEquals(state.temperatures.externalTemperature, Some(19.0))
     assert(
       actions.contains(
         Action.SetOpenHabItemValue("ExteriorArmarisTemperaturaSHS", "19.0")
@@ -415,14 +417,14 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Set up scenario: internal and external temperatures are similar - should NOT turn fans ON
     val testState = automaticModeState
       .modify(_.temperatures.externalTemperature)
-      .setTo(22.0)
+      .setTo(Some(22.0))
 
     val event =
       BatteryTemperatureMeasured(21.0) // only 1°C difference, not worth cooling
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update temperature but NOT trigger fan control
-    assertEquals(state.temperatures.batteriesTemperature, 21.0)
+    assertEquals(state.temperatures.batteriesTemperature, Some(21.0))
     assert(
       actions.contains(
         Action.SetOpenHabItemValue("BateriesTemperaturaSHS", "21.0")
@@ -573,13 +575,13 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // even though external is farther from goal (|5-20|=15 > |30-20|=10)
     val testState = automaticModeState
       .modify(_.temperatures.batteriesClosetTemperature)
-      .setTo(30.0)
+      .setTo(Some(30.0))
 
     val event = ExternalTemperatureMeasured(5.0)
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update external temperature and turn fan ON to bring cool air inside
-    assertEquals(state.temperatures.externalTemperature, 5.0)
+    assertEquals(state.temperatures.externalTemperature, Some(5.0))
     assert(
       actions.contains(
         Action.SetOpenHabItemValue("ExteriorArmarisTemperaturaSHS", "5.0")
@@ -606,11 +608,11 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // With new goal=30°C: internal (25°C) too cool, external (22°C) cooler → fan should be OFF
     val testState = automaticModeState
       .modify(_.temperatures.batteriesClosetTemperature)
-      .setTo(25.0)
+      .setTo(Some(25.0))
       .modify(_.temperatures.externalTemperature)
-      .setTo(22.0)
+      .setTo(Some(22.0))
       .modify(_.temperatures.goalTemperature)
-      .setTo(20.0) // current goal
+      .setTo(Some(20.0)) // current goal
       .modify(_.fans.fanBatteries.latestCommand)
       .setTo(Switch.On) // fan is initially ON due to current temp conditions
 
@@ -618,7 +620,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     val (state, actions) = sut.process(testState, event, now)
 
     // Should update goal temperature and re-evaluate fans
-    assertEquals(state.temperatures.goalTemperature, 30.0)
+    assertEquals(state.temperatures.goalTemperature, Some(30.0))
     // With new goal=30°C, internal temp (25°C) is now too cool, and external (22°C) is cooler
     // so fan should turn OFF (external air wouldn't help warm up)
     assert(

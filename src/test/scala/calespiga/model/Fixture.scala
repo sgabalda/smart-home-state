@@ -6,10 +6,10 @@ object Fixture {
 
   val state: State = State(
     State.Temperatures(
-      externalTemperature = 20.0,
-      batteriesTemperature = 30.0,
-      electronicsTemperature = 40.0,
-      goalTemperature = 20.0
+      externalTemperature = Some(20.0),
+      batteriesTemperature = Some(30.0),
+      electronicsTemperature = Some(40.0),
+      goalTemperature = Some(20.0)
     ),
     State.Fans(
       fanBatteries = RemoteSwitch(),
