@@ -72,7 +72,7 @@ object Main extends IOApp.Simple {
             statePersistence,
             errorManager
           ) =>
-        val processor = StateProcessor()
+        val processor = StateProcessor(config.processor)
         Stream
           .eval(statePersistence.loadState.flatMap {
             case Left(value)  => errorManager.manageError(value).as(State())

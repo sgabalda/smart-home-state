@@ -13,7 +13,8 @@ object TemperatureRelatedProcessor {
 
   private final case class Impl(
       batteryFanActionProducer: RemoteSwitchActionProducer,
-      electronicsFanActionProducer: RemoteSwitchActionProducer
+      electronicsFanActionProducer: RemoteSwitchActionProducer,
+      config: calespiga.config.TemperatureRelatedConfig
   ) extends StateProcessor.SingleProcessor {
 
     def process(
@@ -28,7 +29,7 @@ object TemperatureRelatedProcessor {
             state.modify(_.temperatures.batteriesTemperature).setTo(temperature)
           val tempActions = Set(
             Action.SetOpenHabItemValue(
-              "BateriesTemperaturaSHS",
+              config.batteryTemperatureItem,
               temperature.toString
             )
           )
@@ -48,7 +49,7 @@ object TemperatureRelatedProcessor {
               .setTo(temperature)
           val tempActions = Set(
             Action.SetOpenHabItemValue(
-              "BateriesTemperaturaAdosadaSHS",
+              config.batteryClosetTemperatureItem,
               temperature.toString
             )
           )
@@ -68,7 +69,7 @@ object TemperatureRelatedProcessor {
             .setTo(temperature)
           val tempActions = Set(
             Action.SetOpenHabItemValue(
-              "ElectronicaTemperaturaSHS",
+              config.electronicsTemperatureItem,
               temperature.toString
             )
           )
@@ -87,7 +88,7 @@ object TemperatureRelatedProcessor {
             state.modify(_.temperatures.externalTemperature).setTo(temperature)
           val tempActions = Set(
             Action.SetOpenHabItemValue(
-              "ExteriorArmarisTemperaturaSHS",
+              config.externalTemperatureItem,
               temperature.toString
             )
           )
@@ -154,7 +155,7 @@ object TemperatureRelatedProcessor {
                 state,
                 Set(
                   Action.SetOpenHabItemValue(
-                    "VentiladorBateriesSetSHS",
+                    config.batteryFanCommandItem,
                     state.fans.fanBatteries.latestCommand.toStatusString
                   )
                 )
@@ -184,7 +185,7 @@ object TemperatureRelatedProcessor {
                 state,
                 Set(
                   Action.SetOpenHabItemValue(
-                    "VentiladorElectronicaSetSHS",
+                    config.electronicsFanCommandItem,
                     state.fans.fanElectronics.latestCommand.toStatusString
                   )
                 )
@@ -282,25 +283,44 @@ object TemperatureRelatedProcessor {
 
   }
 
-  // TODO resends and timeouts should be app config parameters
-
   def apply(
-      batteryFanActionProducer: RemoteSwitchActionProducer =
-        RemoteStateActionProducer(
-          "VentiladorBateriesStatusSHS",
-          "fan/batteries/set",
-          "VentiladorsInconsistencySHS",
-          "ventilador-bateries"
-        ),
-      electronicsFanActionProducer: RemoteSwitchActionProducer =
-        RemoteStateActionProducer(
-          "VentiladorElectronicaStatusSHS",
-          "fan/electronics/set",
-          "VentiladorsInconsistencySHS",
-          "ventilador-electronica"
-        )
-  ): StateProcessor.SingleProcessor = Impl(
-    batteryFanActionProducer = batteryFanActionProducer,
-    electronicsFanActionProducer = electronicsFanActionProducer
-  )
+      temperatureRelatedConfig: calespiga.config.TemperatureRelatedConfig
+  ): StateProcessor.SingleProcessor = {
+    val batteryFanProducer = RemoteStateActionProducer(
+      temperatureRelatedConfig.batteryFanStatusItem,
+      temperatureRelatedConfig.batteryFanMqttTopic,
+      temperatureRelatedConfig.fansInconsistencyItem,
+      temperatureRelatedConfig.batteryFanId,
+      temperatureRelatedConfig.resendInterval,
+      temperatureRelatedConfig.timeoutInterval)
+    
+    val electronicsFanProducer = RemoteStateActionProducer(
+      temperatureRelatedConfig.electronicsFanStatusItem,
+      temperatureRelatedConfig.electronicsFanMqttTopic,
+      temperatureRelatedConfig.fansInconsistencyItem,
+      temperatureRelatedConfig.electronicsFanId,
+      temperatureRelatedConfig.resendInterval,
+      temperatureRelatedConfig.timeoutInterval
+    )
+    
+    Impl(
+      batteryFanActionProducer = batteryFanProducer,
+      electronicsFanActionProducer = electronicsFanProducer,
+      config = temperatureRelatedConfig
+    )
+  }
+
+  // For testing with custom action producers
+  def apply(
+      temperatureRelatedConfig: calespiga.config.TemperatureRelatedConfig,
+      batteryFanActionProducer: RemoteSwitchActionProducer,
+      electronicsFanActionProducer: RemoteSwitchActionProducer
+  ): StateProcessor.SingleProcessor = {
+    Impl(
+      batteryFanActionProducer = batteryFanActionProducer,
+      electronicsFanActionProducer = electronicsFanActionProducer,
+      config = temperatureRelatedConfig
+    )
+  }
+
 }

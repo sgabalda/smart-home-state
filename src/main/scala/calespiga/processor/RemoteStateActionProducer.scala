@@ -4,7 +4,6 @@ import calespiga.model.{Action, RemoteState}
 import java.time.Instant
 import calespiga.model.Switch
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration.DurationInt
 import calespiga.model.Switch.Status
 
 trait RemoteStateActionProducer[State] {
@@ -27,8 +26,8 @@ object RemoteStateActionProducer {
       mqttTopicForCommand: String,
       inconsistencyUIItem: String,
       id: String,
-      resendInterval: FiniteDuration = 15.seconds,
-      timeoutInterval: FiniteDuration = 1.minute
+      resendInterval: FiniteDuration,
+      timeoutInterval: FiniteDuration
   ): RemoteSwitchActionProducer =
     new RemoteStateActionProducer[Switch.Status] {
       private def addActionForInconsistencyStart(

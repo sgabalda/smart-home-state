@@ -13,6 +13,28 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.now
 
+  // Default configuration for testing
+  private val defaultConfig: calespiga.config.TemperatureRelatedConfig = {
+    import scala.concurrent.duration.DurationInt
+    calespiga.config.TemperatureRelatedConfig(
+      resendInterval = 15.seconds,
+      timeoutInterval = 1.minute,
+      batteryTemperatureItem = "BateriesTemperaturaSHS",
+      batteryClosetTemperatureItem = "BateriesTemperaturaAdosadaSHS",
+      electronicsTemperatureItem = "ElectronicaTemperaturaSHS",
+      externalTemperatureItem = "ExteriorArmarisTemperaturaSHS",
+      batteryFanStatusItem = "VentiladorBateriesStatusSHS",
+      batteryFanCommandItem = "VentiladorBateriesSetSHS",
+      electronicsFanStatusItem = "VentiladorElectronicaStatusSHS",
+      electronicsFanCommandItem = "VentiladorElectronicaSetSHS",
+      fansInconsistencyItem = "VentiladorsInconsistencySHS",
+      batteryFanMqttTopic = "fan/batteries/set",
+      electronicsFanMqttTopic = "fan/electronics/set",
+      batteryFanId = "ventilador-bateries",
+      electronicsFanId = "ventilador-electronica"
+    )
+  }
+
   // Stub action producers that return predictable, simple actions for testing isolation
   private val batteryFanActionProducerStub: RemoteSwitchActionProducer =
     new RemoteStateActionProducer[Switch.Status] {
@@ -219,7 +241,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
       test(
         s"TemperatureRelatedProcessor processes $event"
       ) {
-        val sut = TemperatureRelatedProcessor(
+        val sut = TemperatureRelatedProcessor(defaultConfig,
           batteryFanActionProducer = batteryFanActionProducerStub,
           electronicsFanActionProducer = electronicsFanActionProducerStub
         )
@@ -236,7 +258,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryTemperatureMeasured does not trigger fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -269,7 +291,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryClosetTemperatureMeasured triggers fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -299,7 +321,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsTemperatureMeasured triggers fan control"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -329,7 +351,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ExternalTemperatureMeasured triggers both fans control"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -369,7 +391,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - no fan action when temperatures don't warrant it"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -396,7 +418,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryFanSwitchManualChanged is ignored when command matches state"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -419,7 +441,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - BatteryFanSwitchManualChanged corrects OH item when command differs"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -446,7 +468,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsFanSwitchManualChanged is ignored when command matches state"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -473,7 +495,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - ElectronicsFanSwitchManualChanged corrects OH item when command differs"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -503,7 +525,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - FanManagementChanged from On to Off"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -519,7 +541,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - bug fix: external=5°C, internal=30°C should turn fan ON"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
@@ -551,7 +573,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   test(
     "TemperatureRelatedProcessor with automatic management - GoalTemperatureChanged triggers fan re-evaluation"
   ) {
-    val sut = TemperatureRelatedProcessor(
+    val sut = TemperatureRelatedProcessor(defaultConfig, 
       batteryFanActionProducer = batteryFanActionProducerStub,
       electronicsFanActionProducer = electronicsFanActionProducerStub
     )
