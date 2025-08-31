@@ -8,3 +8,8 @@
 **/project/.bloop
 logs/**
 state.json
+
+# Docker and deployment
+.env
+data/
+!data/.gitkeep
