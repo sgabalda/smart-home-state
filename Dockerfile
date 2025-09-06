@@ -42,7 +42,7 @@ EXPOSE 8080
 
 # Health check (simple process check since we removed curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "smart-home-state" || exit 1
+    CMD ps aux | grep "[s]mart-home-state" > /dev/null || exit 1
 
 # Set default environment variables (can be overridden by docker-compose)
 ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseG1GC -XX:+UseContainerSupport"
