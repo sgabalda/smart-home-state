@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   smart-home-state:
-    image: ghcr.io/sgabalda/smart-home-state:latest
+    image: ghcr.io/sgabalda/smart-home-state:stable
     container_name: smart-home-state
     restart: unless-stopped
 

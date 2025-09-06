@@ -2,6 +2,26 @@
 
 This guide will help you set up your Raspberry Pi to automatically deploy and update the smart-home-state application using Docker and Watchtower.
 
+## Deployment Strategy
+
+This project uses a **controlled deployment approach** with three types of workflows:
+
+### 🔄 **Automatic Workflows:**
+- **CI (Continuous Integration):** Runs tests on every commit to `main` 
+- **Release:** Triggers when you create a GitHub release, deploys as `stable` tag
+- **Watchtower:** Automatically updates your Pi when `stable` tag changes
+
+### 🎯 **Manual Control:**
+- **Manual Deploy:** GitHub workflow you can trigger to deploy any branch/tag/commit as `stable`
+- **Rollback:** Use manual deploy to rollback to any previous version
+
+### 🏷️ **Image Tags:**
+- `stable` - What runs on your Pi (controlled deployments only)
+- `v1.0.0`, `v1.1.0` - Release versions (semantic versioning)
+- `manual-*` - Manual deployment tracking
+
+**Result: Only intentional releases get deployed automatically, with easy rollback via GitHub UI (no SSH required).**
+
 ## Prerequisites
 
 - Raspberry Pi 3B+ (1GB RAM) or newer
@@ -171,7 +191,46 @@ sed -i 's/WATCHTOWER_POLL_INTERVAL=300/WATCHTOWER_POLL_INTERVAL=1800/' docker-co
 docker-compose restart watchtower
 ```
 
-## Step 6: Monitoring and Maintenance
+## Step 6: Using the Deployment Workflows
+
+### 🚀 **Normal Deployment (Releases):**
+
+1. **Merge your changes** to `main` branch (triggers CI tests)
+2. **Create a GitHub release:**
+   - Go to your repository → Releases → "Create a new release"
+   - Choose a tag (e.g., `v1.0.0`, `v1.1.0`)
+   - Add release notes
+   - Click "Publish release"
+3. **Automatic deployment:** Release workflow builds and pushes as `stable`
+4. **Watchtower deploys:** Your Pi automatically updates within 5 minutes
+
+### 🔄 **Manual Deployment/Rollback:**
+
+1. **Go to GitHub Actions** in your repository
+2. **Select "Manual Deploy" workflow**
+3. **Click "Run workflow"**
+4. **Specify:**
+   - **Ref:** Branch (`main`), tag (`v1.0.0`), or commit SHA (`abc123`)
+   - **Reason:** Description (e.g., "Rollback due to issue X")
+5. **Watchtower deploys:** Your Pi updates automatically
+
+### 📊 **Examples:**
+
+```bash
+# Deploy latest main branch
+Ref: main
+Reason: Deploy latest features
+
+# Rollback to previous release  
+Ref: v1.0.0
+Reason: Rollback due to bug in v1.1.0
+
+# Deploy specific commit
+Ref: abc123def
+Reason: Hotfix for critical issue
+```
+
+## Step 7: Monitoring and Maintenance
 
 ```bash
 # Live logs
@@ -217,7 +276,7 @@ tar -czf backup-$(date +%Y%m%d).tar.gz data/ .env docker-compose.yml
 
 1. Check watchtower logs: `docker-compose logs watchtower`
 2. Verify container labels: `docker inspect smart-home-state | grep watchtower`
-3. Test manual pull: `docker pull ghcr.io/sgabalda/smart-home-state:latest`
+3. Test manual pull: `docker pull ghcr.io/sgabalda/smart-home-state:stable`
 
 ### Network Issues
 
