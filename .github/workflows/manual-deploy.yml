@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch, tag, or commit SHA to deploy'
+        description: "Branch, tag, or commit SHA to deploy"
         required: true
-        default: 'main'
+        default: "main"
         type: string
       reason:
-        description: 'Reason for manual deployment (e.g., rollback, hotfix)'
+        description: "Reason for manual deployment (e.g., rollback, hotfix)"
         required: false
-        default: 'Manual deployment'
+        default: "Manual deployment"
         type: string
 
 env:
