@@ -7,15 +7,18 @@ This guide will help you set up your Raspberry Pi to automatically deploy and up
 This project uses a **controlled deployment approach** with three types of workflows:
 
 ### 🔄 **Automatic Workflows:**
-- **CI (Continuous Integration):** Runs tests on every commit to `main` 
+
+- **CI (Continuous Integration):** Runs tests on every commit to `main`
 - **Release:** Triggers when you create a GitHub release, deploys as `stable` tag
 - **Watchtower:** Automatically updates your Pi when `stable` tag changes
 
 ### 🎯 **Manual Control:**
+
 - **Manual Deploy:** GitHub workflow you can trigger to deploy any branch/tag/commit as `stable`
 - **Rollback:** Use manual deploy to rollback to any previous version
 
 ### 🏷️ **Image Tags:**
+
 - `stable` - What runs on your Pi (controlled deployments only)
 - `v1.0.0`, `v1.1.0` - Release versions (semantic versioning)
 - `manual-*` - Manual deployment tracking
@@ -221,7 +224,7 @@ docker-compose restart watchtower
 Ref: main
 Reason: Deploy latest features
 
-# Rollback to previous release  
+# Rollback to previous release
 Ref: v1.0.0
 Reason: Rollback due to bug in v1.1.0
 
