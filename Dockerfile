@@ -1,6 +1,6 @@
 # Multi-stage Docker build for Scala application
 # Stage 1: Build the application
-FROM sbtscala/scala-sbt:eclipse-temurin-jammy-22.0.2_9_1.10.7_3.4.0 AS builder
+FROM sbtscala/scala-sbt:eclipse-temurin-alpine-24.0.1_9_1.11.6_3.7.2 AS builder
 
 # Set working directory
 WORKDIR /app
