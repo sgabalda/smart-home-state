@@ -75,7 +75,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
     # Only monitor containers with the watchtower.enable label
-    command: --label-enable --cleanup --interval 300
 
 networks:
   default:
