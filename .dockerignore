@@ -1,0 +1,30 @@
+# Ignore unnecessary files for Docker build
+.git
+.github
+.gitignore
+.idea
+.vscode
+.metals
+.bloop
+.bsp
+*.md
+README.md
+
+# Build artifacts
+target/
+project/target/
+project/project/target/
+
+# Logs and data
+logs/
+*.log
+state.json
+
+# Docker files (not needed in image)
+Dockerfile
+docker-compose.yml
+.env*
+
+# OS files
+.DS_Store
+Thumbs.db
