@@ -6,6 +6,9 @@ services:
     container_name: smart-home-state
     restart: unless-stopped
 
+    environment:
+      - JAVA_OPTS=-Xmx256m -Xms128m -XX:+UseG1GC -XX:+UseContainerSupport
+
     env_file:
       - .env
 
