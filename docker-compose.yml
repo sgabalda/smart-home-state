@@ -6,19 +6,8 @@ services:
     container_name: smart-home-state
     restart: unless-stopped
 
-    # Environment variables - customize these for your setup
-    environment:
-      - JAVA_OPTS=-Xmx256m -Xms128m -XX:+UseG1GC -XX:+UseContainerSupport
-      # Application configuration via environment variables (no defaults - see application.conf)
-      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST}
-      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT}
-      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID}
-      - MQTT_TRACE_MESSAGES=${MQTT_TRACE_MESSAGES}
-      - OPENHAB_HOST=${OPENHAB_HOST}
-      - OPENHAB_PORT=${OPENHAB_PORT}
-      - OPENHAB_API_TOKEN=${OPENHAB_API_TOKEN}
-      - STATE_PERSISTENCE_PATH=${STATE_PERSISTENCE_PATH}
-      - STATE_PERSISTENCE_INTERVAL=${STATE_PERSISTENCE_INTERVAL}
+    env_file:
+      - .env
 
     # Volumes for persistent data
     volumes:
