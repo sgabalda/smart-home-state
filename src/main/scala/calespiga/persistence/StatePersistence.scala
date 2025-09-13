@@ -78,9 +78,11 @@ object StatePersistence {
     )).foreverM.background.onFinalize(
       // Save state when resource is finalized (on application shutdown)
       logger.info("StatePersistence: Saving state on finalization") *>
-      impl.fileUpdate(errorManager).handleErrorWith { error =>
-        logger.error(error)("StatePersistence: Failed to save state on finalization")
-      }
+        impl.fileUpdate(errorManager).handleErrorWith { error =>
+          logger.error(error)(
+            "StatePersistence: Failed to save state on finalization"
+          )
+        }
     )
   } yield impl
 
