@@ -75,7 +75,13 @@ object StatePersistence {
     impl = Impl(statePersistenceConfig, currentStateRef, readInput, saveOutput)
     _ <- (IO.sleep(statePersistenceConfig.storePeriod) *> impl.fileUpdate(
       errorManager
-    )).foreverM.background
+    )).foreverM.background.onFinalize(
+      // Save state when resource is finalized (on application shutdown)
+      logger.info("StatePersistence: Saving state on finalization") *>
+      impl.fileUpdate(errorManager).handleErrorWith { error =>
+        logger.error(error)("StatePersistence: Failed to save state on finalization")
+      }
+    )
   } yield impl
 
 }
