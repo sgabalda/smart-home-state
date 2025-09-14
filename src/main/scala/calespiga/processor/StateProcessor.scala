@@ -51,7 +51,7 @@ object StateProcessor {
       temperatureRelatedProcessor =
         TemperatureRelatedProcessor(config.temperatureRelated),
       offlineDetectorProcessor =
-        OfflineDetectorProcessor()
+        OfflineDetectorProcessor(config.offlineDetector)
     )
 
 }
