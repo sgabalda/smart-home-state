@@ -60,5 +60,7 @@ final case class TemperatureRelatedConfig(
 
 final case class OfflineDetectorConfig(
     timeoutDuration: FiniteDuration,
-    temperaturesStatusItem: String
+    temperaturesStatusItem: String,
+    onlineText: String,
+    offlineText: String
 ) derives ConfigReader
