@@ -58,7 +58,10 @@ class ExecutorSuite extends CatsEffectSuite {
       actualScheduledActions <- receivedScheduledActions.get
     } yield {
       assertEquals(actualDirectActions, Set(directAction1, directAction2))
-      assertEquals(actualScheduledActions, Set(scheduledAction))
+      assertEquals(
+        actualScheduledActions,
+        Set[Action.Scheduled](scheduledAction)
+      )
     }
   }
 

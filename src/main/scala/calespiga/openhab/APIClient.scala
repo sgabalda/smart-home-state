@@ -3,7 +3,6 @@ package calespiga.openhab
 import calespiga.config.OpenHabConfig
 import calespiga.openhab.APIClient.ItemChangedEvent
 import cats.effect.{IO, ResourceIO}
-import cats.syntax.flatMap.*
 import fs2.Stream
 import io.circe.generic.auto.*
 import io.circe.parser.decode

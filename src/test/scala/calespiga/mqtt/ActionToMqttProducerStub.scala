@@ -7,7 +7,7 @@ object ActionToMqttProducerStub {
 
   def apply(
       actionToMqttStub: Action.SendMqttStringMessage => IO[Unit] =
-        (action: Action.SendMqttStringMessage) => IO.unit
+        (_: Action.SendMqttStringMessage) => IO.unit
   ): ActionToMqttProducer = (action: Action.SendMqttStringMessage) =>
     actionToMqttStub(action)
 

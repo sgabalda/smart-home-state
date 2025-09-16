@@ -1,7 +1,6 @@
 package calespiga.model
 
 import io.circe._
-import io.circe.generic.semiauto._
 
 object Switch {
   sealed trait Status {

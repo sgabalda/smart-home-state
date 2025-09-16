@@ -17,7 +17,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
     for {
       called <- IO.ref(false)
       apiClient = ApiClientStub(
-        changeItemStub = (item: String, value: String) => called.set(true)
+        changeItemStub = (_: String, _: String) => called.set(true)
       )
       executor = DirectExecutor(apiClient, ActionToMqttProducerStub())
       _ <- executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
@@ -37,7 +37,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
 
     DirectExecutor(
       ApiClientStub(
-        changeItemStub = (item: String, value: String) => IO.raiseError(error)
+        changeItemStub = (_: String, _: String) => IO.raiseError(error)
       ),
       ActionToMqttProducerStub()
     ).execute(Set(action)).map {
@@ -57,7 +57,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
 
     DirectExecutor(
       ApiClientStub(
-        changeItemStub = (item: String, value: String) => IO.unit
+        changeItemStub = (_: String, _: String) => IO.unit
       ),
       ActionToMqttProducerStub()
     ).execute(Set(action)).map {
@@ -78,8 +78,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
     for {
       called <- IO.ref(false)
       actionToMqtt = ActionToMqttProducerStub(
-        actionToMqttStub =
-          (action: Action.SendMqttStringMessage) => called.set(true)
+        actionToMqttStub = (_: Action.SendMqttStringMessage) => called.set(true)
       )
       executor = DirectExecutor(ApiClientStub(), actionToMqtt)
       _ <- executor.execute(Set(action))
@@ -101,7 +100,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
       ApiClientStub(),
       ActionToMqttProducerStub(
         actionToMqttStub =
-          (action: Action.SendMqttStringMessage) => IO.raiseError(error)
+          (_: Action.SendMqttStringMessage) => IO.raiseError(error)
       )
     ).execute(Set(action)).map {
       case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
@@ -121,7 +120,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
     DirectExecutor(
       ApiClientStub(),
       ActionToMqttProducerStub(
-        actionToMqttStub = (action: Action.SendMqttStringMessage) => IO.unit
+        actionToMqttStub = (_: Action.SendMqttStringMessage) => IO.unit
       )
     ).execute(Set(action)).map {
       case some :: _ => fail("The error was not propagated")

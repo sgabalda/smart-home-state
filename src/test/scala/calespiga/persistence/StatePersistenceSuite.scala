@@ -30,7 +30,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     val sut = StatePersistence(
       config,
       errorManager = ErrorManagerStub(),
-      readInput = path => IO.pure(someStateJson),
+      readInput = _ => IO.pure(someStateJson),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
     )
@@ -47,7 +47,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     val sut = StatePersistence(
       config,
       errorManager = ErrorManagerStub(),
-      readInput = path => IO.raiseError(error),
+      readInput = _ => IO.raiseError(error),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
     )
@@ -66,7 +66,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     val sut = StatePersistence(
       config,
       errorManager = ErrorManagerStub(),
-      readInput = path => IO.pure("blabla"),
+      readInput = _ => IO.pure("blabla"),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
     )
@@ -90,8 +90,8 @@ class StatePersistenceSuite extends CatsEffectSuite {
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(),
-        readInput = path =>
-          IO.raiseError(new Exception("Not expected call to load file")),
+        readInput =
+          _ => IO.raiseError(new Exception("Not expected call to load file")),
         saveOutput = (path, state) => ref.set(Some((path, state))).as(())
       )
       val program = sut.use { statePersistence =>
@@ -121,8 +121,8 @@ class StatePersistenceSuite extends CatsEffectSuite {
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(),
-        readInput = path =>
-          IO.raiseError(new Exception("Not expected call to read input")),
+        readInput =
+          _ => IO.raiseError(new Exception("Not expected call to read input")),
         saveOutput = (path, state) => ref.set(Some((path, state))).as(())
       )
       val program = sut.use { statePersistence =>
@@ -154,9 +154,9 @@ class StatePersistenceSuite extends CatsEffectSuite {
       val sut = StatePersistence(
         config,
         errorManager = ErrorManagerStub(e => ref.set(Some(e))),
-        readInput = path =>
-          IO.raiseError(new Exception("Not expected call to read input")),
-        saveOutput = (path, state) => IO.raiseError(error)
+        readInput =
+          _ => IO.raiseError(new Exception("Not expected call to read input")),
+        saveOutput = (_, _) => IO.raiseError(error)
       )
       sut.use { statePersistence =>
         for {

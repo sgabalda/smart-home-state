@@ -481,7 +481,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Should correct the OH item to current state value
     assertEquals(
       actions,
-      Set(Action.SetOpenHabItemValue("VentiladorBateriesSetSHS", "off"))
+      Set[Action](Action.SetOpenHabItemValue("VentiladorBateriesSetSHS", "off"))
     )
   }
 
@@ -540,7 +540,9 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
     // Should correct the OH item to current state value
     assertEquals(
       actions,
-      Set(Action.SetOpenHabItemValue("VentiladorElectronicaSetSHS", "off"))
+      Set[Action](
+        Action.SetOpenHabItemValue("VentiladorElectronicaSetSHS", "off")
+      )
     )
   }
 

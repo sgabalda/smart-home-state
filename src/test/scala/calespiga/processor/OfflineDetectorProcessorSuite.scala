@@ -1,7 +1,7 @@
 package calespiga.processor
 
 import munit.FunSuite
-import calespiga.model.{Action, Event, State, Switch}
+import calespiga.model.{Action, Event, Switch}
 import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
