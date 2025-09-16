@@ -63,19 +63,24 @@ class RemoteStateActionProducerSuite extends FunSuite {
   }
 
   test(
-    "produceActionsForCommand - no inconsistency, sets online and cancels timeout"
+    "produceActionsForCommand - no inconsistency, sets synchronized and cancels timeout"
   ) {
     val remoteState: RemoteState[Switch.Status] =
       RemoteState(Switch.Off, Switch.On, None)
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Online")
-          if item == inconsistencyUIItem =>
+    val setSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
-    assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
+    assert(
+      setSynchronizedAction.isDefined,
+      "Should set inconsistency item to Synchronized"
+    )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }
     assert(cancelAction.isDefined, "Should cancel timeout")
@@ -83,7 +88,7 @@ class RemoteStateActionProducerSuite extends FunSuite {
   }
 
   test(
-    "produceActionsForCommand - recent inconsistency, sets online and schedules timeout"
+    "produceActionsForCommand - recent inconsistency, sets synchronized and schedules timeout"
   ) {
     val inconsistencyStart =
       now.minusSeconds(30) // 30 seconds ago, less than 2 minutes timeout
@@ -92,21 +97,28 @@ class RemoteStateActionProducerSuite extends FunSuite {
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Online")
-          if item == inconsistencyUIItem =>
+    val setSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
-    assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
+    assert(
+      setSynchronizedAction.isDefined,
+      "Should set inconsistency item to Synchronized"
+    )
 
     val delayedAction = actions.collectFirst { case a: Action.Delayed => a }
     assert(delayedAction.isDefined, "Should schedule timeout")
     assertEquals(delayedAction.get.id, s"$id-timeout")
 
-    // Check the delayed action sets offline
+    // Check the delayed action sets not synchronized
     delayedAction.get.action match {
-      case Action.SetOpenHabItemValue(item, "Offline")
-          if item == inconsistencyUIItem =>
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.NOT_SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         // Verify delay is approximately correct (timeout - elapsed time)
         val expectedDelay = timeoutInterval - 30.seconds
         assert(
@@ -117,12 +129,13 @@ class RemoteStateActionProducerSuite extends FunSuite {
           delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1,
           "Delay should be approximately correct (upper bound)"
         )
-      case _ => fail("Delayed action should set inconsistency item to Offline")
+      case _ =>
+        fail("Delayed action should set inconsistency item to Not Synchronized")
     }
   }
 
   test(
-    "produceActionsForCommand - old inconsistency past timeout, sets offline and cancels timeout"
+    "produceActionsForCommand - old inconsistency past timeout, sets not synchronized and cancels timeout"
   ) {
     val inconsistencyStart =
       now.minusSeconds(180) // 3 minutes ago, past 2 minutes timeout
@@ -131,14 +144,16 @@ class RemoteStateActionProducerSuite extends FunSuite {
 
     val actions = producer.produceActionsForCommand(remoteState, now)
 
-    val setOfflineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Offline")
-          if item == inconsistencyUIItem =>
+    val setNotSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.NOT_SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
     assert(
-      setOfflineAction.isDefined,
-      "Should set inconsistency item to Offline"
+      setNotSynchronizedAction.isDefined,
+      "Should set inconsistency item to Not Synchronized"
     )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }
@@ -163,19 +178,24 @@ class RemoteStateActionProducerSuite extends FunSuite {
   }
 
   test(
-    "produceActionsForConfirmed - no inconsistency, sets online and cancels timeout"
+    "produceActionsForConfirmed - no inconsistency, sets synchronized and cancels timeout"
   ) {
     val remoteState: RemoteState[Switch.Status] =
       RemoteState(Switch.On, Switch.Off, None)
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Online")
-          if item == inconsistencyUIItem =>
+    val setSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
-    assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
+    assert(
+      setSynchronizedAction.isDefined,
+      "Should set inconsistency item to Synchronized"
+    )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }
     assert(cancelAction.isDefined, "Should cancel timeout")
@@ -183,7 +203,7 @@ class RemoteStateActionProducerSuite extends FunSuite {
   }
 
   test(
-    "produceActionsForConfirmed - recent inconsistency, sets online and schedules timeout"
+    "produceActionsForConfirmed - recent inconsistency, sets synchronized and schedules timeout"
   ) {
     val inconsistencyStart =
       now.minusSeconds(45) // 45 seconds ago, less than 2 minutes timeout
@@ -192,21 +212,28 @@ class RemoteStateActionProducerSuite extends FunSuite {
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOnlineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Online")
-          if item == inconsistencyUIItem =>
+    val setSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
-    assert(setOnlineAction.isDefined, "Should set inconsistency item to Online")
+    assert(
+      setSynchronizedAction.isDefined,
+      "Should set inconsistency item to Synchronized"
+    )
 
     val delayedAction = actions.collectFirst { case a: Action.Delayed => a }
     assert(delayedAction.isDefined, "Should schedule timeout")
     assertEquals(delayedAction.get.id, s"$id-timeout")
 
-    // Check the delayed action sets offline
+    // Check the delayed action sets not synchronized
     delayedAction.get.action match {
-      case Action.SetOpenHabItemValue(item, "Offline")
-          if item == inconsistencyUIItem =>
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.NOT_SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         // Verify delay is approximately correct (timeout - elapsed time)
         val expectedDelay = timeoutInterval - 45.seconds
         assert(
@@ -217,12 +244,13 @@ class RemoteStateActionProducerSuite extends FunSuite {
           delayedAction.get.delay.toSeconds <= expectedDelay.toSeconds + 1,
           "Delay should be approximately correct (upper bound)"
         )
-      case _ => fail("Delayed action should set inconsistency item to Offline")
+      case _ =>
+        fail("Delayed action should set inconsistency item to Not Synchronized")
     }
   }
 
   test(
-    "produceActionsForConfirmed - old inconsistency past timeout, sets offline and cancels timeout"
+    "produceActionsForConfirmed - old inconsistency past timeout, sets not synchronized and cancels timeout"
   ) {
     val inconsistencyStart =
       now.minusSeconds(150) // 2.5 minutes ago, past 2 minutes timeout
@@ -231,14 +259,16 @@ class RemoteStateActionProducerSuite extends FunSuite {
 
     val actions = producer.produceActionsForConfirmed(remoteState, now)
 
-    val setOfflineAction = actions.collectFirst {
-      case Action.SetOpenHabItemValue(item, "Offline")
-          if item == inconsistencyUIItem =>
+    val setNotSynchronizedAction = actions.collectFirst {
+      case Action.SetOpenHabItemValue(
+            item,
+            RemoteStateActionProducer.NOT_SYNCHRONIZED
+          ) if item == inconsistencyUIItem =>
         item
     }
     assert(
-      setOfflineAction.isDefined,
-      "Should set inconsistency item to Offline"
+      setNotSynchronizedAction.isDefined,
+      "Should set inconsistency item to Not Synchronized"
     )
 
     val cancelAction = actions.collectFirst { case a: Action.Cancel => a }

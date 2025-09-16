@@ -32,7 +32,8 @@ final case class StatePersistenceConfig(
 )
 
 final case class ProcessorConfig(
-    temperatureRelated: TemperatureRelatedConfig
+    temperatureRelated: TemperatureRelatedConfig,
+    offlineDetector: OfflineDetectorConfig
 ) derives ConfigReader
 
 final case class TemperatureRelatedConfig(
@@ -55,4 +56,11 @@ final case class TemperatureRelatedConfig(
     // Internal IDs for action tracking
     batteryFanId: String,
     electronicsFanId: String
+) derives ConfigReader
+
+final case class OfflineDetectorConfig(
+    timeoutDuration: FiniteDuration,
+    temperaturesStatusItem: String,
+    onlineText: String,
+    offlineText: String
 ) derives ConfigReader

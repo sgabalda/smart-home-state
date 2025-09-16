@@ -16,14 +16,20 @@ class StateProcessorSuite extends CatsEffectSuite {
           executed = true
           (state, Set.empty)
         }
-      val sut = StateProcessor(temperatureRelatedProcessor)
+      val offlineDetectorProcessor: SingleProcessor =
+        (state, _, _) => (state, Set.empty)
+
+      val sut =
+        StateProcessor(temperatureRelatedProcessor, offlineDetectorProcessor)
       assertEquals(
         sut.process(Fixture.state, event),
-        (Fixture.state, Set.empty)
+        (Fixture.state, Set.empty),
+        s"Processing event: $event"
       )
       assertEquals(
         executed,
-        true
+        true,
+        s"TemperatureRelatedProcessor should be executed for event: $event"
       )
     }
   }

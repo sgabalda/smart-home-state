@@ -21,6 +21,10 @@ object RemoteStateActionProducer {
 
   type RemoteSwitchActionProducer = RemoteStateActionProducer[Switch.Status]
 
+  // Synchronization status constants
+  val SYNCHRONIZED = "Sincronitzat"
+  val NOT_SYNCHRONIZED = "No sincronitzat"
+
   def apply(
       confirmedStateUIItem: String,
       mqttTopicForCommand: String,
@@ -34,10 +38,10 @@ object RemoteStateActionProducer {
           s: Option[Instant],
           now: Instant
       ): Set[Action] = {
-        val setOffline =
-          Action.SetOpenHabItemValue(inconsistencyUIItem, "Offline")
-        val setOnline =
-          Action.SetOpenHabItemValue(inconsistencyUIItem, "Online")
+        val setNotSynchronized =
+          Action.SetOpenHabItemValue(inconsistencyUIItem, NOT_SYNCHRONIZED)
+        val setSynchronized =
+          Action.SetOpenHabItemValue(inconsistencyUIItem, SYNCHRONIZED)
 
         s match {
           case Some(timestamp) =>
@@ -45,21 +49,21 @@ object RemoteStateActionProducer {
               java.time.Duration.ofMillis(timeoutInterval.toMillis)
             )
             if (now.isAfter(timeOutInstant))
-              // the inconsistency started more than timeoutInterval ago, then set it as offline and cancel the timeout
-              Set(setOffline, Action.Cancel(id + "-timeout"))
+              // the inconsistency started more than timeoutInterval ago, then set it as not synchronized and cancel the timeout
+              Set(setNotSynchronized, Action.Cancel(id + "-timeout"))
             else
-              // the inconsistency started less than timeoutInterval ago, then set it as online and schedule the timeout
+              // the inconsistency started less than timeoutInterval ago, then set it as synchronized and schedule the timeout
               import scala.jdk.DurationConverters._
               Set(
-                setOnline,
+                setSynchronized,
                 Action.Delayed(
                   id + "-timeout",
-                  setOffline,
+                  setNotSynchronized,
                   java.time.Duration.between(now, timeOutInstant).toScala
                 )
               )
           case None =>
-            Set(Action.Cancel(id + "-timeout"), setOnline)
+            Set(Action.Cancel(id + "-timeout"), setSynchronized)
         }
       }
 

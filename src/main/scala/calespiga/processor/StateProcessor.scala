@@ -38,9 +38,10 @@ object StateProcessor {
   }
 
   def apply(
-      temperatureRelatedProcessor: SingleProcessor
+      temperatureRelatedProcessor: SingleProcessor,
+      offlineDetectorProcessor: SingleProcessor
   ): StateProcessor = Impl(
-    List(temperatureRelatedProcessor)
+    List(temperatureRelatedProcessor, offlineDetectorProcessor)
   )
 
   def apply(
@@ -48,7 +49,9 @@ object StateProcessor {
   ): StateProcessor =
     this.apply(
       temperatureRelatedProcessor =
-        TemperatureRelatedProcessor(config.temperatureRelated)
+        TemperatureRelatedProcessor(config.temperatureRelated),
+      offlineDetectorProcessor =
+        OfflineDetectorProcessor(config.offlineDetector)
     )
 
 }
