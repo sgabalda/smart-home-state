@@ -1,0 +1,21 @@
+name: Scala Steward
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Every Monday at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  scala-steward:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scala Steward
+        uses: scala-steward-org/scala-steward-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          author-email: "41898282+github-actions[bot]@users.noreply.github.com"
+          author-name: "github-actions[bot]"
+          # No repo or vcs inputs needed for v2; runs on current repo
