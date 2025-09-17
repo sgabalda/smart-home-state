@@ -2,11 +2,11 @@ import sbt.*
 
 object Dependencies {
   object Versions {
-    val cats_effect = "3.6.1"
+    val cats_effect = "3.6.3"
 
-    val circe = "0.14.13"
+    val circe = "0.14.14"
 
-    val fs2 = "3.12.0"
+    val fs2 = "3.12.2"
 
     val fs2_mqtt = "1.0.1"
 

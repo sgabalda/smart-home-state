@@ -347,7 +347,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
 
       // All executions should be the same action
       actionsAfterThird.foreach { actions =>
-        assertEquals(actions, Set(directAction))
+        assertEquals(actions, Set[Action.Direct](directAction))
       }
     }
 
@@ -408,7 +408,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
       finalActions.foreach { actions =>
         assertEquals(
           actions,
-          Set(directAction2),
+          Set[Action.Direct](directAction2),
           "Only second action should execute"
         )
       }
@@ -627,7 +627,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
         1,
         "No second execution should occur after cancellation"
       )
-      assertEquals(finalActions.head, Set(directAction))
+      assertEquals(finalActions.head, Set[Action.Direct](directAction))
     }
 
     TestControl.executeEmbed(program)
@@ -707,7 +707,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
         1,
         "No further executions should occur after cancellation"
       )
-      assertEquals(finalActions.head, Set(directAction2))
+      assertEquals(finalActions.head, Set[Action.Direct](directAction2))
     }
 
     TestControl.executeEmbed(program)

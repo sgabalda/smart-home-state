@@ -1,7 +1,6 @@
 package calespiga.model
 
 import java.time.Instant
-import calespiga.model.RemoteState.*
 import io.circe._
 import io.circe.generic.semiauto._
 

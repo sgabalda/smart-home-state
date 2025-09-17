@@ -1,5 +1,5 @@
 ThisBuild / organization := "calespiga"
-ThisBuild / scalaVersion := "3.3.6"
+ThisBuild / scalaVersion := "3.7.3"
 
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
