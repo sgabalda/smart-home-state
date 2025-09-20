@@ -1,9 +1,10 @@
 package calespiga.model
 
-import calespiga.model.State.{Fans, Temperatures}
+import calespiga.model.State.{Fans, Temperatures, FeatureFlags}
 import calespiga.model.RemoteSwitch.*
 
 case class State(
+    featureFlags: FeatureFlags = FeatureFlags(),
     temperatures: Temperatures = Temperatures(),
     fans: Fans = Fans()
 )
@@ -21,5 +22,9 @@ object State {
       fanManagementAutomatic: Switch.Status = Switch.Off,
       fanBatteries: RemoteSwitch = RemoteSwitch(),
       fanElectronics: RemoteSwitch = RemoteSwitch()
+  )
+
+  case class FeatureFlags(
+      fanManagementEnabled: Boolean = false  //to be removed when fans are controled by SHS
   )
 }

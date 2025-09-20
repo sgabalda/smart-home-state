@@ -5,6 +5,7 @@ import java.time.Instant
 object Fixture {
 
   val state: State = State(
+    State.FeatureFlags(fanManagementEnabled = true),
     State.Temperatures(
       externalTemperature = Some(20.0),
       batteriesTemperature = Some(30.0),

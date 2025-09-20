@@ -29,6 +29,13 @@ object Event {
     case object StartupEvent extends SystemData
   }
 
+  object FeatureFlagEvents{
+    sealed trait FeatureFlagEvent extends EventData
+    
+    @InputEventOHItem("GestioVentiladorsSHS")
+    case class SetFanManagement(enable: Boolean) extends FeatureFlagEvent
+  }
+
   object Temperature {
     sealed trait TemperatureData extends EventData
 
