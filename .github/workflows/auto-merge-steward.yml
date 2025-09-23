@@ -8,7 +8,7 @@ permissions:
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: github.actor == 'scala-steward[bot]'
+    if: github.event.pull_request.user.login == 'scala-steward[bot]'
     steps:
       - uses: peter-evans/enable-pull-request-automerge@v3
         with:
