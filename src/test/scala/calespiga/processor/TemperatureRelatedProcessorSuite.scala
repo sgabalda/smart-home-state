@@ -246,7 +246,7 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
               // Actions depend on the actual state, which varies in tests
             )
           )
-        // case e => List((e, s => s, Set.empty)) for when more events are to be defined
+        case e => List((e, s => s, Set.empty))
       }
     )
     .foreach { (event, newState, expectedActions) =>

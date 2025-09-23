@@ -3,6 +3,7 @@ package calespiga.processor
 import calespiga.model.{Action, Event, State}
 import java.time.Instant
 import calespiga.model.Event.EventData
+import calespiga.processor.utils.FilterMqttActionsProcessor
 
 trait StateProcessor {
   def process(
@@ -41,7 +42,13 @@ object StateProcessor {
       temperatureRelatedProcessor: SingleProcessor,
       offlineDetectorProcessor: SingleProcessor
   ): StateProcessor = Impl(
-    List(temperatureRelatedProcessor, offlineDetectorProcessor)
+    List(
+      new FilterMqttActionsProcessor( // filter to be removed when fans are rolled out
+        temperatureRelatedProcessor,
+        !_.featureFlags.fanManagementEnabled
+      ),
+      offlineDetectorProcessor
+    )
   )
 
   def apply(
