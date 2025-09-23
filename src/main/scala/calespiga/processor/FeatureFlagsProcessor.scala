@@ -16,9 +16,7 @@ object FeatureFlagsProcessor {
         (
           state.copy(
             featureFlags =
-              state.featureFlags.copy(fanManagementEnabled = enable),
-            temperatures = state.temperatures,
-            fans = state.fans
+              state.featureFlags.copy(fanManagementEnabled = enable)
           ),
           Set.empty
         )
