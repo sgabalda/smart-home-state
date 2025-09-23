@@ -22,7 +22,7 @@ object Dependencies {
 
     val quicklens = "1.9.12"
 
-    val sttp = "4.0.7"
+    val sttp = "4.0.11"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
