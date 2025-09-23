@@ -6,7 +6,6 @@ import java.time.Instant
 
 object FeatureFlagsProcessor {
   class Impl extends StateProcessor.SingleProcessor {
-    
 
     override def process(
         state: State,
@@ -16,7 +15,8 @@ object FeatureFlagsProcessor {
       case Event.FeatureFlagEvents.SetFanManagement(enable) =>
         (
           state.copy(
-            featureFlags = state.featureFlags.copy(fanManagementEnabled = enable),
+            featureFlags =
+              state.featureFlags.copy(fanManagementEnabled = enable),
             temperatures = state.temperatures,
             fans = state.fans
           ),

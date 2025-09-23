@@ -25,6 +25,7 @@ object State {
   )
 
   case class FeatureFlags(
-      fanManagementEnabled: Boolean = false  //to be removed when fans are controled by SHS
+      fanManagementEnabled: Boolean =
+        false // to be removed when fans are controled by SHS
   )
 }
