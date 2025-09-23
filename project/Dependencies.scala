@@ -12,7 +12,7 @@ object Dependencies {
 
     val janino = "3.1.12"
 
-    val log4cats = "2.7.0"
+    val log4cats = "2.7.1"
 
     val logback = "1.5.18"
 
