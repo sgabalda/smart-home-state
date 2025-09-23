@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-- This project manages the state of an smart home system as a single, consistent state.
+- This project manages the state of a smart home system as a single, consistent state.
 - It aggregates multiple event sources and updates OpenHAB items via the REST API (OpenHAB is used as a frontend, not as the main state holder).
 - The goal is to reduce complexity and inconsistency from managing many OpenHAB items individually.
 
