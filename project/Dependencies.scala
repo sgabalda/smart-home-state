@@ -12,7 +12,7 @@ object Dependencies {
 
     val janino = "3.1.12"
 
-    val log4cats = "2.7.0"
+    val log4cats = "2.7.1"
 
     val logback = "1.5.18"
 
@@ -22,7 +22,7 @@ object Dependencies {
 
     val quicklens = "1.9.12"
 
-    val sttp = "4.0.7"
+    val sttp = "4.0.11"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
