@@ -8,7 +8,7 @@ permissions:
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login == 'scala-steward-sgabalda'
+    if: github.actor == 'scala-steward-sgabalda[bot]' && github.event.sender.id == 234083034
     steps:
       - name: Generate token
         id: generate-token
