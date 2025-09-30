@@ -20,9 +20,6 @@ String VentiladorElectronicaSetSHS  "Commanda ventilador electronica"
 String VentiladorGestioSHS "Gestió dels ventiladors" 
 String VentiladorsInconsistencySHS "Inconsistencies ventiladors"
 
-//TO BE removed when migration is finished
-String VentiladorBateriesStatusSHS  "Control al SHS"
-
 /*
 ----------------------
 SYSTEM 
