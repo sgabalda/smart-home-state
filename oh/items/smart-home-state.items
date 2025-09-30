@@ -13,9 +13,9 @@ Number:Temperature BateriesTemperaturaAdosadaSHS      "T. bateries: [%.2f %unit%
 Number:Temperature TemperaturaObjectiuSHS "T. objectiu bat."
 
 String VentiladorBateriesStatusSHS  "Estat ventilador bateria"
-String VentiladorBateriesSetSHS  "Commanda ventilador bateria"
+Switch VentiladorBateriesSetSHS  "Commanda ventilador bateria"
 String VentiladorElectronicaStatusSHS  "Estat ventilador electronica"
-String VentiladorElectronicaSetSHS  "Commanda ventilador electronica"
+Switch VentiladorElectronicaSetSHS  "Commanda ventilador electronica"
 
 String VentiladorGestioSHS "Gestió dels ventiladors" 
 String VentiladorsInconsistencySHS "Inconsistencies ventiladors"
@@ -32,4 +32,4 @@ String SystemTitle "Estat"
 String TemperaturesMicroControladorEstat "Estat microcontrolador temperatures"
 
 /* feature flags */
-String VentiladorsHabilitatsSHS "Habilitar ventiladors per SHS"
+Switch VentiladorsHabilitatsSHS "Habilitar ventiladors per SHS"
