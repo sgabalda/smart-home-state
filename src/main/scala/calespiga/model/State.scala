@@ -2,11 +2,13 @@ package calespiga.model
 
 import calespiga.model.State.{Fans, Temperatures, FeatureFlags}
 import calespiga.model.RemoteSwitch.*
+import calespiga.model.Switch.*
 
 case class State(
     featureFlags: FeatureFlags = FeatureFlags(),
     temperatures: Temperatures = Temperatures(),
-    fans: Fans = Fans()
+    fans: Fans = Fans(),
+    heater: State.Heater = State.Heater()
 )
 
 object State {
@@ -17,6 +19,14 @@ object State {
       batteriesClosetTemperature: Option[Double] = None,
       electronicsTemperature: Option[Double] = None,
       goalTemperature: Option[Double] = None
+  )
+  case class Heater(
+      status: RemoteHeaterPowerState.RemoteHeaterPowerState =
+        RemoteHeaterPowerState(),
+      lastChange: Option[java.time.Instant] = None,
+      isHot: Switch.Status = Switch.Off,
+      lastTimeHot: Option[java.time.Instant] = None,
+      energyToday: Float = 0.0f
   )
   case class Fans(
       fanManagementAutomatic: Switch.Status = Switch.Off,
