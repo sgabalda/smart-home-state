@@ -36,21 +36,24 @@ This project uses a **controlled deployment approach** with three types of workf
 
 ## Step 1: Install Docker on Raspberry Pi
 
-````bash
+```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
+```
 
 # Install Docker
+
 Follow instructions on https://docs.docker.com/engine/install/
 
 NOTE: if the RPI is doing router functionality (e.g. VPN), take into account
 that installing it will add rules to the firewall, check https://docs.docker.com/engine/network/packet-filtering-firewalls/
 
 # Check docker installation
+
 ```bash
 docker --version
 docker compose --version
-````
+```
 
 ## Step 2: Set up the Application
 
