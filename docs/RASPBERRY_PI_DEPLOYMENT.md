@@ -43,7 +43,7 @@ sudo apt update && sudo apt upgrade -y
 # Install Docker
 Follow instructions on https://docs.docker.com/engine/install/
 
-NOTE: if the RPI is doing router functionalily (e.g. VPN), take into account
+NOTE: if the RPI is doing router functionality (e.g. VPN), take into account
 that installing it will add rules to the firewall, check https://docs.docker.com/engine/network/packet-filtering-firewalls/
 
 # Check docker installation
