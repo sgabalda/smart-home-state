@@ -39,30 +39,20 @@ This project uses a **controlled deployment approach** with three types of workf
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
-
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# Add your user to docker group (to run without sudo)
-sudo usermod -aG docker $USER
-
-# Install Docker Compose
-sudo apt install docker-compose -y
-
-# Enable Docker service
-sudo systemctl enable docker
-sudo systemctl start docker
-
-# Reboot to apply group changes
-sudo reboot
 ```
 
-After reboot, verify Docker is working:
+# Install Docker
+
+Follow instructions on https://docs.docker.com/engine/install/
+
+NOTE: if the RPI is doing router functionality (e.g. VPN), take into account
+that installing it will add rules to the firewall, check https://docs.docker.com/engine/network/packet-filtering-firewalls/
+
+# Check docker installation
 
 ```bash
 docker --version
-docker-compose --version
+docker compose --version
 ```
 
 ## Step 2: Set up the Application
@@ -85,6 +75,8 @@ wget https://raw.githubusercontent.com/sgabalda/smart-home-state/main/docker-com
 ```bash
 mkdir -p data logs
 ```
+
+and give permissions to the files
 
 4. **Configure environment variables (IMPORTANT for security):**
 
@@ -138,23 +130,23 @@ To use Gmail for notifications, you need to create an App Password:
 1. **Start the application:**
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 2. **Check logs:**
 
 ```bash
 # View application logs
-docker-compose logs -f smart-home-state
+docker compose logs -f smart-home-state
 
 # View watchtower logs
-docker-compose logs -f watchtower
+docker compose logs -f watchtower
 ```
 
 3. **Verify containers are running:**
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ## Step 4: Configure Automatic Updates

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   smart-home-state:
     image: ghcr.io/sgabalda/smart-home-state:stable
