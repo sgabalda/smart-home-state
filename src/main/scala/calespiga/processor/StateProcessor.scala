@@ -43,6 +43,7 @@ object StateProcessor {
       offlineDetectorProcessor: SingleProcessor
   ): StateProcessor = Impl(
     List(
+      FeatureFlagsProcessor(),
       new FilterMqttActionsProcessor( // filter to be removed when fans are rolled out
         temperatureRelatedProcessor,
         !_.featureFlags.fanManagementEnabled
