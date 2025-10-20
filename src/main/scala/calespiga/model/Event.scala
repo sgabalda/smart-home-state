@@ -93,4 +93,23 @@ object Event {
       ) extends FanData
     }
   }
+
+  object Heater {
+    sealed trait HeaterData extends EventData
+
+    @InputEventMqtt("heater/power/status")
+    case class HeaterPowerStatusReported(
+        status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
+    ) extends HeaterData
+
+    @InputEventOHItem("CalefaccioSetSHS")
+    case class HeaterPowerCommandChanged(
+        status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
+    ) extends HeaterData
+
+    @InputEventMqtt("heater/isHot/status")
+    case class HeaterIsHotReported(
+        status: Switch.Status
+    ) extends HeaterData
+  }
 }

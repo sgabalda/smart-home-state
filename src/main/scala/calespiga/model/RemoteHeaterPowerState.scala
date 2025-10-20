@@ -1,40 +1,31 @@
 package calespiga.model
 
-import io.circe._
+import io.circe.{Encoder, Decoder}
+import scala.util.Try
 
 object RemoteHeaterPowerState {
 
-  sealed trait RemoteHeaterPowerStatus
-
-  case object Off extends RemoteHeaterPowerStatus
-  case object Power500 extends RemoteHeaterPowerStatus
-  case object Power1000 extends RemoteHeaterPowerStatus
-  case object Power2000 extends RemoteHeaterPowerStatus
+  enum RemoteHeaterPowerStatus {
+    case Off, Power500, Power1000, Power2000
+  }
 
   // Encoder for Status
   implicit val statusEncoder: Encoder[RemoteHeaterPowerStatus] =
-    Encoder.instance {
-      case Off       => Json.fromString("Off")
-      case Power500  => Json.fromString("Power500")
-      case Power1000 => Json.fromString("Power1000")
-      case Power2000 => Json.fromString("Power2000")
-    }
+    Encoder.encodeString.contramap(_.toString)
 
   // Decoder for Status
   implicit val statusDecoder: Decoder[RemoteHeaterPowerStatus] =
-    Decoder.decodeString.emap {
-      case "Off"       => Right(Off)
-      case "Power500"  => Right(Power500)
-      case "Power1000" => Right(Power1000)
-      case "Power2000" => Right(Power2000)
-      case other       => Left(s"Invalid Status: $other")
+    Decoder.decodeString.emap { str =>
+      Try(RemoteHeaterPowerStatus.valueOf(str)).toEither.left.map(_ =>
+        s"Invalid Status: $str"
+      )
     }
 
   type RemoteHeaterPowerState = RemoteState[RemoteHeaterPowerStatus]
 
   def apply(
-      confirmed: RemoteHeaterPowerStatus = Off,
-      latestCommand: RemoteHeaterPowerStatus = Off,
+      confirmed: RemoteHeaterPowerStatus = RemoteHeaterPowerStatus.Off,
+      latestCommand: RemoteHeaterPowerStatus = RemoteHeaterPowerStatus.Off,
       currentInconsistencyStart: Option[java.time.Instant] = None
   ): RemoteHeaterPowerState =
     RemoteState(confirmed, latestCommand, currentInconsistencyStart)
