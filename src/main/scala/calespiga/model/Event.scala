@@ -97,18 +97,23 @@ object Event {
   object Heater {
     sealed trait HeaterData extends EventData
 
-    @InputEventMqtt("heater/power/status")
+    @InputEventMqtt("arduino_calentador/potencia/status")
     case class HeaterPowerStatusReported(
         status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
     ) extends HeaterData
 
-    @InputEventOHItem("CalefaccioSetSHS")
+    @InputEventOHItem("CalentadorSetSHS")
     case class HeaterPowerCommandChanged(
         status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
     ) extends HeaterData
 
-    @InputEventMqtt("heater/isHot/status")
+    @InputEventMqtt("arduino_calentador/termostat/status")
     case class HeaterIsHotReported(
+        status: Switch.Status
+    ) extends HeaterData
+
+    @InputEventOHItem("CalentadorGestioSHS")
+    case class HeaterManagementAutomaticChanged(
         status: Switch.Status
     ) extends HeaterData
   }

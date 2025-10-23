@@ -23,10 +23,14 @@ object State {
   case class Heater(
       status: RemoteHeaterPowerState.RemoteHeaterPowerState =
         RemoteHeaterPowerState(),
+      lastCommandReceived: Option[
+        RemoteHeaterPowerState.RemoteHeaterPowerStatus
+      ] = None,
       lastChange: Option[java.time.Instant] = None,
       isHot: Switch.Status = Switch.Off,
       lastTimeHot: Option[java.time.Instant] = None,
-      energyToday: Float = 0.0f
+      energyToday: Float = 0.0f,
+      heaterManagementAutomatic: Switch.Status = Switch.Off
   )
   case class Fans(
       fanManagementAutomatic: Switch.Status = Switch.Off,

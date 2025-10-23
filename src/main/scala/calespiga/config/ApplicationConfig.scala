@@ -33,7 +33,8 @@ final case class StatePersistenceConfig(
 
 final case class ProcessorConfig(
     temperatureRelated: TemperatureRelatedConfig,
-    offlineDetector: OfflineDetectorConfig
+    offlineDetector: OfflineDetectorConfig,
+    heater: HeaterConfig
 ) derives ConfigReader
 
 final case class TemperatureRelatedConfig(
@@ -63,4 +64,13 @@ final case class OfflineDetectorConfig(
     temperaturesStatusItem: String,
     onlineText: String,
     offlineText: String
+) derives ConfigReader
+
+final case class HeaterConfig(
+    mqttTopicForCommand: String,
+    statusItem: String,
+    powerItem: String,
+    lastTimeHotItem: String,
+    energyTodayItem: String,
+    inconsistencyUIItem: String
 ) derives ConfigReader
