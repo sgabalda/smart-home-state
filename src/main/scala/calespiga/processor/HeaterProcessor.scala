@@ -26,10 +26,12 @@ object HeaterProcessor {
         timestamp: Instant
     ): (State, Set[Action]) = eventData match {
 
+      // TODO add event for startup, so if the management is manual, apply last command received
+
       case hd: Event.Heater.HeaterData =>
         hd match
           case HeaterPowerStatusReported(status) =>
-            // TODO update any inconsistency timers, calculate spent energy.
+            // TODO update any inconsistency timers, calculate and forward spent energy.
             (state, Set.empty)
 
           case HeaterPowerCommandChanged(status) =>
