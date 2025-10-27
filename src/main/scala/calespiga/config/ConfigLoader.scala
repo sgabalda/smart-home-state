@@ -7,7 +7,7 @@ object ConfigLoader {
   private def load: IO[ApplicationConfig] =
     ConfigSource.default.load[ApplicationConfig] match {
       case Right(config) => IO.pure(config)
-      case Left(error) =>
+      case Left(error)   =>
         IO.raiseError(new Exception(s"Failed to load config: $error"))
     }
 
