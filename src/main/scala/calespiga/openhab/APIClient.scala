@@ -35,7 +35,7 @@ object APIClient {
       value <- decode[ItemChangedEventPayload](event.payload).map(_.value)
       item <- event.topic.split("/") match {
         case Array("openhab", "items", item, "statechanged") => Right(item)
-        case _ =>
+        case _                                               =>
           Left(
             new Exception(
               s"Invalid topic for ItemStateChangedEvent: ${event.topic}"
@@ -130,7 +130,7 @@ object APIClient {
         .send(webSocketBackend)
         .flatMap {
           case Response(Right(successBody), code, _, _, _, _) => IO.unit
-          case Response(Left(error), code, _, _, _, _) =>
+          case Response(Left(error), code, _, _, _, _)        =>
             IO.raiseError(
               new Exception(s"Failed to change item, error $code: $error")
             )

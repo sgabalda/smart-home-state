@@ -22,7 +22,7 @@ object RemoteState {
       c.downField("signal").as[String].flatMap {
         case "Command" => c.downField("stateToSet").as[S].map(Command(_))
         case "Event"   => c.downField("stateChangedTo").as[S].map(Event(_))
-        case other =>
+        case other     =>
           Left(DecodingFailure(s"Unknown Signal type: $other", c.history))
       }
   }
