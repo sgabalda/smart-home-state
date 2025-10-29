@@ -99,21 +99,16 @@ object Event {
 
     @InputEventMqtt("arduino_calentador/potencia/status")
     case class HeaterPowerStatusReported(
-        status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
+        status: HeaterSignal.ControllerState
     ) extends HeaterData
 
     @InputEventOHItem("CalentadorSetSHS")
     case class HeaterPowerCommandChanged(
-        status: RemoteHeaterPowerState.RemoteHeaterPowerStatus
+        status: HeaterSignal.UserCommand
     ) extends HeaterData
 
     @InputEventMqtt("arduino_calentador/termostat/status")
     case class HeaterIsHotReported(
-        status: Switch.Status
-    ) extends HeaterData
-
-    @InputEventOHItem("CalentadorGestioSHS")
-    case class HeaterManagementAutomaticChanged(
         status: Switch.Status
     ) extends HeaterData
   }

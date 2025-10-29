@@ -1,150 +1,163 @@
 package calespiga.processor
 
-import calespiga.model.{State, Action, Event, Switch}
+import calespiga.model.{State, Action, Event}
 import java.time.Instant
-import calespiga.model.Event.Heater.*
-import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
-import scala.concurrent.duration._
-import calespiga.model.RemoteHeaterPowerState.RemoteHeaterPowerStatus
-import calespiga.model.RemoteHeaterPowerState
-import calespiga.processor.utils.RemoteStateActionManager
+import calespiga.model.Event.Heater.HeaterPowerStatusReported
+import calespiga.model.Event.Heater.HeaterPowerCommandChanged
+import calespiga.model.Event.Heater.HeaterIsHotReported
+import calespiga.model.HeaterSignal.TurnOff
+import calespiga.model.HeaterSignal.SetAutomatic
+import calespiga.model.HeaterSignal.SetPower500
+import calespiga.model.HeaterSignal.SetPower1000
+import calespiga.model.HeaterSignal.SetPower2000
+import calespiga.model.HeaterSignal
+import com.softwaremill.quicklens.*
+import calespiga.model.Switch.On
+import calespiga.model.Switch.Off
+import calespiga.model.Event.Heater
+import java.time.ZoneId
 
 object HeaterProcessor {
 
-  private val id = "heater-processor"
-  private val resendInterval = 20.seconds
-  private val timeoutInterval = 1.minutes
+  val COMMAND_ACTION_SUFFIX = "-command"
 
-  private final case class Impl(
-      manager: RemoteStateActionManager[RemoteHeaterPowerStatus]
-  ) extends StateProcessor.SingleProcessor {
+  private final case class Impl(config: HeaterConfig, zone: ZoneId)
+      extends StateProcessor.SingleProcessor {
 
+    private object Actions {
+      private def commandAction(command: HeaterSignal.ControllerState) =
+        Action.SendMqttStringMessage(
+          config.mqttTopicForCommand,
+          command.toString
+        )
+      private def periodicCommandAction(
+          command: HeaterSignal.ControllerState
+      ) = {
+        Action.Periodic(
+          config.id + COMMAND_ACTION_SUFFIX,
+          commandAction(command),
+          config.resendInterval
+        )
+      }
+      def commandActionWithResend(command: HeaterSignal.ControllerState) = {
+        Set(commandAction(command), periodicCommandAction(command))
+      }
+    }
+
+    private def getDefaultCommandToSend(
+        status: HeaterSignal.UserCommand
+    ): HeaterSignal.ControllerState = {
+      status match
+        case TurnOff      => HeaterSignal.Off
+        case SetAutomatic => HeaterSignal.Off
+        case SetPower500  => HeaterSignal.Power500
+        case SetPower1000 => HeaterSignal.Power1000
+        case SetPower2000 => HeaterSignal.Power2000
+    }
     override def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match {
 
-      // TODO add event for startup, so if the management is manual, apply last command received
-
       case hd: Event.Heater.HeaterData =>
         hd match
           case HeaterPowerStatusReported(status) =>
-            // TODO update any inconsistency timers, calculate and forward spent energy.
-            (state, Set.empty)
+            val lastEnergyUpdate = state.heater.lastChange.getOrElse(timestamp)
+            val sameDay = lastEnergyUpdate.atZone(zone).toLocalDate == timestamp
+              .atZone(zone)
+              .toLocalDate
+            val energyLastPeriod =
+              lastEnergyUpdate.until(timestamp).toMillis * state.heater.status
+                .map(_.power)
+                .getOrElse(0) / 1000f / 3600f
+            val newEnergyToday =
+              if (sameDay) state.heater.energyToday + energyLastPeriod
+              else energyLastPeriod
+            val newState = state
+              .modify(_.heater.status)
+              .setTo(Some(status))
+              .modify(_.heater.lastChange)
+              .setTo(Some(timestamp))
+              .modify(_.heater.energyToday)
+              .setTo(newEnergyToday)
+
+            val actions: Set[Action] = Set(
+              Action.SetOpenHabItemValue(
+                config.energyTodayItem,
+                newEnergyToday.toString
+              ),
+              Action.SetOpenHabItemValue(config.statusItem, status.toString)
+            )
+
+            (newState, actions)
 
           case HeaterPowerCommandChanged(status) =>
-            state.heater.heaterManagementAutomatic match {
-              case Switch.On =>
-                // in automatic mode, store user commands but not apply them
-                val newState = state
-                  .modify(_.heater.lastCommandReceived)
-                  .setTo(Some(status))
-                (newState, Set.empty)
-              case Switch.Off =>
-                // in manual mode, apply user command and update last command
-                val (actions, newRemoteState) =
-                  manager.turnRemote(
-                    status,
-                    state.heater.status
-                  )
-                val newState = state
-                  .modify(_.heater.status)
-                  .setTo(newRemoteState)
-                  .modify(_.heater.lastCommandReceived)
-                  .setTo(Some(status))
-                (newState, actions)
-            }
-
-          case HeaterIsHotReported(Switch.On) =>
-            // heater is HOT, turn it off, mark it as hot and update last time hot
-            val (actions, newRemoteState) =
-              manager.turnRemote(
-                RemoteHeaterPowerStatus.Off,
-                state.heater.status
-              )
+            val commandToSend = getDefaultCommandToSend(status)
             val newState = state
-              .modify(_.heater.isHot)
-              .setTo(Switch.On)
-              .modify(_.heater.lastTimeHot)
-              .setTo(Some(timestamp))
-              .modify(_.heater.status)
-              .setTo(newRemoteState)
-            (newState, actions)
+              .modify(_.heater.lastCommandReceived)
+              .setTo(Some(status))
+              .modify(_.heater.lastCommandSent)
+              .setTo(Some(commandToSend))
 
-          case HeaterIsHotReported(Switch.Off) =>
-            // heater is COLD, mark it as not hot
-            // if the management is manual, we should propagate the last user command. Otherwise we should turn it off
-            val commandToSet = state.heater.heaterManagementAutomatic match {
-              case Switch.Off =>
-                state.heater.lastCommandReceived.getOrElse(
-                  RemoteHeaterPowerStatus.Off
+            (newState, Actions.commandActionWithResend(commandToSend))
+
+          case HeaterIsHotReported(status) =>
+            status match
+              case On =>
+                val commandToSend = HeaterSignal.Off
+                val newState = state
+                  .modify(_.heater.isHot)
+                  .setTo(On)
+                  .modify(_.heater.lastTimeHot)
+                  .setTo(Some(timestamp))
+                  .modify(_.heater.lastCommandSent)
+                  .setTo(Some(commandToSend))
+
+                (
+                  newState,
+                  Actions.commandActionWithResend(commandToSend) + Action
+                    .SetOpenHabItemValue(
+                      config.lastTimeHotItem,
+                      timestamp.toString
+                    )
                 )
-              case Switch.On =>
-                RemoteHeaterPowerStatus.Off
-            }
+              case Off =>
+                val commandToSend = getDefaultCommandToSend(
+                  state.heater.lastCommandReceived.getOrElse(TurnOff)
+                )
+                val newState = state
+                  .modify(_.heater.isHot)
+                  .setTo(Off)
+                  .modify(_.heater.lastCommandSent)
+                  .setTo(Some(commandToSend))
 
-            val (actions, newRemoteState) =
-              manager.turnRemote(
-                commandToSet,
-                state.heater.status
-              )
-            val newState = state
-              .modify(_.heater.isHot)
-              .setTo(Switch.Off)
-              .modify(_.heater.status)
-              .setTo(newRemoteState)
-            (newState, actions)
+                (newState, Actions.commandActionWithResend(commandToSend))
 
-          case HeaterManagementAutomaticChanged(Switch.On) =>
-            // the heater goes automatic. Turn it off and the automatic process will manage it
-            val (actions, newRemoteState) =
-              manager.turnRemote(
-                RemoteHeaterPowerStatus.Off,
-                state.heater.status
-              )
-            val newState = state
-              .modify(_.heater.heaterManagementAutomatic)
-              .setTo(Switch.On)
-              .modify(_.heater.status)
-              .setTo(newRemoteState)
-            (newState, actions)
+      case Event.System.StartupEvent =>
+        val commandToSend = getDefaultCommandToSend(
+          state.heater.lastCommandReceived.getOrElse(TurnOff)
+        )
+        val newState = state
+          .modify(_.heater.lastCommandSent)
+          .setTo(Some(commandToSend))
+          .modify(_.heater.lastChange)
+          .setTo(Some(timestamp))
 
-          case HeaterManagementAutomaticChanged(Switch.Off) =>
-            // the heater goes back to manual. Change state and apply last command received
-            val (actions, newRemoteState) =
-              manager.turnRemote(
-                state.heater.lastCommandReceived.getOrElse(
-                  RemoteHeaterPowerStatus.Off
-                ),
-                state.heater.status
-              )
-            val newState = state
-              .modify(_.heater.heaterManagementAutomatic)
-              .setTo(Switch.Off)
-              .modify(_.heater.status)
-              .setTo(newRemoteState)
-            (newState, actions)
+        (newState, Actions.commandActionWithResend(commandToSend))
+
       case _ =>
         (state, Set.empty)
     }
 
   }
 
-  def apply(config: HeaterConfig): StateProcessor.SingleProcessor = Impl(
-    RemoteStateActionManager(
-      id = id,
-      resendInterval = resendInterval,
-      timeoutInterval = timeoutInterval,
-      mqttTopicForCommand = config.mqttTopicForCommand,
-      inconsistencyUIItem = config.inconsistencyUIItem
-    )
-  )
-
   def apply(
-      remoteManager: RemoteStateActionManager[RemoteHeaterPowerStatus]
+      config: HeaterConfig,
+      zone: ZoneId
   ): StateProcessor.SingleProcessor = Impl(
-    remoteManager
+    config,
+    zone
   )
 }

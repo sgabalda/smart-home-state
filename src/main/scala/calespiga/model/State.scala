@@ -20,22 +20,20 @@ object State {
       electronicsTemperature: Option[Double] = None,
       goalTemperature: Option[Double] = None
   )
-  case class Heater(
-      status: RemoteHeaterPowerState.RemoteHeaterPowerState =
-        RemoteHeaterPowerState(),
-      lastCommandReceived: Option[
-        RemoteHeaterPowerState.RemoteHeaterPowerStatus
-      ] = None,
-      lastChange: Option[java.time.Instant] = None,
-      isHot: Switch.Status = Switch.Off,
-      lastTimeHot: Option[java.time.Instant] = None,
-      energyToday: Float = 0.0f,
-      heaterManagementAutomatic: Switch.Status = Switch.Off
-  )
   case class Fans(
       fanManagementAutomatic: Switch.Status = Switch.Off,
       fanBatteries: RemoteSwitch = RemoteSwitch(),
       fanElectronics: RemoteSwitch = RemoteSwitch()
+  )
+
+  case class Heater(
+      status: Option[HeaterSignal.ControllerState] = None,
+      lastCommandSent: Option[HeaterSignal.ControllerState] = None,
+      lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
+      lastChange: Option[java.time.Instant] = None,
+      isHot: Switch.Status = Switch.Off,
+      lastTimeHot: Option[java.time.Instant] = None,
+      energyToday: Float = 0.0f
   )
 
   case class FeatureFlags(

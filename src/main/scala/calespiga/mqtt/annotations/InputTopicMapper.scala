@@ -94,14 +94,13 @@ object InputTopicMapper {
                 calespiga.model.Switch.statusFromString(valueStr)
               }
               getNewExpr(convertedValueExpr)
-
             case tpe
-                if tpe <:< TypeRepr.of[
-                  calespiga.model.RemoteHeaterPowerState.RemoteHeaterPowerStatus
-                ] =>
+                if tpe =:= TypeRepr
+                  .of[calespiga.model.HeaterSignal.ControllerState] =>
               val convertedValueExpr = '{ (valueStr: String) =>
-                calespiga.model.RemoteHeaterPowerState.RemoteHeaterPowerStatus
-                  .valueOf(valueStr)
+                calespiga.model.HeaterSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(calespiga.model.HeaterSignal.Off)
               }
               getNewExpr(convertedValueExpr)
 

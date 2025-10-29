@@ -2,222 +2,212 @@ package calespiga.processor
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Switch}
-import calespiga.model.RemoteHeaterPowerState
-import calespiga.model.RemoteHeaterPowerState.RemoteHeaterPowerStatus
 import calespiga.model.Event.Heater.*
+import calespiga.model.HeaterSignal
 import java.time.Instant
-import calespiga.processor.utils.RemoteStateActionManager
 import com.softwaremill.quicklens.*
+import calespiga.config.HeaterConfig
+import java.time.ZoneId
 
 class HeaterProcessorSuite extends FunSuite {
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
-  private val initialRemoteState = RemoteHeaterPowerState.apply(
-    RemoteHeaterPowerStatus.Off,
-    RemoteHeaterPowerStatus.Off,
-    None
-  )
-  private val resultRemoteState = RemoteHeaterPowerState.apply(
-    RemoteHeaterPowerStatus.Off,
-    RemoteHeaterPowerStatus.Off,
-    None
-  )
-  private val initialStateManual = State(
-    heater = State.Heater(
-      status = initialRemoteState,
-      isHot = Switch.Off,
-      lastTimeHot = None,
-      energyToday = 0.0f,
-      heaterManagementAutomatic = Switch.Off,
-      lastCommandReceived = None
-    )
+
+  private val zone: ZoneId = ZoneId.systemDefault()
+
+  // Dummy HeaterConfig for processor instantiation
+  private val dummyConfig = HeaterConfig(
+    mqttTopicForCommand = "dummy/topic",
+    lastTimeHotItem = "dummy/lastTimeHot",
+    energyTodayItem = "dummy/energyToday",
+    statusItem = "dummy/status",
+    resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
+    id = "heater-processor"
   )
 
-  // Stub manager that records calls and returns fixed actions/state
-  class StubManager extends RemoteStateActionManager[RemoteHeaterPowerStatus] {
-    var calledWith: Option[
-      (RemoteHeaterPowerStatus, RemoteHeaterPowerState.RemoteHeaterPowerState)
-    ] = None
-    var actionsToReturn: Set[Action] = Set(
-      Action.SendMqttStringMessage("topic", "payload")
+  private def stateWithHeater(
+      status: Option[HeaterSignal.ControllerState] = Some(HeaterSignal.Off),
+      lastCommandSent: Option[HeaterSignal.ControllerState] = None,
+      lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
+      lastChange: Option[Instant] = None,
+      isHot: Switch.Status = Switch.Off,
+      lastTimeHot: Option[Instant] = None,
+      energyToday: Float = 0.0f
+  ): State =
+    State()
+      .modify(_.heater)
+      .setTo(
+        State.Heater(
+          status,
+          lastCommandSent,
+          lastCommandReceived,
+          lastChange,
+          isHot,
+          lastTimeHot,
+          energyToday
+        )
+      )
+
+  test("HeaterPowerStatusReported accumulates energy if same day") {
+    val secondsAgo = 3600
+    val initialEnergy = 1000f
+    val addedEnergy = 500f
+    val oneHourAgo = now.minusSeconds(secondsAgo)
+    val initialState = stateWithHeater(
+      status = Some(HeaterSignal.Power500),
+      lastChange = Some(oneHourAgo),
+      energyToday = initialEnergy
     )
-    var stateToReturn: RemoteHeaterPowerState.RemoteHeaterPowerState =
-      resultRemoteState
-    override def turnRemote(
-        commandToSet: RemoteHeaterPowerStatus,
-        currentState: RemoteHeaterPowerState.RemoteHeaterPowerState
-    ) = {
-      calledWith = Some((commandToSet, currentState))
-      (actionsToReturn, stateToReturn)
-    }
+    val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(initialState, event, now)
+    assertEquals(newState.heater.status, Some(HeaterSignal.Power1000))
+    assertEquals(newState.heater.lastChange, Some(now))
+    assertEqualsDouble(
+      newState.heater.energyToday,
+      initialEnergy + addedEnergy,
+      0.1f
+    )
+    val expectedActions: Set[Action] = Set(
+      Action.SetOpenHabItemValue(
+        dummyConfig.energyTodayItem,
+        newState.heater.energyToday.toString
+      ),
+      Action.SetOpenHabItemValue(
+        dummyConfig.statusItem,
+        HeaterSignal.Power1000.toString
+      )
+    )
+    assertEquals(actions, expectedActions)
+  }
+
+  test("HeaterPowerStatusReported resets energy if new day") {
+    val initialEnergy = 10000f
+    val yesterday = now
+      .atZone(zone)
+      .toLocalDate
+      .minusDays(1)
+      .atTime(java.time.LocalTime.MAX)
+      .atZone(zone)
+      .toInstant
+    val today = yesterday.plusSeconds(3600)
+    val initialStateNewDay = stateWithHeater(
+      status = Some(HeaterSignal.Power500),
+      lastChange = Some(yesterday),
+      energyToday = initialEnergy
+    )
+    val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState2, actions2) =
+      processor.process(initialStateNewDay, event, today)
+    assertEqualsDouble(
+      newState2.heater.energyToday,
+      500f,
+      0.1f,
+      "energyToday should reset for new day"
+    )
+    val expectedActions: Set[Action] = Set(
+      Action.SetOpenHabItemValue(
+        dummyConfig.energyTodayItem,
+        newState2.heater.energyToday.toString
+      ),
+      Action.SetOpenHabItemValue(
+        dummyConfig.statusItem,
+        HeaterSignal.Power1000.toString
+      )
+    )
+    assertEquals(actions2, expectedActions)
   }
 
   test(
-    "HeaterPowerCommandChanged in manual mode applies command and updates lastCommandReceived"
+    "HeaterPowerCommandChanged stores user and controller command, sends correct actions"
   ) {
-    val stub = new StubManager
-    val processor = HeaterProcessor(stub)
-    val event = HeaterPowerCommandChanged(RemoteHeaterPowerStatus.Power500)
-    val (newState, actions) = processor.process(initialStateManual, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Power500, initialRemoteState))
-    )
-    assertEquals(actions, stub.actionsToReturn)
+    val initialState = stateWithHeater()
+    val event = HeaterPowerCommandChanged(HeaterSignal.SetPower1000)
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(
       newState.heater.lastCommandReceived,
-      Some(RemoteHeaterPowerStatus.Power500)
+      Some(HeaterSignal.SetPower1000)
     )
-    assertEquals(newState.heater.status, stub.stateToReturn)
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power1000))
+    val expectedActions = Set(
+      Action
+        .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
+      Action.Periodic(
+        dummyConfig.id + HeaterProcessor.COMMAND_ACTION_SUFFIX,
+        Action
+          .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
+        dummyConfig.resendInterval
+      )
+    )
+    assertEquals(actions, expectedActions)
   }
 
   test(
-    "HeaterIsHotReported(Switch.Off) in manual mode propagates last user command"
+    "HeaterIsHotReported(On) sets isHot, lastTimeHot, sends Off command and UI update"
   ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Power500)
-    val stateWithLastCmd = initialStateManual
-      .modify(_.heater.lastCommandReceived)
-      .setTo(Some(RemoteHeaterPowerStatus.Power500))
-    val processor = HeaterProcessor(stub)
-    val event = HeaterIsHotReported(Switch.Off)
-    val (newState, actions) = processor.process(stateWithLastCmd, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Power500, initialRemoteState))
-    )
-    assertEquals(actions, stub.actionsToReturn)
-    assertEquals(newState.heater.isHot, Switch.Off)
-    assertEquals(newState.heater.status, stub.stateToReturn)
-  }
-
-  test(
-    "HeaterIsHotReported(Switch.On) in manual mode turns heater off and marks as hot"
-  ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Off)
-    val processor = HeaterProcessor(stub)
+    val initialState = stateWithHeater(isHot = Switch.Off)
     val event = HeaterIsHotReported(Switch.On)
-    val (newState, actions) = processor.process(initialStateManual, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Off, initialRemoteState))
-    )
-    assertEquals(actions, stub.actionsToReturn)
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, Switch.On)
     assertEquals(newState.heater.lastTimeHot, Some(now))
-    assertEquals(newState.heater.status, stub.stateToReturn)
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
+    val expectedActions = Set(
+      Action.SendMqttStringMessage("dummy/topic", "Off"),
+      Action.Periodic(
+        "heater-processor-command",
+        Action.SendMqttStringMessage("dummy/topic", "Off"),
+        scala.concurrent.duration.DurationInt(20).seconds
+      ),
+      Action.SetOpenHabItemValue(dummyConfig.lastTimeHotItem, now.toString)
+    )
+    assertEquals(actions, expectedActions)
   }
 
   test(
-    "HeaterManagementAutomaticChanged(Switch.Off) applies last command received"
+    "HeaterIsHotReported(Off) sets isHot, sends last user command and no UI update"
   ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Power1000)
-    val stateWithLastCmd = initialStateManual
-      .modify(_.heater.lastCommandReceived)
-      .setTo(Some(RemoteHeaterPowerStatus.Power1000))
-    val processor = HeaterProcessor(stub)
-    val event = HeaterManagementAutomaticChanged(Switch.Off)
-    val (newState, actions) = processor.process(stateWithLastCmd, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Power1000, initialRemoteState))
+    val initialState = stateWithHeater(
+      isHot = Switch.On,
+      lastCommandReceived = Some(HeaterSignal.SetPower500)
     )
-    assertEquals(actions, stub.actionsToReturn)
-    assertEquals(newState.heater.heaterManagementAutomatic, Switch.Off)
-    assertEquals(newState.heater.status, stub.stateToReturn)
-  }
-
-  private val initialStateAutomatic = State(
-    heater = State.Heater(
-      status = initialRemoteState,
-      isHot = Switch.Off,
-      lastTimeHot = None,
-      energyToday = 0.0f,
-      heaterManagementAutomatic = Switch.On,
-      lastCommandReceived = None
-    )
-  )
-
-  test(
-    "HeaterPowerCommandChanged in automatic mode stores command but does not apply it"
-  ) {
-    val stub = new StubManager
-    val processor = HeaterProcessor(stub)
-    val event = HeaterPowerCommandChanged(RemoteHeaterPowerStatus.Power500)
-    val (newState, actions) =
-      processor.process(initialStateAutomatic, event, now)
-    assertEquals(
-      stub.calledWith,
-      None,
-      "RemoteStateActionManager should not be called"
-    )
-    assertEquals(actions, Set.empty, "No actions should be produced")
-    assertEquals(
-      newState.heater.lastCommandReceived,
-      Some(RemoteHeaterPowerStatus.Power500)
-    )
-    assertEquals(newState.heater.status, initialRemoteState)
-  }
-
-  test(
-    "HeaterIsHotReported(Switch.Off) in automatic mode turns heater off"
-  ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Off)
-    val processor = HeaterProcessor(stub)
     val event = HeaterIsHotReported(Switch.Off)
-    val (newState, actions) =
-      processor.process(initialStateAutomatic, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Off, initialRemoteState))
-    )
-    assertEquals(actions, stub.actionsToReturn)
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, Switch.Off)
-    assertEquals(newState.heater.status, stub.stateToReturn)
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power500))
+    val expectedActions = Set(
+      Action.SendMqttStringMessage("dummy/topic", "Power500"),
+      Action.Periodic(
+        "heater-processor-command",
+        Action.SendMqttStringMessage("dummy/topic", "Power500"),
+        scala.concurrent.duration.DurationInt(20).seconds
+      )
+    )
+    assertEquals(actions, expectedActions)
   }
 
-  test(
-    "HeaterIsHotReported(Switch.On) in automatic mode turns heater off and marks as hot"
-  ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Off)
-    val processor = HeaterProcessor(stub)
-    val event = HeaterIsHotReported(Switch.On)
-    val (newState, actions) =
-      processor.process(initialStateAutomatic, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Off, initialRemoteState))
+  test("StartupEvent sends last user command or Off if none") {
+    val initialState =
+      stateWithHeater(lastCommandReceived = Some(HeaterSignal.SetPower2000))
+    val processor = HeaterProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      calespiga.model.Event.System.StartupEvent,
+      now
     )
-    assertEquals(actions, stub.actionsToReturn)
-    assertEquals(newState.heater.isHot, Switch.On)
-    assertEquals(newState.heater.lastTimeHot, Some(now))
-    assertEquals(newState.heater.status, stub.stateToReturn)
-  }
-
-  test(
-    "HeaterManagementAutomaticChanged(Switch.On) turns heater off and sets automatic mode"
-  ) {
-    val stub = new StubManager
-    stub.stateToReturn =
-      initialRemoteState.copy(confirmed = RemoteHeaterPowerStatus.Off)
-    val processor = HeaterProcessor(stub)
-    val event = HeaterManagementAutomaticChanged(Switch.On)
-    val (newState, actions) = processor.process(initialStateManual, event, now)
-    assertEquals(
-      stub.calledWith,
-      Some((RemoteHeaterPowerStatus.Off, initialRemoteState))
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power2000))
+    assertEquals(newState.heater.lastChange, Some(now))
+    val expectedActions = Set(
+      Action.SendMqttStringMessage("dummy/topic", "Power2000"),
+      Action.Periodic(
+        "heater-processor-command",
+        Action.SendMqttStringMessage("dummy/topic", "Power2000"),
+        scala.concurrent.duration.DurationInt(20).seconds
+      )
     )
-    assertEquals(actions, stub.actionsToReturn)
-    assertEquals(newState.heater.heaterManagementAutomatic, Switch.On)
-    assertEquals(newState.heater.status, stub.stateToReturn)
+    assertEquals(actions, expectedActions)
   }
 }

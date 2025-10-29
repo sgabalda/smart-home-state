@@ -69,8 +69,8 @@ final case class OfflineDetectorConfig(
 final case class HeaterConfig(
     mqttTopicForCommand: String,
     statusItem: String,
-    powerItem: String,
     lastTimeHotItem: String,
     energyTodayItem: String,
-    inconsistencyUIItem: String
+    resendInterval: FiniteDuration,
+    id: String
 ) derives ConfigReader
