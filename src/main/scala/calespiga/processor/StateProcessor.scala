@@ -20,6 +20,19 @@ object StateProcessor {
         eventData: EventData,
         timestamp: Instant
     ): (State, Set[Action])
+
+    def andThen(next: SingleProcessor): SingleProcessor = new SingleProcessor {
+      def process(
+          state: State,
+          eventData: EventData,
+          timestamp: Instant
+      ): (State, Set[Action]) = {
+        val (newState, newActions) = this.process(state, eventData, timestamp)
+        val (nextState, nextActions) =
+          next.process(newState, eventData, timestamp)
+        (nextState, newActions ++ nextActions)
+      }
+    }
   }
 
   private final case class Impl(

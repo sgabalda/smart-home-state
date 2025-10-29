@@ -72,5 +72,6 @@ final case class HeaterConfig(
     lastTimeHotItem: String,
     energyTodayItem: String,
     resendInterval: FiniteDuration,
-    id: String
+    id: String,
+    onlineStatusItem: String
 ) derives ConfigReader

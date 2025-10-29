@@ -1,4 +1,4 @@
-package calespiga.processor
+package calespiga.processor.heater
 
 import calespiga.model.{State, Action, Event}
 import java.time.Instant
@@ -17,6 +17,7 @@ import calespiga.model.Switch.On
 import calespiga.model.Switch.Off
 import calespiga.model.Event.Heater
 import java.time.ZoneId
+import calespiga.processor.StateProcessor
 
 object HeaterProcessor {
 

@@ -1,4 +1,4 @@
-package calespiga.processor
+package calespiga.processor.heater
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Switch}
@@ -22,7 +22,8 @@ class HeaterProcessorSuite extends FunSuite {
     energyTodayItem = "dummy/energyToday",
     statusItem = "dummy/status",
     resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
-    id = "heater-processor"
+    id = "heater-processor",
+    onlineStatusItem = "dummyStatusItem"
   )
 
   private def stateWithHeater(
