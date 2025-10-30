@@ -15,7 +15,8 @@ object SyncDetector {
       field2ToCheck: State => T,
       getLastSyncing: State => Option[Instant],
       setLastSyncing: (State, Option[Instant]) => State,
-      statusItem: String
+      statusItem: String,
+      isEventRelevant: Event.EventData => Boolean
   ): SingleProcessor =
     Impl(
       config,
@@ -24,7 +25,8 @@ object SyncDetector {
       field2ToCheck,
       getLastSyncing,
       setLastSyncing,
-      statusItem
+      statusItem,
+      isEventRelevant
     )
 
   private final case class Impl[T](
@@ -34,14 +36,15 @@ object SyncDetector {
       field2ToCheck: State => T,
       getLastSyncing: State => Option[Instant],
       setLastSyncing: (State, Option[Instant]) => State,
-      statusItem: String
+      statusItem: String,
+      isEventRelevant: Event.EventData => Boolean
   ) extends SingleProcessor {
 
     def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
-    ): (State, Set[Action]) = {
+    ): (State, Set[Action]) = if (isEventRelevant(eventData)) {
       val inSync = field1ToCheck(state) == field2ToCheck(state)
 
       if (inSync) {
@@ -69,6 +72,8 @@ object SyncDetector {
             (setLastSyncing(state, Some(timestamp)), actions)
       }
 
+    } else {
+      (state, Set.empty)
     }
   }
 

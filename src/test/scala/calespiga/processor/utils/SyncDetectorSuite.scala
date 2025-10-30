@@ -5,6 +5,7 @@ import calespiga.model.{State, Action, Event}
 import calespiga.config.SyncDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
+import calespiga.model.HeaterSignal
 
 class SyncDetectorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
@@ -30,6 +31,11 @@ class SyncDetectorSuite extends FunSuite {
   def setLastSyncing(state: State, v: Option[Instant]): State =
     state.copy(heater = state.heater.copy(lastSyncing = v))
 
+  def isEventRelevant(eventData: Event.EventData): Boolean = eventData match {
+    case Event.Temperature.BatteryTemperatureMeasured(_) => true
+    case _                                               => false
+  }
+
   val detector = calespiga.processor.SyncDetector(
     config,
     id,
@@ -37,7 +43,8 @@ class SyncDetectorSuite extends FunSuite {
     field2ToCheck,
     getLastSyncing,
     setLastSyncing,
-    statusItem
+    statusItem,
+    isEventRelevant
   )
 
   val dummyEvent = Event.Temperature.BatteryTemperatureMeasured(0.0)
@@ -45,7 +52,6 @@ class SyncDetectorSuite extends FunSuite {
   test(
     "Already in sync: sets SYNC and cancels delayed action, clears lastSyncing"
   ) {
-    import calespiga.model.HeaterSignal
     val state = State().copy(heater =
       State.Heater(
         status = Some(HeaterSignal.Power500),
@@ -65,7 +71,6 @@ class SyncDetectorSuite extends FunSuite {
   test(
     "Not in sync, first time: sets SYNCING, schedules delayed NON_SYNC, sets lastSyncing"
   ) {
-    import calespiga.model.HeaterSignal
     val state = State().copy(heater =
       State.Heater(
         status = Some(HeaterSignal.Power500),
@@ -87,7 +92,6 @@ class SyncDetectorSuite extends FunSuite {
   }
 
   test("Not in sync, already syncing: does nothing") {
-    import calespiga.model.HeaterSignal
     val state = State().copy(heater =
       State.Heater(
         status = Some(HeaterSignal.Power500),
@@ -96,6 +100,20 @@ class SyncDetectorSuite extends FunSuite {
       )
     )
     val (newState, actions) = detector.process(state, dummyEvent, now)
+    assertEquals(newState, state)
+    assertEquals(actions, Set.empty)
+  }
+
+  test("event not relevant: does nothing") {
+    val state = State().copy(heater =
+      State.Heater(
+        status = Some(HeaterSignal.Power1000),
+        lastCommandSent = Some(HeaterSignal.Power1000),
+        lastSyncing = Some(now.minusSeconds(10))
+      )
+    )
+    val anotherEvent = Event.Temperature.BatteryClosetTemperatureMeasured(0.0)
+    val (newState, actions) = detector.process(state, anotherEvent, now)
     assertEquals(newState, state)
     assertEquals(actions, Set.empty)
   }
