@@ -33,7 +33,8 @@ object State {
       lastChange: Option[java.time.Instant] = None,
       isHot: Switch.Status = Switch.Off,
       lastTimeHot: Option[java.time.Instant] = None,
-      energyToday: Float = 0.0f
+      energyToday: Float = 0.0f,
+      lastSyncing: Option[java.time.Instant] = None
   )
 
   case class FeatureFlags(

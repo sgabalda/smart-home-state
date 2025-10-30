@@ -5,7 +5,7 @@ import calespiga.model.Event.EventData
 import java.time.Instant
 
 object FeatureFlagsProcessor {
-  class Impl extends StateProcessor.SingleProcessor {
+  class Impl extends SingleProcessor {
 
     override def process(
         state: State,
@@ -25,5 +25,5 @@ object FeatureFlagsProcessor {
     }
   }
 
-  def apply(): StateProcessor.SingleProcessor = new Impl
+  def apply(): SingleProcessor = new Impl
 }

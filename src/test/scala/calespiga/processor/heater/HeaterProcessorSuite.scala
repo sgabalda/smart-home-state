@@ -23,7 +23,8 @@ class HeaterProcessorSuite extends FunSuite {
     statusItem = "dummy/status",
     resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
     id = "heater-processor",
-    onlineStatusItem = "dummyStatusItem"
+    onlineStatusItem = "dummyStatusItem",
+    syncStatusItem = "dummySyncStatusItem"
   )
 
   private def stateWithHeater(
