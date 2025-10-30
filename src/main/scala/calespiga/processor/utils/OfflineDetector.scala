@@ -11,7 +11,7 @@ object OfflineDetector {
       id: String,
       eventMatcher: Event.EventData => Boolean,
       statusItem: String
-  ): StateProcessor.SingleProcessor =
+  ): SingleProcessor =
     Impl(config, id, eventMatcher, statusItem)
 
   private final case class Impl(
@@ -19,7 +19,7 @@ object OfflineDetector {
       id: String,
       eventMatcher: Event.EventData => Boolean,
       statusItem: String
-  ) extends StateProcessor.SingleProcessor {
+  ) extends SingleProcessor {
 
     def process(
         state: State,

@@ -2,7 +2,6 @@ package calespiga.processor
 
 import calespiga.model.Fixture
 import munit.CatsEffectSuite
-import calespiga.processor.StateProcessor.SingleProcessor
 import calespiga.model.{State, Action}
 import java.time.Instant
 
@@ -41,7 +40,7 @@ class StateProcessorSuite extends CatsEffectSuite {
   ) {
     // Dummy processor that always emits a dummy Action
     val dummyAction = Action.SendMqttStringMessage("topic", "payload")
-    val dummyProcessor = new StateProcessor.SingleProcessor {
+    val dummyProcessor = new SingleProcessor {
       def process(
           state: State,
           eventData: calespiga.model.Event.EventData,
@@ -49,7 +48,7 @@ class StateProcessorSuite extends CatsEffectSuite {
       ) =
         (state, Set(dummyAction))
     }
-    val dummyOffline = new StateProcessor.SingleProcessor {
+    val dummyOffline = new SingleProcessor {
       def process(
           state: State,
           eventData: calespiga.model.Event.EventData,

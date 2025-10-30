@@ -15,7 +15,7 @@ object TemperatureRelatedProcessor {
       batteryFanActionProducer: RemoteSwitchActionProducer,
       electronicsFanActionProducer: RemoteSwitchActionProducer,
       config: calespiga.config.TemperatureRelatedConfig
-  ) extends StateProcessor.SingleProcessor {
+  ) extends SingleProcessor {
 
     def process(
         state: State,
@@ -350,7 +350,7 @@ object TemperatureRelatedProcessor {
 
   def apply(
       temperatureRelatedConfig: calespiga.config.TemperatureRelatedConfig
-  ): StateProcessor.SingleProcessor = {
+  ): SingleProcessor = {
     val batteryFanProducer = RemoteStateActionProducer(
       temperatureRelatedConfig.batteryFanStatusItem,
       temperatureRelatedConfig.batteryFanMqttTopic,
@@ -381,7 +381,7 @@ object TemperatureRelatedProcessor {
       temperatureRelatedConfig: calespiga.config.TemperatureRelatedConfig,
       batteryFanActionProducer: RemoteSwitchActionProducer,
       electronicsFanActionProducer: RemoteSwitchActionProducer
-  ): StateProcessor.SingleProcessor = {
+  ): SingleProcessor = {
     Impl(
       batteryFanActionProducer = batteryFanActionProducer,
       electronicsFanActionProducer = electronicsFanActionProducer,

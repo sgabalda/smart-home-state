@@ -5,15 +5,15 @@ import calespiga.model.Event.EventData
 import java.time.Instant
 import calespiga.model.Action
 
-
 trait SingleProcessor { self =>
-    def process(
-        state: State,
-        eventData: EventData,
-        timestamp: Instant
-    ): (State, Set[Action])
+  def process(
+      state: State,
+      eventData: EventData,
+      timestamp: Instant
+  ): (State, Set[Action])
 
-    final def andThen(next: SingleProcessor): SingleProcessor = new SingleProcessor {
+  final def andThen(next: SingleProcessor): SingleProcessor =
+    new SingleProcessor {
       def process(
           state: State,
           eventData: EventData,
@@ -25,4 +25,4 @@ trait SingleProcessor { self =>
         (nextState, newActions ++ nextActions)
       }
     }
-  }
+}

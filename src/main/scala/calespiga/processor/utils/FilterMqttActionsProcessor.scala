@@ -1,7 +1,7 @@
 package calespiga.processor.utils
 
 import calespiga.model.{Action, State}
-import calespiga.processor.StateProcessor
+import calespiga.processor.SingleProcessor
 import java.time.Instant
 import calespiga.model.Event.EventData
 
@@ -16,9 +16,9 @@ import calespiga.model.Event.EventData
   *   should be filtered
   */
 class FilterMqttActionsProcessor(
-    nested: StateProcessor.SingleProcessor,
+    nested: SingleProcessor,
     shouldFilter: State => Boolean
-) extends StateProcessor.SingleProcessor {
+) extends SingleProcessor {
   override def process(
       state: State,
       eventData: EventData,

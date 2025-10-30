@@ -8,11 +8,11 @@ object OfflineDetectorProcessor {
 
   private val TEMPERATURES_TIMEOUT_ID = "temperatures-offline-timeout"
 
-  def apply(config: OfflineDetectorConfig): StateProcessor.SingleProcessor =
+  def apply(config: OfflineDetectorConfig): SingleProcessor =
     Impl(config)
 
   private final case class Impl(config: OfflineDetectorConfig)
-      extends StateProcessor.SingleProcessor {
+      extends SingleProcessor {
 
     def process(
         state: State,

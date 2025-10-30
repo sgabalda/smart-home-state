@@ -3,14 +3,13 @@ package calespiga.processor.utils
 import munit.FunSuite
 import calespiga.model.{Action, State}
 import calespiga.model.Event.EventData
-import calespiga.processor.StateProcessor
+import calespiga.processor.SingleProcessor
 import java.time.Instant
 
 class FilterMqttActionsProcessorSuite extends FunSuite {
 
   // Dummy processor that always returns the given actions
-  class DummyProcessor(actionsToReturn: Set[Action])
-      extends StateProcessor.SingleProcessor {
+  class DummyProcessor(actionsToReturn: Set[Action]) extends SingleProcessor {
     override def process(
         state: State,
         eventData: EventData,

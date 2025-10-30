@@ -17,14 +17,14 @@ import calespiga.model.Switch.On
 import calespiga.model.Switch.Off
 import calespiga.model.Event.Heater
 import java.time.ZoneId
-import calespiga.processor.StateProcessor
+import calespiga.processor.SingleProcessor
 
 object HeaterProcessor {
 
   val COMMAND_ACTION_SUFFIX = "-command"
 
   private final case class Impl(config: HeaterConfig, zone: ZoneId)
-      extends StateProcessor.SingleProcessor {
+      extends SingleProcessor {
 
     private object Actions {
       private def commandAction(command: HeaterSignal.ControllerState) =
@@ -157,7 +157,7 @@ object HeaterProcessor {
   def apply(
       config: HeaterConfig,
       zone: ZoneId
-  ): StateProcessor.SingleProcessor = Impl(
+  ): SingleProcessor = Impl(
     config,
     zone
   )

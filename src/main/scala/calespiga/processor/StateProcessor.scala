@@ -1,8 +1,6 @@
 package calespiga.processor
 
 import calespiga.model.{Action, Event, State}
-import java.time.Instant
-import calespiga.model.Event.EventData
 import calespiga.processor.utils.FilterMqttActionsProcessor
 
 trait StateProcessor {

@@ -16,8 +16,16 @@ object SyncDetector {
       getLastSyncing: State => Option[Instant],
       setLastSyncing: (State, Option[Instant]) => State,
       statusItem: String
-  ): StateProcessor.SingleProcessor =
-    Impl(config, id + ID_SUFFIX, field1ToCheck, field2ToCheck, getLastSyncing, setLastSyncing, statusItem)
+  ): SingleProcessor =
+    Impl(
+      config,
+      id + ID_SUFFIX,
+      field1ToCheck,
+      field2ToCheck,
+      getLastSyncing,
+      setLastSyncing,
+      statusItem
+    )
 
   private final case class Impl[T](
       config: SyncDetectorConfig,
@@ -27,7 +35,7 @@ object SyncDetector {
       getLastSyncing: State => Option[Instant],
       setLastSyncing: (State, Option[Instant]) => State,
       statusItem: String
-  ) extends StateProcessor.SingleProcessor {
+  ) extends SingleProcessor {
 
     def process(
         state: State,
@@ -36,7 +44,7 @@ object SyncDetector {
     ): (State, Set[Action]) = {
       val inSync = field1ToCheck(state) == field2ToCheck(state)
 
-      if(inSync) {
+      if (inSync) {
         val actions = Set(
           Action.SetOpenHabItemValue(statusItem, config.syncText),
           Action.Cancel(
@@ -46,8 +54,8 @@ object SyncDetector {
         (setLastSyncing(state, None), actions)
       } else {
         getLastSyncing(state) match
-          case Some(value) => 
-            //do nothing as the actions were already set
+          case Some(value) =>
+            // do nothing as the actions were already set
             (state, Set.empty)
           case None =>
             val actions = Set(
@@ -60,7 +68,7 @@ object SyncDetector {
             )
             (setLastSyncing(state, Some(timestamp)), actions)
       }
-      
+
     }
   }
 
