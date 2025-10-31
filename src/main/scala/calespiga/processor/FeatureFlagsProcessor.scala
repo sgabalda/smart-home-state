@@ -20,6 +20,14 @@ object FeatureFlagsProcessor {
           ),
           Set.empty
         )
+      case Event.FeatureFlagEvents.SetHeaterManagement(enable) =>
+        (
+          state.copy(
+            featureFlags =
+              state.featureFlags.copy(heaterManagementEnabled = enable)
+          ),
+          Set.empty
+        )
       case _ =>
         (state, Set.empty)
     }

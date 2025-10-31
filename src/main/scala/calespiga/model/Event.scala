@@ -34,6 +34,9 @@ object Event {
 
     @InputEventOHItem("VentiladorsHabilitatsSHS")
     case class SetFanManagement(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("CalentadorHabilitatsSHS")
+    case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {

@@ -3,7 +3,6 @@ package calespiga.processor
 import calespiga.model.Fixture
 import munit.CatsEffectSuite
 import calespiga.model.{State, Action}
-import java.time.Instant
 
 class StateProcessorSuite extends CatsEffectSuite {
 
@@ -19,9 +18,15 @@ class StateProcessorSuite extends CatsEffectSuite {
         }
       val offlineDetectorProcessor: SingleProcessor =
         (state, _, _) => (state, Set.empty)
+      val heaterProcessor: SingleProcessor =
+        (state, _, _) => (state, Set.empty)
 
       val sut =
-        StateProcessor(temperatureRelatedProcessor, offlineDetectorProcessor)
+        StateProcessor(
+          temperatureRelatedProcessor,
+          offlineDetectorProcessor,
+          heaterProcessor
+        )
       assertEquals(
         sut.process(Fixture.state, event),
         (Fixture.state, Set.empty),
@@ -40,23 +45,17 @@ class StateProcessorSuite extends CatsEffectSuite {
   ) {
     // Dummy processor that always emits a dummy Action
     val dummyAction = Action.SendMqttStringMessage("topic", "payload")
-    val dummyProcessor = new SingleProcessor {
-      def process(
-          state: State,
-          eventData: calespiga.model.Event.EventData,
-          timestamp: Instant
-      ) =
-        (state, Set(dummyAction))
-    }
-    val dummyOffline = new SingleProcessor {
-      def process(
-          state: State,
-          eventData: calespiga.model.Event.EventData,
-          timestamp: Instant
-      ) =
-        (state, Set.empty)
-    }
-    val processor = StateProcessor.apply(dummyProcessor, dummyOffline)
+    val dummyProcessor: SingleProcessor =
+      (state, _, _) => (state, Set(dummyAction))
+
+    val dummyOffline: SingleProcessor =
+      (state, _, _) => (state, Set.empty)
+
+    val heaterProcessor: SingleProcessor =
+      (state, _, _) => (state, Set.empty)
+
+    val processor =
+      StateProcessor(dummyProcessor, dummyOffline, heaterProcessor)
 
     val event = Fixture.event
 

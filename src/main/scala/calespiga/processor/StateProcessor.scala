@@ -2,6 +2,8 @@ package calespiga.processor
 
 import calespiga.model.{Action, Event, State}
 import calespiga.processor.utils.FilterMqttActionsProcessor
+import calespiga.processor.heater.HeaterProcessor
+import java.time.ZoneId
 
 trait StateProcessor {
   def process(
@@ -30,7 +32,8 @@ object StateProcessor {
 
   def apply(
       temperatureRelatedProcessor: SingleProcessor,
-      offlineDetectorProcessor: SingleProcessor
+      offlineDetectorProcessor: SingleProcessor,
+      heaterProcessor: SingleProcessor
   ): StateProcessor = Impl(
     List(
       FeatureFlagsProcessor(),
@@ -38,7 +41,11 @@ object StateProcessor {
         temperatureRelatedProcessor,
         !_.featureFlags.fanManagementEnabled
       ),
-      offlineDetectorProcessor
+      offlineDetectorProcessor,
+      new FilterMqttActionsProcessor( // filter to be removed when heater is rolled out
+        heaterProcessor,
+        !_.featureFlags.heaterManagementEnabled
+      )
     )
   )
 
@@ -49,7 +56,13 @@ object StateProcessor {
       temperatureRelatedProcessor =
         TemperatureRelatedProcessor(config.temperatureRelated),
       offlineDetectorProcessor =
-        OfflineDetectorProcessor(config.offlineDetector)
+        OfflineDetectorProcessor(config.offlineDetector),
+      heaterProcessor = HeaterProcessor(
+        config.heater,
+        ZoneId.systemDefault(),
+        config.offlineDetector,
+        config.syncDetector
+      )
     )
 
 }
