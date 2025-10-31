@@ -9,7 +9,7 @@ import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
 import java.time.ZoneId
 
-class HeaterProcessorSuite extends FunSuite {
+class HeaterPowerProcessorSuite extends FunSuite {
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
 
@@ -61,7 +61,7 @@ class HeaterProcessorSuite extends FunSuite {
       energyToday = initialEnergy
     )
     val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.status, Some(HeaterSignal.Power1000))
     assertEquals(newState.heater.lastChange, Some(now))
@@ -99,7 +99,7 @@ class HeaterProcessorSuite extends FunSuite {
       energyToday = initialEnergy
     )
     val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState2, actions2) =
       processor.process(initialStateNewDay, event, today)
     assertEqualsDouble(
@@ -126,7 +126,7 @@ class HeaterProcessorSuite extends FunSuite {
   ) {
     val initialState = stateWithHeater()
     val event = HeaterPowerCommandChanged(HeaterSignal.SetPower1000)
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(
       newState.heater.lastCommandReceived,
@@ -137,7 +137,7 @@ class HeaterProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
       Action.Periodic(
-        dummyConfig.id + HeaterProcessor.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + HeaterPowerProcessor.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
         dummyConfig.resendInterval
@@ -151,7 +151,7 @@ class HeaterProcessorSuite extends FunSuite {
   ) {
     val initialState = stateWithHeater(isHot = Switch.Off)
     val event = HeaterIsHotReported(Switch.On)
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, Switch.On)
     assertEquals(newState.heater.lastTimeHot, Some(now))
@@ -176,7 +176,7 @@ class HeaterProcessorSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetPower500)
     )
     val event = HeaterIsHotReported(Switch.Off)
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, Switch.Off)
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power500))
@@ -194,7 +194,7 @@ class HeaterProcessorSuite extends FunSuite {
   test("StartupEvent sends last user command or Off if none") {
     val initialState =
       stateWithHeater(lastCommandReceived = Some(HeaterSignal.SetPower2000))
-    val processor = HeaterProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(
       initialState,
       calespiga.model.Event.System.StartupEvent,

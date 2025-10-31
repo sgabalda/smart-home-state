@@ -60,7 +60,7 @@ object SyncDetector {
           case None =>
             // do nothing as the actions were already set
             (state, Set.empty)
-        
+
       } else {
         getLastSyncing(state) match
           case Some(value) =>
