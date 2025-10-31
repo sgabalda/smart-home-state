@@ -69,6 +69,21 @@ class SyncDetectorSuite extends FunSuite {
   }
 
   test(
+    "Already in sync and no syncing time: do nothing"
+  ) {
+    val state = State().copy(heater =
+      State.Heater(
+        status = Some(HeaterSignal.Power500),
+        lastCommandSent = Some(HeaterSignal.Power500),
+        lastSyncing = None
+      )
+    )
+    val (newState, actions) = detector.process(state, dummyEvent, now)
+    assertEquals(newState, state)
+    assertEquals(actions, Set.empty)
+  }
+
+  test(
     "Not in sync, first time: sets SYNCING, schedules delayed NON_SYNC, sets lastSyncing"
   ) {
     val state = State().copy(heater =

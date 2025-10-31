@@ -6,13 +6,15 @@ import java.time.Instant
 
 object OfflineDetector {
 
+  val ID_SUFFIX = "-offline-detector"
+
   def apply(
       config: OfflineDetectorConfig,
       id: String,
       eventMatcher: Event.EventData => Boolean,
       statusItem: String
   ): SingleProcessor =
-    Impl(config, id, eventMatcher, statusItem)
+    Impl(config, id + ID_SUFFIX, eventMatcher, statusItem)
 
   private final case class Impl(
       config: OfflineDetectorConfig,

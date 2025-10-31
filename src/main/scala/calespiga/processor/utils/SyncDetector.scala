@@ -48,13 +48,19 @@ object SyncDetector {
       val inSync = field1ToCheck(state) == field2ToCheck(state)
 
       if (inSync) {
-        val actions = Set(
-          Action.SetOpenHabItemValue(statusItem, config.syncText),
-          Action.Cancel(
-            id
-          )
-        )
-        (setLastSyncing(state, None), actions)
+        getLastSyncing(state) match
+          case Some(value) =>
+            val actions = Set(
+              Action.SetOpenHabItemValue(statusItem, config.syncText),
+              Action.Cancel(
+                id
+              )
+            )
+            (setLastSyncing(state, None), actions)
+          case None =>
+            // do nothing as the actions were already set
+            (state, Set.empty)
+        
       } else {
         getLastSyncing(state) match
           case Some(value) =>

@@ -18,7 +18,8 @@ class OfflineDetectorSuite extends FunSuite {
     offlineText = "OFFLINE"
   )
 
-  val id = "test-offline-detector"
+  val originalId = "test"
+  val id = originalId + OfflineDetector.ID_SUFFIX
   val statusItem = "TestStatusItem"
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
@@ -29,7 +30,7 @@ class OfflineDetectorSuite extends FunSuite {
     case _                                               => false
   }
 
-  val detector = OfflineDetector(config, id, matcher, statusItem)
+  val detector = OfflineDetector(config, originalId, matcher, statusItem)
 
   test("Matching event sets online and schedules offline") {
     val state = State()
