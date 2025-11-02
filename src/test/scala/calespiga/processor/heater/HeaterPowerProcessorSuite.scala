@@ -74,7 +74,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.SetOpenHabItemValue(
         dummyConfig.energyTodayItem,
-        newState.heater.energyToday.toString
+        newState.heater.energyToday.toInt.toString
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.statusItem,
@@ -112,7 +112,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.SetOpenHabItemValue(
         dummyConfig.energyTodayItem,
-        newState2.heater.energyToday.toString
+        newState2.heater.energyToday.toInt.toString
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.statusItem,
@@ -164,7 +164,10 @@ class HeaterPowerProcessorSuite extends FunSuite {
         Action.SendMqttStringMessage("dummy/topic", "0"),
         scala.concurrent.duration.DurationInt(20).seconds
       ),
-      Action.SetOpenHabItemValue(dummyConfig.lastTimeHotItem, now.toString),
+      Action.SetOpenHabItemValue(
+        dummyConfig.lastTimeHotItem,
+        now.atZone(zone).toLocalDateTime.toString
+      ),
       Action.SetOpenHabItemValue(dummyConfig.isHotItem, true.toString)
     )
     assertEquals(actions, expectedActions)
@@ -188,6 +191,10 @@ class HeaterPowerProcessorSuite extends FunSuite {
         "heater-processor-command",
         Action.SendMqttStringMessage("dummy/topic", "500"),
         scala.concurrent.duration.DurationInt(20).seconds
+      ),
+      Action.SetOpenHabItemValue(
+        dummyConfig.lastTimeHotItem,
+        now.atZone(zone).toLocalDateTime.toString
       ),
       Action.SetOpenHabItemValue(dummyConfig.isHotItem, false.toString)
     )

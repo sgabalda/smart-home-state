@@ -1,38 +1,137 @@
 package calespiga.processor
 
-import munit.FunSuite
-import calespiga.model.State
-import calespiga.model.Event.FeatureFlagEvents.SetFanManagement
+import munit.CatsEffectSuite
+import cats.effect.IO
+import cats.effect.Ref
+import calespiga.model.{State, Event}
 import java.time.Instant
+import com.softwaremill.quicklens.*
+import calespiga.config.FeatureFlagsConfig
 
-class FeatureFlagsProcessorSuite extends FunSuite {
+class FeatureFlagsProcessorSuite extends CatsEffectSuite {
+  val now = Instant.parse("2023-08-17T10:00:00Z")
+  val startupEvent = Event.System.StartupEvent
 
-  private val now = Instant.parse("2023-08-17T10:00:00Z")
+  val dummyConfig = FeatureFlagsConfig(
+    temperaturesMqttTopic = Set("fan/topic1", "fan/topic2"),
+    heaterMqttTopic = Set("heater/topic1", "heater/topic2")
+  )
 
-  test("FeatureFlagsProcessor should set fanManagementEnabled to true") {
-    val initialState = State()
-    val eventData = SetFanManagement(true)
-    val processor = FeatureFlagsProcessor()
-    val (newState, actions) = processor.process(initialState, eventData, now)
-    assertEquals(
-      newState.featureFlags.fanManagementEnabled,
-      true,
-      "fanManagementEnabled should be true"
-    )
-    assertEquals(actions, Set.empty, "No actions should be produced")
+  test("StartupEvent with feature flags false adds blacklist items") {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.fanManagementEnabled)
+        .setTo(false)
+        .modify(_.featureFlags.heaterManagementEnabled)
+        .setTo(false)
+      _ <- processor.process(state, startupEvent, now)
+      blacklist <- blacklistRef.get
+    } yield {
+      assert(blacklist.contains("fan/topic1"))
+      assert(blacklist.contains("fan/topic2"))
+      assert(blacklist.contains("heater/topic1"))
+      assert(blacklist.contains("heater/topic2"))
+    }
   }
 
-  test("FeatureFlagsProcessor should set fanManagementEnabled to false") {
-    val initialState =
-      State(featureFlags = State.FeatureFlags(fanManagementEnabled = true))
-    val eventData = SetFanManagement(false)
-    val processor = FeatureFlagsProcessor()
-    val (newState, actions) = processor.process(initialState, eventData, now)
-    assertEquals(
-      newState.featureFlags.fanManagementEnabled,
-      false,
-      "fanManagementEnabled should be false"
-    )
-    assertEquals(actions, Set.empty, "No actions should be produced")
+  test("StartupEvent with feature flags true does not add blacklist items") {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.fanManagementEnabled)
+        .setTo(true)
+        .modify(_.featureFlags.heaterManagementEnabled)
+        .setTo(true)
+      _ <- processor.process(state, startupEvent, now)
+      blacklist <- blacklistRef.get
+    } yield {
+      assertEquals(blacklist, Set.empty)
+    }
+  }
+  test(
+    "SetFanManagement(false) adds fan topics to blacklist and disables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State().modify(_.featureFlags.fanManagementEnabled).setTo(true)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetFanManagement(false),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      assert(blacklist.contains("fan/topic1"))
+      assert(blacklist.contains("fan/topic2"))
+      assertEquals(newState.featureFlags.fanManagementEnabled, false)
+    }
+  }
+
+  test(
+    "SetFanManagement(true) removes fan topics from blacklist and enables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set("fan/topic1", "fan/topic2"))
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State().modify(_.featureFlags.fanManagementEnabled).setTo(false)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetFanManagement(true),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      assert(!blacklist.contains("fan/topic1"))
+      assert(!blacklist.contains("fan/topic2"))
+      assertEquals(newState.featureFlags.fanManagementEnabled, true)
+    }
+  }
+
+  test(
+    "SetHeaterManagement(false) adds heater topics to blacklist and disables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State().modify(_.featureFlags.heaterManagementEnabled).setTo(true)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetHeaterManagement(false),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      assert(blacklist.contains("heater/topic1"))
+      assert(blacklist.contains("heater/topic2"))
+      assertEquals(newState.featureFlags.heaterManagementEnabled, false)
+    }
+  }
+
+  test(
+    "SetHeaterManagement(true) removes heater topics from blacklist and enables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](
+        Set("heater/topic1", "heater/topic2")
+      )
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.heaterManagementEnabled)
+        .setTo(false)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetHeaterManagement(true),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      assert(!blacklist.contains("heater/topic1"))
+      assert(!blacklist.contains("heater/topic2"))
+      assertEquals(newState.featureFlags.heaterManagementEnabled, true)
+    }
   }
 }

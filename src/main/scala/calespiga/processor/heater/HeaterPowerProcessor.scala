@@ -87,7 +87,7 @@ private object HeaterPowerProcessor {
             val actions: Set[Action] = Set(
               Action.SetOpenHabItemValue(
                 config.energyTodayItem,
-                newEnergyToday.toString
+                newEnergyToday.toInt.toString
               ),
               Action.SetOpenHabItemValue(
                 config.statusItem,
@@ -125,7 +125,7 @@ private object HeaterPowerProcessor {
                   Actions.commandActionWithResend(commandToSend) + Action
                     .SetOpenHabItemValue(
                       config.lastTimeHotItem,
-                      timestamp.toString
+                      timestamp.atZone(zone).toLocalDateTime.toString
                     ) + Action.SetOpenHabItemValue(
                     config.isHotItem,
                     true.toString
@@ -138,12 +138,18 @@ private object HeaterPowerProcessor {
                 val newState = state
                   .modify(_.heater.isHot)
                   .setTo(Off)
+                  .modify(_.heater.lastTimeHot)
+                  .setTo(Some(timestamp))
                   .modify(_.heater.lastCommandSent)
                   .setTo(Some(commandToSend))
 
                 (
                   newState,
                   Actions.commandActionWithResend(commandToSend) + Action
+                    .SetOpenHabItemValue(
+                      config.lastTimeHotItem,
+                      timestamp.atZone(zone).toLocalDateTime.toString
+                    ) + Action
                     .SetOpenHabItemValue(
                       config.isHotItem,
                       false.toString
