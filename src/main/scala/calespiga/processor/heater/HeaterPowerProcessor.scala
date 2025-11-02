@@ -30,7 +30,7 @@ private object HeaterPowerProcessor {
       private def commandAction(command: HeaterSignal.ControllerState) =
         Action.SendMqttStringMessage(
           config.mqttTopicForCommand,
-          command.toString
+          command.power.toString
         )
       private def periodicCommandAction(
           command: HeaterSignal.ControllerState
@@ -89,7 +89,10 @@ private object HeaterPowerProcessor {
                 config.energyTodayItem,
                 newEnergyToday.toString
               ),
-              Action.SetOpenHabItemValue(config.statusItem, status.toString)
+              Action.SetOpenHabItemValue(
+                config.statusItem,
+                status.power.toString
+              )
             )
 
             (newState, actions)
@@ -123,7 +126,10 @@ private object HeaterPowerProcessor {
                     .SetOpenHabItemValue(
                       config.lastTimeHotItem,
                       timestamp.toString
-                    )
+                    ) + Action.SetOpenHabItemValue(
+                    config.isHotItem,
+                    true.toString
+                  )
                 )
               case Off =>
                 val commandToSend = getDefaultCommandToSend(
@@ -135,7 +141,14 @@ private object HeaterPowerProcessor {
                   .modify(_.heater.lastCommandSent)
                   .setTo(Some(commandToSend))
 
-                (newState, Actions.commandActionWithResend(commandToSend))
+                (
+                  newState,
+                  Actions.commandActionWithResend(commandToSend) + Action
+                    .SetOpenHabItemValue(
+                      config.isHotItem,
+                      false.toString
+                    )
+                )
 
       case Event.System.StartupEvent =>
         val commandToSend = getDefaultCommandToSend(

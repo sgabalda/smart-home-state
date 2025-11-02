@@ -20,10 +20,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
     mqttTopicForCommand = "dummy/topic",
     lastTimeHotItem = "dummy/lastTimeHot",
     energyTodayItem = "dummy/energyToday",
-    statusItem = "dummy/status",
+    statusItem = "dummyStatusItem",
+    isHotItem = "dummyIsHotItem",
     resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
     id = "heater-processor",
-    onlineStatusItem = "dummyStatusItem",
+    onlineStatusItem = "dummyOnlineStatusItem",
     syncStatusItem = "dummySyncStatusItem"
   )
 
@@ -77,7 +78,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.statusItem,
-        HeaterSignal.Power1000.toString
+        HeaterSignal.Power1000.power.toString
       )
     )
     assertEquals(actions, expectedActions)
@@ -115,7 +116,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.statusItem,
-        HeaterSignal.Power1000.toString
+        HeaterSignal.Power1000.power.toString
       )
     )
     assertEquals(actions2, expectedActions)
@@ -135,11 +136,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power1000))
     val expectedActions = Set(
       Action
-        .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
+        .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
       Action.Periodic(
         dummyConfig.id + HeaterPowerProcessor.COMMAND_ACTION_SUFFIX,
         Action
-          .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "Power1000"),
+          .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
         dummyConfig.resendInterval
       )
     )
@@ -157,13 +158,14 @@ class HeaterPowerProcessorSuite extends FunSuite {
     assertEquals(newState.heater.lastTimeHot, Some(now))
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
     val expectedActions = Set(
-      Action.SendMqttStringMessage("dummy/topic", "Off"),
+      Action.SendMqttStringMessage("dummy/topic", "0"),
       Action.Periodic(
         "heater-processor-command",
-        Action.SendMqttStringMessage("dummy/topic", "Off"),
+        Action.SendMqttStringMessage("dummy/topic", "0"),
         scala.concurrent.duration.DurationInt(20).seconds
       ),
-      Action.SetOpenHabItemValue(dummyConfig.lastTimeHotItem, now.toString)
+      Action.SetOpenHabItemValue(dummyConfig.lastTimeHotItem, now.toString),
+      Action.SetOpenHabItemValue(dummyConfig.isHotItem, true.toString)
     )
     assertEquals(actions, expectedActions)
   }
@@ -181,12 +183,13 @@ class HeaterPowerProcessorSuite extends FunSuite {
     assertEquals(newState.heater.isHot, Switch.Off)
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power500))
     val expectedActions = Set(
-      Action.SendMqttStringMessage("dummy/topic", "Power500"),
+      Action.SendMqttStringMessage("dummy/topic", "500"),
       Action.Periodic(
         "heater-processor-command",
-        Action.SendMqttStringMessage("dummy/topic", "Power500"),
+        Action.SendMqttStringMessage("dummy/topic", "500"),
         scala.concurrent.duration.DurationInt(20).seconds
-      )
+      ),
+      Action.SetOpenHabItemValue(dummyConfig.isHotItem, false.toString)
     )
     assertEquals(actions, expectedActions)
   }
@@ -203,10 +206,10 @@ class HeaterPowerProcessorSuite extends FunSuite {
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power2000))
     assertEquals(newState.heater.lastChange, Some(now))
     val expectedActions = Set(
-      Action.SendMqttStringMessage("dummy/topic", "Power2000"),
+      Action.SendMqttStringMessage("dummy/topic", "2000"),
       Action.Periodic(
         "heater-processor-command",
-        Action.SendMqttStringMessage("dummy/topic", "Power2000"),
+        Action.SendMqttStringMessage("dummy/topic", "2000"),
         scala.concurrent.duration.DurationInt(20).seconds
       )
     )

@@ -77,6 +77,7 @@ final case class SyncDetectorConfig(
 final case class HeaterConfig(
     mqttTopicForCommand: String,
     statusItem: String,
+    isHotItem: String,
     lastTimeHotItem: String,
     energyTodayItem: String,
     resendInterval: FiniteDuration,

@@ -26,12 +26,12 @@ object HeaterSignal {
     }
 
   def userCommandFromString(str: String): Either[String, UserCommand] =
-    str match
-      case "Off"       => Right(TurnOff)
-      case "Automatic" => Right(SetAutomatic)
-      case "Power500"  => Right(SetPower500)
-      case "Power1000" => Right(SetPower1000)
-      case "Power2000" => Right(SetPower2000)
+    str.toLowerCase match
+      case "off"       => Right(TurnOff)
+      case "automatic" => Right(SetAutomatic)
+      case "500"       => Right(SetPower500)
+      case "1000"      => Right(SetPower1000)
+      case "2000"      => Right(SetPower2000)
       case other       => Left(s"Invalid UserCommand: $other")
 
   sealed trait ControllerState {
@@ -53,9 +53,9 @@ object HeaterSignal {
   implicit val controllerStateEncoder: Encoder[ControllerState] =
     Encoder.instance {
       case Off       => Json.fromString("Off")
-      case Power500  => Json.fromString("Power500")
-      case Power1000 => Json.fromString("Power1000")
-      case Power2000 => Json.fromString("Power2000")
+      case Power500  => Json.fromString("500")
+      case Power1000 => Json.fromString("1000")
+      case Power2000 => Json.fromString("2000")
     }
 
   implicit val controllerStateDecoder: Decoder[ControllerState] =
@@ -64,11 +64,11 @@ object HeaterSignal {
     }
 
   def controllerStateFromString(str: String): Either[String, ControllerState] =
-    str match
-      case "Off"       => Right(Off)
-      case "Power500"  => Right(Power500)
-      case "Power1000" => Right(Power1000)
-      case "Power2000" => Right(Power2000)
-      case other       => Left(s"Invalid ControllerState: $other")
+    str.toLowerCase match
+      case "off"  => Right(Off)
+      case "500"  => Right(Power500)
+      case "1000" => Right(Power1000)
+      case "2000" => Right(Power2000)
+      case other  => Left(s"Invalid ControllerState: $other")
 
 }
