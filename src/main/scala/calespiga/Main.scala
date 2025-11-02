@@ -16,6 +16,7 @@ import calespiga.processor.StateProcessor
 import calespiga.userinput.UserInputManager
 import cats.effect.{IO, IOApp, ResourceIO}
 import fs2.Stream
+import cats.effect.Ref
 
 object Main extends IOApp.Simple {
 
@@ -26,7 +27,8 @@ object Main extends IOApp.Simple {
         UserInputManager,
         Executor,
         StatePersistence,
-        ErrorManager
+        ErrorManager,
+        StateProcessor
     )
 
   private def resources: ResourceIO[Resources] =
@@ -42,6 +44,7 @@ object Main extends IOApp.Simple {
         inputTopicsManager.inputTopicsConversions
       )
       mqttProducer <- Producer(appConfig.mqttConfig)
+      mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       mqttActionToProducer = ActionToMqttProducer(mqttProducer)
       openHabApiClient <- APIClient(appConfig.openHabConfig)
       userInputManager = UserInputManager(openHabApiClient)
@@ -53,13 +56,15 @@ object Main extends IOApp.Simple {
         appConfig.statePersistenceConfig,
         errorManager
       )
+      processor = StateProcessor(appConfig.processor, mqttBlacklist)
     } yield (
       appConfig,
       mqttInputProcessor,
       userInputManager,
       executor,
       statePersistence,
-      errorManager
+      errorManager,
+      processor
     )
 
   def run: IO[Unit] = {
@@ -70,9 +75,9 @@ object Main extends IOApp.Simple {
             userInputManager,
             executor,
             statePersistence,
-            errorManager
+            errorManager,
+            processor
           ) =>
-        val processor = StateProcessor(config.processor)
         Stream
           .eval(statePersistence.loadState.flatMap {
             case Left(value)  => errorManager.manageError(value).as(State())
@@ -98,7 +103,7 @@ object Main extends IOApp.Simple {
                     IO.pure(Some(value))
                 }
                 .evalMapAccumulate(initialState) { case (current, event) =>
-                  IO.pure(processor.process(current, event))
+                  processor.process(current, event)
                 }
                 .evalMap { (state, actions) =>
                   statePersistence

@@ -35,7 +35,8 @@ final case class ProcessorConfig(
     temperatureRelated: TemperatureRelatedConfig,
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
-    heater: HeaterConfig
+    heater: HeaterConfig,
+    featureFlags: FeatureFlagsConfig
 ) derives ConfigReader
 
 final case class TemperatureRelatedConfig(
@@ -85,3 +86,8 @@ final case class HeaterConfig(
     onlineStatusItem: String,
     syncStatusItem: String
 ) derives ConfigReader
+
+final case class FeatureFlagsConfig(
+    temperaturesMqttTopic: Set[String],
+    heaterMqttTopic: Set[String]
+)

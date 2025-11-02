@@ -1,68 +1,58 @@
 package calespiga.processor
 
 import calespiga.model.{Action, Event, State}
-import calespiga.processor.utils.FilterMqttActionsProcessor
 import calespiga.processor.heater.HeaterProcessor
 import java.time.ZoneId
+import cats.effect.IO
+import cats.effect.Ref
 
 trait StateProcessor {
   def process(
       state: State,
       event: Event
-  ): (State, Set[Action])
+  ): IO[(State, Set[Action])]
 }
 
 object StateProcessor {
 
   private final case class Impl(
-      processors: List[SingleProcessor]
+      processors: List[EffectfulProcessor]
   ) extends StateProcessor {
     override def process(
         state: State,
         event: Event
-    ): (State, Set[Action]) = {
-      processors.foldLeft((state, Set.empty[Action])) {
-        case ((currentState, currentActions), processor) =>
-          val (newState, newActions) =
-            processor.process(currentState, event.data, event.timestamp)
-          (newState, currentActions ++ newActions)
+    ): IO[(State, Set[Action])] = {
+      processors.foldLeft(IO((state, Set.empty[Action]))) {
+        case (acc, processor) =>
+          acc.flatMap { case (currentState, currentActions) =>
+            processor.process(currentState, event.data, event.timestamp).map {
+              case (newState, newActions) =>
+                (newState, currentActions ++ newActions)
+            }
+          }
+
       }
     }
   }
 
   def apply(
-      temperatureRelatedProcessor: SingleProcessor,
-      offlineDetectorProcessor: SingleProcessor,
-      heaterProcessor: SingleProcessor
-  ): StateProcessor = Impl(
-    List(
-      FeatureFlagsProcessor(),
-      new FilterMqttActionsProcessor( // filter to be removed when fans are rolled out
-        temperatureRelatedProcessor,
-        !_.featureFlags.fanManagementEnabled
-      ),
-      offlineDetectorProcessor,
-      new FilterMqttActionsProcessor( // filter to be removed when heater is rolled out
-        heaterProcessor,
-        !_.featureFlags.heaterManagementEnabled
-      )
-    )
-  )
+      processors: EffectfulProcessor*
+  ): StateProcessor = Impl(processors.toList)
 
   def apply(
-      config: calespiga.config.ProcessorConfig
+      config: calespiga.config.ProcessorConfig,
+      mqttBlacklist: Ref[IO, Set[String]]
   ): StateProcessor =
     this.apply(
-      temperatureRelatedProcessor =
-        TemperatureRelatedProcessor(config.temperatureRelated),
-      offlineDetectorProcessor =
-        OfflineDetectorProcessor(config.offlineDetector),
-      heaterProcessor = HeaterProcessor(
+      TemperatureRelatedProcessor(config.temperatureRelated).toEffectful,
+      OfflineDetectorProcessor(config.offlineDetector).toEffectful,
+      HeaterProcessor(
         config.heater,
         ZoneId.systemDefault(),
         config.offlineDetector,
         config.syncDetector
-      )
+      ).toEffectful,
+      FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
 
 }

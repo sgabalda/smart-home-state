@@ -1,81 +1,64 @@
 package calespiga.processor
 
-import calespiga.model.Fixture
 import munit.CatsEffectSuite
-import calespiga.model.{State, Action}
+import cats.effect.IO
+import com.softwaremill.quicklens.*
 
 class StateProcessorSuite extends CatsEffectSuite {
+  import calespiga.model.{State, Action, Event}
+  import java.time.Instant
 
-  test(
-    "Events of type TemperatureRelated are forwarded to the provided TemperatureRelatedProcessor"
-  ) {
-    Fixture.allEvents.foreach { event =>
-      var executed = false
-      val temperatureRelatedProcessor: SingleProcessor =
-        (state, _, _) => {
-          executed = true
-          (state, Set.empty)
-        }
-      val offlineDetectorProcessor: SingleProcessor =
-        (state, _, _) => (state, Set.empty)
-      val heaterProcessor: SingleProcessor =
-        (state, _, _) => (state, Set.empty)
+  val now = Instant.parse("2023-08-17T10:00:00Z")
+  val event = Event.Temperature.BatteryTemperatureMeasured(42.0)
 
-      val sut =
-        StateProcessor(
-          temperatureRelatedProcessor,
-          offlineDetectorProcessor,
-          heaterProcessor
-        )
-      assertEquals(
-        sut.process(Fixture.state, event),
-        (Fixture.state, Set.empty),
-        s"Processing event: $event"
-      )
-      assertEquals(
-        executed,
-        true,
-        s"TemperatureRelatedProcessor should be executed for event: $event"
-      )
+  val initialState =
+    State().modify(_.temperatures.batteriesTemperature).setTo(Some(0d))
+  val action1 = Action.SetOpenHabItemValue("item1", "value1")
+  val action2 = Action.SetOpenHabItemValue("item2", "value2")
+  // Dummy processors
+  val processor1 = new EffectfulProcessor {
+    override def process(
+        state: State,
+        eventData: Event.EventData,
+        timestamp: Instant
+    ): IO[(State, Set[Action])] = {
+      if (eventData != event) fail("Event not correct")
+      val newState =
+        state.modify(_.temperatures.batteriesTemperature).setTo(Some(10d))
+      IO.pure((newState, Set(action1)))
+    }
+  }
+  val processor2 = new EffectfulProcessor {
+    override def process(
+        state: State,
+        eventData: Event.EventData,
+        timestamp: Instant
+    ): IO[(State, Set[Action])] = {
+      if (eventData != event) fail("Event not correct")
+      val newState =
+        state.modify(_.temperatures.batteriesTemperature).using(_.map(_ + 5))
+      IO.pure((newState, Set(action2)))
     }
   }
 
-  test(
-    "StateProcessor.apply wraps temperatureRelatedProcessor with filterMqttActionsProcessor based on fanManagementEnabled"
-  ) {
-    // Dummy processor that always emits a dummy Action
-    val dummyAction = Action.SendMqttStringMessage("topic", "payload")
-    val dummyProcessor: SingleProcessor =
-      (state, _, _) => (state, Set(dummyAction))
+  test("Events are forwarded to all the processors") {
 
-    val dummyOffline: SingleProcessor =
-      (state, _, _) => (state, Set.empty)
+    val stateProcessor = StateProcessor(processor1, processor2)
 
-    val heaterProcessor: SingleProcessor =
-      (state, _, _) => (state, Set.empty)
-
-    val processor =
-      StateProcessor(dummyProcessor, dummyOffline, heaterProcessor)
-
-    val event = Fixture.event
-
-    // fanManagementEnabled = false: actions should be filtered (empty)
-    val stateWithFlagFalse =
-      State(featureFlags = State.FeatureFlags(fanManagementEnabled = false))
-    val (_, actionsFiltered) = processor.process(stateWithFlagFalse, event)
-    assert(
-      actionsFiltered.isEmpty,
-      "Actions should be filtered when fanManagementEnabled is false"
-    )
-
-    // fanManagementEnabled = true: actions should pass through
-    val stateWithFlagTrue =
-      State(featureFlags = State.FeatureFlags(fanManagementEnabled = true))
-    val (_, actionsPassed) = processor.process(stateWithFlagTrue, event)
-    assert(
-      actionsPassed.contains(dummyAction),
-      "Actions should pass when fanManagementEnabled is true"
-    )
+    stateProcessor.process(initialState, Event(now, event)).map {
+      case (_, actions) =>
+        // Both processors should have received the event and produced their actions
+        assertEquals(actions, Set[Action](action1, action2))
+    }
   }
 
+  test("the State is modified by all the processors, in the given order ") {
+    val stateProcessor = StateProcessor(processor1, processor2)
+
+    stateProcessor.process(initialState, Event(now, event)).map {
+      case (finalState, actions) =>
+        // State should reflect both changes, in order
+        assertEquals(finalState.temperatures.batteriesTemperature, Some(15d))
+    }
+  }
 }
