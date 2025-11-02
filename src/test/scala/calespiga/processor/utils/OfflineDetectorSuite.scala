@@ -10,6 +10,11 @@ import scala.concurrent.duration._
 
 class OfflineDetectorSuite extends FunSuite {
 
+  val originalId = "test"
+  val id = originalId + OfflineDetector.ID_SUFFIX
+  val statusItem = "TestStatusItem"
+  val now = Instant.parse("2023-08-17T10:00:00Z")
+
   // Dummy config for testing
   val config = OfflineDetectorConfig(
     timeoutDuration = 30.seconds,
@@ -17,11 +22,6 @@ class OfflineDetectorSuite extends FunSuite {
     onlineText = "ONLINE",
     offlineText = "OFFLINE"
   )
-
-  val originalId = "test"
-  val id = originalId + OfflineDetector.ID_SUFFIX
-  val statusItem = "TestStatusItem"
-  val now = Instant.parse("2023-08-17T10:00:00Z")
 
   // Use an existing event type for matching, e.g. BatteryTemperatureMeasured
   val matchingEvent = Event.Temperature.BatteryTemperatureMeasured(42.0)
