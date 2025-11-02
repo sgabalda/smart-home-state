@@ -112,7 +112,7 @@ object Event {
 
     @InputEventMqtt("arduino_calentador/termostat/status")
     case class HeaterIsHotReported(
-        status: Switch.Status
+        status: HeaterSignal.HeaterTermostateState
     ) extends HeaterData
   }
 }

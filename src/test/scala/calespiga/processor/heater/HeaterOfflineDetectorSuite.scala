@@ -5,6 +5,7 @@ import calespiga.model.{State, Action, Event}
 import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
+import calespiga.model.HeaterSignal
 
 class HeaterOfflineDetectorSuite extends FunSuite {
   val config = OfflineDetectorConfig(
@@ -21,7 +22,7 @@ class HeaterOfflineDetectorSuite extends FunSuite {
 
   test("HeaterIsHotReported sets online and schedules offline") {
     val state = State()
-    val event = Event.Heater.HeaterIsHotReported(calespiga.model.Switch.On)
+    val event = Event.Heater.HeaterIsHotReported(HeaterSignal.Hot)
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions = Set(
       Action.SetOpenHabItemValue(statusItem, config.onlineText),

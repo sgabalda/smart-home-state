@@ -71,4 +71,26 @@ object HeaterSignal {
       case "2000" => Right(Power2000)
       case other  => Left(s"Invalid ControllerState: $other")
 
+  sealed trait HeaterTermostateState
+  case object Hot extends HeaterTermostateState
+  case object Cold extends HeaterTermostateState
+
+  implicit val heaterTermostateStateEncoder: Encoder[HeaterTermostateState] =
+    Encoder.instance {
+      case Hot  => Json.fromString("HOT")
+      case Cold => Json.fromString("COLD")
+    }
+
+  def heaterTermostateStateFromString(
+      str: String
+  ): Either[String, HeaterTermostateState] =
+    str.toUpperCase match
+      case "HOT"  => Right(Hot)
+      case "COLD" => Right(Cold)
+      case other  => Left(s"Invalid HeaterTermostateState: $other")
+
+  implicit val heaterTermostateStateDecoder: Decoder[HeaterTermostateState] =
+    Decoder.decodeString.emap {
+      heaterTermostateStateFromString
+    }
 }

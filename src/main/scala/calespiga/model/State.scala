@@ -31,7 +31,7 @@ object State {
       lastCommandSent: Option[HeaterSignal.ControllerState] = None,
       lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
       lastChange: Option[java.time.Instant] = None,
-      isHot: Switch.Status = Switch.Off,
+      isHot: HeaterSignal.HeaterTermostateState = HeaterSignal.Cold,
       lastTimeHot: Option[java.time.Instant] = None,
       energyToday: Float = 0.0f,
       lastSyncing: Option[java.time.Instant] = None

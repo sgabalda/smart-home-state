@@ -1,13 +1,14 @@
 package calespiga.processor.heater
 
 import munit.FunSuite
-import calespiga.model.{State, Action, Switch}
+import calespiga.model.{State, Action}
 import calespiga.model.Event.Heater.*
 import calespiga.model.HeaterSignal
 import java.time.Instant
 import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
 import java.time.ZoneId
+import calespiga.model.State.Heater
 
 class HeaterPowerProcessorSuite extends FunSuite {
 
@@ -33,7 +34,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       lastCommandSent: Option[HeaterSignal.ControllerState] = None,
       lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
       lastChange: Option[Instant] = None,
-      isHot: Switch.Status = Switch.Off,
+      isHot: HeaterSignal.HeaterTermostateState = HeaterSignal.Cold,
       lastTimeHot: Option[Instant] = None,
       energyToday: Float = 0.0f
   ): State =
@@ -150,11 +151,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
   test(
     "HeaterIsHotReported(On) sets isHot, lastTimeHot, sends Off command and UI update"
   ) {
-    val initialState = stateWithHeater(isHot = Switch.Off)
-    val event = HeaterIsHotReported(Switch.On)
+    val initialState = stateWithHeater(isHot = HeaterSignal.Cold)
+    val event = HeaterIsHotReported(HeaterSignal.Hot)
     val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
-    assertEquals(newState.heater.isHot, Switch.On)
+    assertEquals(newState.heater.isHot, HeaterSignal.Hot)
     assertEquals(newState.heater.lastTimeHot, Some(now))
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
     val expectedActions = Set(
@@ -166,9 +167,12 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.toString
+        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
       ),
-      Action.SetOpenHabItemValue(dummyConfig.isHotItem, true.toString)
+      Action.SetOpenHabItemValue(
+        dummyConfig.isHotItem,
+        HeaterSignal.Hot.toString
+      )
     )
     assertEquals(actions, expectedActions)
   }
@@ -177,13 +181,13 @@ class HeaterPowerProcessorSuite extends FunSuite {
     "HeaterIsHotReported(Off) sets isHot, sends last user command and no UI update"
   ) {
     val initialState = stateWithHeater(
-      isHot = Switch.On,
+      isHot = HeaterSignal.Hot,
       lastCommandReceived = Some(HeaterSignal.SetPower500)
     )
-    val event = HeaterIsHotReported(Switch.Off)
+    val event = HeaterIsHotReported(HeaterSignal.Cold)
     val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
-    assertEquals(newState.heater.isHot, Switch.Off)
+    assertEquals(newState.heater.isHot, HeaterSignal.Cold)
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power500))
     val expectedActions = Set(
       Action.SendMqttStringMessage("dummy/topic", "500"),
@@ -194,9 +198,12 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetOpenHabItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.toString
+        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
       ),
-      Action.SetOpenHabItemValue(dummyConfig.isHotItem, false.toString)
+      Action.SetOpenHabItemValue(
+        dummyConfig.isHotItem,
+        HeaterSignal.Cold.toString
+      )
     )
     assertEquals(actions, expectedActions)
   }

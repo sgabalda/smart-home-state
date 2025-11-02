@@ -2,6 +2,7 @@ package calespiga.mqtt.annotations
 
 import scala.quoted.*
 import calespiga.model.Event.EventData
+import calespiga.model.HeaterSignal
 
 object InputTopicMapper {
 
@@ -94,13 +95,20 @@ object InputTopicMapper {
                 calespiga.model.Switch.statusFromString(valueStr)
               }
               getNewExpr(convertedValueExpr)
+            case tpe if tpe =:= TypeRepr.of[HeaterSignal.ControllerState] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                HeaterSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(HeaterSignal.Off)
+              }
+              getNewExpr(convertedValueExpr)
             case tpe
                 if tpe =:= TypeRepr
-                  .of[calespiga.model.HeaterSignal.ControllerState] =>
+                  .of[HeaterSignal.HeaterTermostateState] =>
               val convertedValueExpr = '{ (valueStr: String) =>
-                calespiga.model.HeaterSignal
-                  .controllerStateFromString(valueStr)
-                  .getOrElse(calespiga.model.HeaterSignal.Off)
+                HeaterSignal
+                  .heaterTermostateStateFromString(valueStr)
+                  .getOrElse(HeaterSignal.Cold)
               }
               getNewExpr(convertedValueExpr)
 

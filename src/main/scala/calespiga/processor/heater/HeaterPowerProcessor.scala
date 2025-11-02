@@ -13,15 +13,15 @@ import calespiga.model.HeaterSignal.SetPower1000
 import calespiga.model.HeaterSignal.SetPower2000
 import calespiga.model.HeaterSignal
 import com.softwaremill.quicklens.*
-import calespiga.model.Switch.On
-import calespiga.model.Switch.Off
 import calespiga.model.Event.Heater
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
+import java.time.format.DateTimeFormatter
 
 private object HeaterPowerProcessor {
 
   val COMMAND_ACTION_SUFFIX = "-command"
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   private final case class Impl(config: HeaterConfig, zone: ZoneId)
       extends SingleProcessor {
@@ -109,52 +109,56 @@ private object HeaterPowerProcessor {
             (newState, Actions.commandActionWithResend(commandToSend))
 
           case HeaterIsHotReported(status) =>
-            status match
-              case On =>
-                val commandToSend = HeaterSignal.Off
-                val newState = state
-                  .modify(_.heater.isHot)
-                  .setTo(On)
-                  .modify(_.heater.lastTimeHot)
-                  .setTo(Some(timestamp))
-                  .modify(_.heater.lastCommandSent)
-                  .setTo(Some(commandToSend))
+            if (status != state.heater.isHot) {
+              status match
+                case HeaterSignal.Hot =>
+                  val commandToSend = HeaterSignal.Off
+                  val newState = state
+                    .modify(_.heater.isHot)
+                    .setTo(HeaterSignal.Hot)
+                    .modify(_.heater.lastTimeHot)
+                    .setTo(Some(timestamp))
+                    .modify(_.heater.lastCommandSent)
+                    .setTo(Some(commandToSend))
 
-                (
-                  newState,
-                  Actions.commandActionWithResend(commandToSend) + Action
-                    .SetOpenHabItemValue(
-                      config.lastTimeHotItem,
-                      timestamp.atZone(zone).toLocalDateTime.toString
-                    ) + Action.SetOpenHabItemValue(
-                    config.isHotItem,
-                    true.toString
-                  )
-                )
-              case Off =>
-                val commandToSend = getDefaultCommandToSend(
-                  state.heater.lastCommandReceived.getOrElse(TurnOff)
-                )
-                val newState = state
-                  .modify(_.heater.isHot)
-                  .setTo(Off)
-                  .modify(_.heater.lastTimeHot)
-                  .setTo(Some(timestamp))
-                  .modify(_.heater.lastCommandSent)
-                  .setTo(Some(commandToSend))
-
-                (
-                  newState,
-                  Actions.commandActionWithResend(commandToSend) + Action
-                    .SetOpenHabItemValue(
-                      config.lastTimeHotItem,
-                      timestamp.atZone(zone).toLocalDateTime.toString
-                    ) + Action
-                    .SetOpenHabItemValue(
+                  (
+                    newState,
+                    Actions.commandActionWithResend(commandToSend) + Action
+                      .SetOpenHabItemValue(
+                        config.lastTimeHotItem,
+                        timestamp.atZone(zone).toLocalDateTime.format(formatter)
+                      ) + Action.SetOpenHabItemValue(
                       config.isHotItem,
-                      false.toString
+                      HeaterSignal.Hot.toString
                     )
-                )
+                  )
+                case HeaterSignal.Cold =>
+                  val commandToSend = getDefaultCommandToSend(
+                    state.heater.lastCommandReceived.getOrElse(TurnOff)
+                  )
+                  val newState = state
+                    .modify(_.heater.isHot)
+                    .setTo(HeaterSignal.Cold)
+                    .modify(_.heater.lastTimeHot)
+                    .setTo(Some(timestamp))
+                    .modify(_.heater.lastCommandSent)
+                    .setTo(Some(commandToSend))
+
+                  (
+                    newState,
+                    Actions.commandActionWithResend(commandToSend) + Action
+                      .SetOpenHabItemValue(
+                        config.lastTimeHotItem,
+                        timestamp.atZone(zone).toLocalDateTime.format(formatter)
+                      ) + Action
+                      .SetOpenHabItemValue(
+                        config.isHotItem,
+                        HeaterSignal.Cold.toString
+                      )
+                  )
+            } else {
+              (state, Set.empty)
+            }
 
       case Event.System.StartupEvent =>
         val commandToSend = getDefaultCommandToSend(
