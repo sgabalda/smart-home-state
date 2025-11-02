@@ -2,6 +2,7 @@ package calespiga.mqtt
 
 import calespiga.model.Action
 import cats.effect.IO
+import cats.effect.Ref
 
 trait ActionToMqttProducer {
 
@@ -11,12 +12,26 @@ trait ActionToMqttProducer {
 
 object ActionToMqttProducer {
 
-  final private case class Impl(producer: Producer)
-      extends ActionToMqttProducer {
+  final private case class Impl(
+      producer: Producer,
+      topicsBlacklist: Ref[IO, Set[String]]
+  ) extends ActionToMqttProducer {
     override def actionToMqtt(action: Action.SendMqttStringMessage): IO[Unit] =
-      producer.publish(action.topic, action.message.getBytes("UTF-8").toVector)
+      topicsBlacklist.get.flatMap { blacklistedTopics =>
+        if (blacklistedTopics.contains(action.topic)) {
+          IO.unit
+        } else {
+          producer.publish(
+            action.topic,
+            action.message.getBytes("UTF-8").toVector
+          )
+        }
+      }
   }
 
-  def apply(producer: Producer): ActionToMqttProducer = Impl(producer)
+  def apply(
+      producer: Producer,
+      topicsBlacklist: Ref[IO, Set[String]]
+  ): ActionToMqttProducer = Impl(producer, topicsBlacklist)
 
 }

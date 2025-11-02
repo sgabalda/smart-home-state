@@ -45,7 +45,7 @@ object Main extends IOApp.Simple {
       )
       mqttProducer <- Producer(appConfig.mqttConfig)
       mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
-      mqttActionToProducer = ActionToMqttProducer(mqttProducer)
+      mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
       openHabApiClient <- APIClient(appConfig.openHabConfig)
       userInputManager = UserInputManager(openHabApiClient)
       directExecutor = DirectExecutor(openHabApiClient, mqttActionToProducer)
