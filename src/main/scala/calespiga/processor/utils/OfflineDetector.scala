@@ -4,15 +4,24 @@ import calespiga.model.{Action, Event, State}
 import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
 
-object OfflineDetectorProcessor {
+object OfflineDetector {
 
-  private val TEMPERATURES_TIMEOUT_ID = "temperatures-offline-timeout"
+  val ID_SUFFIX = "-offline-detector"
 
-  def apply(config: OfflineDetectorConfig): SingleProcessor =
-    Impl(config)
+  def apply(
+      config: OfflineDetectorConfig,
+      id: String,
+      eventMatcher: Event.EventData => Boolean,
+      statusItem: String
+  ): SingleProcessor =
+    Impl(config, id + ID_SUFFIX, eventMatcher, statusItem)
 
-  private final case class Impl(config: OfflineDetectorConfig)
-      extends SingleProcessor {
+  private final case class Impl(
+      config: OfflineDetectorConfig,
+      id: String,
+      eventMatcher: Event.EventData => Boolean,
+      statusItem: String
+  ) extends SingleProcessor {
 
     def process(
         state: State,
@@ -24,39 +33,34 @@ object OfflineDetectorProcessor {
         case Event.System.StartupEvent =>
           val offlineAction =
             Action.SetOpenHabItemValue(
-              config.temperaturesStatusItem,
+              statusItem,
               config.offlineText
             )
           val delayedOfflineAction = Action.Delayed(
-            TEMPERATURES_TIMEOUT_ID,
+            id,
             offlineAction,
             config.timeoutDuration
           )
           (state, Set(delayedOfflineAction))
 
-        // Handle events from Temperatures microcontroller
-        case _: Event.Temperature.BatteryTemperatureMeasured |
-            _: Event.Temperature.BatteryClosetTemperatureMeasured |
-            _: Event.Temperature.ElectronicsTemperatureMeasured |
-            _: Event.Temperature.ExternalTemperatureMeasured |
-            _: Event.Temperature.Fans.BatteryFanSwitchReported |
-            _: Event.Temperature.Fans.ElectronicsFanSwitchReported =>
+        // Handle events matching
+        case e if eventMatcher(e) =>
 
           // Set status to online immediately
           val setOnlineAction =
             Action.SetOpenHabItemValue(
-              config.temperaturesStatusItem,
+              statusItem,
               config.onlineText
             )
 
           // Schedule new offline timeout (automatically cancels previous one with same ID)
           val offlineAction =
             Action.SetOpenHabItemValue(
-              config.temperaturesStatusItem,
+              statusItem,
               config.offlineText
             )
           val newDelayedOfflineAction = Action.Delayed(
-            TEMPERATURES_TIMEOUT_ID,
+            id,
             offlineAction,
             config.timeoutDuration
           )

@@ -1,6 +1,6 @@
 # Multi-stage Docker build for Scala application
 # Stage 1: Build the application
-FROM sbtscala/scala-sbt:eclipse-temurin-alpine-24.0.1_9_1.11.6_3.7.2 AS builder
+FROM sbtscala/scala-sbt:eclipse-temurin-25_36_1.11.7_3.7.3 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src/ ./src/
 RUN sbt clean compile stage
 
 # Stage 2: Create runtime image
-FROM eclipse-temurin:22-jre-jammy AS runtime
+FROM eclipse-temurin:25-jre-jammy AS runtime
 
 # Create application user for security
 RUN groupadd -r smarthome && useradd -r -g smarthome -d /app -s /bin/false smarthome

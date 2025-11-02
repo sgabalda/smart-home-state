@@ -93,6 +93,16 @@ object InputOHItemsMapper {
               }
               getNewExpr(convertedValueExpr)
 
+            case tpe
+                if tpe =:= TypeRepr
+                  .of[calespiga.model.HeaterSignal.UserCommand] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.HeaterSignal
+                  .userCommandFromString(valueStr)
+                  .getOrElse(calespiga.model.HeaterSignal.TurnOff)
+              }
+              getNewExpr(convertedValueExpr)
+
             case _ =>
               report.errorAndAbort(
                 s"Unsupported parameter type: ${paramType.show}"

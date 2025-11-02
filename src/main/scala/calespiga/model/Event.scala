@@ -34,6 +34,9 @@ object Event {
 
     @InputEventOHItem("VentiladorsHabilitatsSHS")
     case class SetFanManagement(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("CalentadorHabilitatsSHS")
+    case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -92,5 +95,24 @@ object Event {
           status: Switch.Status
       ) extends FanData
     }
+  }
+
+  object Heater {
+    sealed trait HeaterData extends EventData
+
+    @InputEventMqtt("arduino_calentador/potencia/status")
+    case class HeaterPowerStatusReported(
+        status: HeaterSignal.ControllerState
+    ) extends HeaterData
+
+    @InputEventOHItem("CalentadorSetSHS")
+    case class HeaterPowerCommandChanged(
+        status: HeaterSignal.UserCommand
+    ) extends HeaterData
+
+    @InputEventMqtt("arduino_calentador/termostat/status")
+    case class HeaterIsHotReported(
+        status: HeaterSignal.HeaterTermostateState
+    ) extends HeaterData
   }
 }
