@@ -84,10 +84,13 @@ final case class HeaterConfig(
     resendInterval: FiniteDuration,
     id: String,
     onlineStatusItem: String,
-    syncStatusItem: String
+    syncStatusItem: String,
+    lastCommandItem: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(
     temperaturesMqttTopic: Set[String],
-    heaterMqttTopic: Set[String]
+    setFanManagementItem: String,
+    heaterMqttTopic: Set[String],
+    setHeaterManagementItem: String
 ) derives ConfigReader

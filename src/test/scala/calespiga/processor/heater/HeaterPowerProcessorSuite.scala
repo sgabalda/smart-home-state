@@ -26,7 +26,8 @@ class HeaterPowerProcessorSuite extends FunSuite {
     resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
     id = "heater-processor",
     onlineStatusItem = "dummyOnlineStatusItem",
-    syncStatusItem = "dummySyncStatusItem"
+    syncStatusItem = "dummySyncStatusItem",
+    lastCommandItem = "dummyLastCommandItem"
   )
 
   private def stateWithHeater(
@@ -225,6 +226,10 @@ class HeaterPowerProcessorSuite extends FunSuite {
         "heater-processor-command",
         Action.SendMqttStringMessage("dummy/topic", "2000"),
         scala.concurrent.duration.DurationInt(20).seconds
+      ),
+      Action.SetOpenHabItemValue(
+        dummyConfig.lastCommandItem,
+        HeaterSignal.userCommandToString(HeaterSignal.SetPower2000)
       )
     )
     assertEquals(actions, expectedActions)
