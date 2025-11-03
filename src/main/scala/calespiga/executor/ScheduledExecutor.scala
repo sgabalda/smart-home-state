@@ -37,13 +37,14 @@ object ScheduledExecutor {
               }
             }
             // Create new fiber for the delayed execution
-            delayedExecution = for {
-              _ <- IO.sleep(delayed.delay)
-              errors <- directExecutor.execute(Set(delayed.action))
-              _ <- errorManager.manageErrors(errors)
-              // Remove the fiber from the map after execution
-              _ <- fibersRef.update(_ - delayed.id)
-            } yield ()
+            delayedExecution =
+              for {
+                _ <- IO.sleep(delayed.delay)
+                errors <- directExecutor.execute(Set(delayed.action))
+                _ <- errorManager.manageErrors(errors)
+                // Remove the fiber from the map after execution
+                _ <- fibersRef.update(_ - delayed.id)
+              } yield ()
             newFiber <- delayedExecution.start
 
             // Store the new fiber in the map
