@@ -12,12 +12,15 @@ object HeaterSignal {
 
   // Encoder for UserCommand
   implicit val userCommandEncoder: Encoder[UserCommand] = Encoder.instance {
-    case TurnOff      => Json.fromString("Off")
-    case SetAutomatic => Json.fromString("Automatic")
-    case SetPower500  => Json.fromString("500")
-    case SetPower1000 => Json.fromString("1000")
-    case SetPower2000 => Json.fromString("2000")
+    s => Json.fromString(userCommandToString(s))
   }
+
+  def userCommandToString(command: UserCommand): String = command match
+    case TurnOff      => "off"
+    case SetAutomatic => "automatic"
+    case SetPower500  => "500"
+    case SetPower1000 => "1000"
+    case SetPower2000 => "2000"
 
   // Decoder for UserCommand
   implicit val userCommandDecoder: Decoder[UserCommand] =

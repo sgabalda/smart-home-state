@@ -7,6 +7,7 @@ import calespiga.model.{State, Event}
 import java.time.Instant
 import com.softwaremill.quicklens.*
 import calespiga.config.FeatureFlagsConfig
+import calespiga.model.Action
 
 class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
@@ -14,10 +15,14 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
 
   val dummyConfig = FeatureFlagsConfig(
     temperaturesMqttTopic = Set("fan/topic1", "fan/topic2"),
-    heaterMqttTopic = Set("heater/topic1", "heater/topic2")
+    setFanManagementItem = "SetFanManagementSHS",
+    heaterMqttTopic = Set("heater/topic1", "heater/topic2"),
+    setHeaterManagementItem = "SetHeaterManagementSHS"
   )
 
-  test("StartupEvent with feature flags false adds blacklist items") {
+  test(
+    "StartupEvent with feature flags false adds blacklist items and sets items"
+  ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
       processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
@@ -26,13 +31,26 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(false)
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(false)
-      _ <- processor.process(state, startupEvent, now)
+      (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
       assert(blacklist.contains("fan/topic1"))
       assert(blacklist.contains("fan/topic2"))
       assert(blacklist.contains("heater/topic1"))
       assert(blacklist.contains("heater/topic2"))
+      assertEquals(
+        actions,
+        Set[Action](
+          Action.SetOpenHabItemValue(
+            dummyConfig.setFanManagementItem,
+            "false"
+          ),
+          Action.SetOpenHabItemValue(
+            dummyConfig.setHeaterManagementItem,
+            "false"
+          )
+        )
+      )
     }
   }
 
@@ -45,10 +63,23 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(true)
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(true)
-      _ <- processor.process(state, startupEvent, now)
+      (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
       assertEquals(blacklist, Set.empty)
+      assertEquals(
+        actions,
+        Set[Action](
+          Action.SetOpenHabItemValue(
+            dummyConfig.setFanManagementItem,
+            "true"
+          ),
+          Action.SetOpenHabItemValue(
+            dummyConfig.setHeaterManagementItem,
+            "true"
+          )
+        )
+      )
     }
   }
   test(

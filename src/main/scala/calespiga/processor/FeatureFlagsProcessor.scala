@@ -36,7 +36,21 @@ object FeatureFlagsProcessor {
                    config.heaterMqttTopic
                  else Set.empty)
             )
-            .as((state, Set.empty))
+            .as(
+              (
+                state,
+                Set(
+                  Action.SetOpenHabItemValue(
+                    config.setFanManagementItem,
+                    state.featureFlags.fanManagementEnabled.toString
+                  ),
+                  Action.SetOpenHabItemValue(
+                    config.setHeaterManagementItem,
+                    state.featureFlags.heaterManagementEnabled.toString
+                  )
+                )
+              )
+            ) <* logger.info("Feature flags initialized on startup")
         case Event.FeatureFlagEvents.SetFanManagement(enable) =>
           val modifier = if (enable) { (bl: Set[String]) =>
             bl -- config.temperaturesMqttTopic

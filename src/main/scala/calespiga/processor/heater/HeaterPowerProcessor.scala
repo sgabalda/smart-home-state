@@ -170,7 +170,16 @@ private object HeaterPowerProcessor {
           .modify(_.heater.lastChange)
           .setTo(Some(timestamp))
 
-        (newState, Actions.commandActionWithResend(commandToSend))
+        (
+          newState,
+          Actions.commandActionWithResend(commandToSend) +
+            Action.SetOpenHabItemValue(
+              config.lastCommandItem,
+              HeaterSignal.userCommandToString(
+                state.heater.lastCommandReceived.getOrElse(TurnOff)
+              )
+            )
+        )
 
       case _ =>
         (state, Set.empty)
