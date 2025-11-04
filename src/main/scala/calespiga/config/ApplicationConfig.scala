@@ -40,6 +40,8 @@ final case class ProcessorConfig(
 ) derives ConfigReader
 
 final case class TemperatureRelatedConfig(
+    id: String,
+    onlineStatusItem: String,
     resendInterval: FiniteDuration,
     timeoutInterval: FiniteDuration,
     // OpenHAB item names for temperature readings
@@ -63,7 +65,6 @@ final case class TemperatureRelatedConfig(
 
 final case class OfflineDetectorConfig(
     timeoutDuration: FiniteDuration,
-    temperaturesStatusItem: String,
     onlineText: String,
     offlineText: String
 ) derives ConfigReader

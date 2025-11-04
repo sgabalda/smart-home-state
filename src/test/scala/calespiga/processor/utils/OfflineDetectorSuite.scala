@@ -18,7 +18,6 @@ class OfflineDetectorSuite extends FunSuite {
   // Dummy config for testing
   val config = OfflineDetectorConfig(
     timeoutDuration = 30.seconds,
-    temperaturesStatusItem = statusItem,
     onlineText = "ONLINE",
     offlineText = "OFFLINE"
   )

@@ -5,6 +5,7 @@ import calespiga.processor.heater.HeaterProcessor
 import java.time.ZoneId
 import cats.effect.IO
 import cats.effect.Ref
+import calespiga.processor.temperatures.TemperaturesProcessor
 
 trait StateProcessor {
   def process(
@@ -44,8 +45,10 @@ object StateProcessor {
       mqttBlacklist: Ref[IO, Set[String]]
   ): StateProcessor =
     this.apply(
-      TemperatureRelatedProcessor(config.temperatureRelated).toEffectful,
-      OfflineDetectorProcessor(config.offlineDetector).toEffectful,
+      TemperaturesProcessor(
+        config.temperatureRelated,
+        config.offlineDetector
+      ).toEffectful,
       HeaterProcessor(
         config.heater,
         ZoneId.systemDefault(),

@@ -18,6 +18,8 @@ class TemperatureRelatedProcessorSuite extends CatsEffectSuite {
   private val defaultConfig: calespiga.config.TemperatureRelatedConfig = {
     import scala.concurrent.duration.DurationInt
     calespiga.config.TemperatureRelatedConfig(
+      id = "temperature-processor",
+      onlineStatusItem = "TemperaturesMicroControladorEstatSHS",
       resendInterval = 15.seconds,
       timeoutInterval = 1.minute,
       batteryTemperatureItem = "BateriesTemperaturaSHS",
