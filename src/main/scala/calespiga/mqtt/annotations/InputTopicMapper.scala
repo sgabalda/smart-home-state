@@ -3,6 +3,7 @@ package calespiga.mqtt.annotations
 import scala.quoted.*
 import calespiga.model.Event.EventData
 import calespiga.model.HeaterSignal
+import calespiga.model.FanSignal
 
 object InputTopicMapper {
 
@@ -90,11 +91,14 @@ object InputTopicMapper {
               val convertedValueExpr = '{ (valueStr: String) => valueStr }
               getNewExpr(convertedValueExpr)
 
-            case tpe if tpe =:= TypeRepr.of[calespiga.model.Switch.Status] =>
+            case tpe if tpe =:= TypeRepr.of[FanSignal.ControllerState] =>
               val convertedValueExpr = '{ (valueStr: String) =>
-                calespiga.model.Switch.statusFromString(valueStr)
+                FanSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(FanSignal.Off)
               }
               getNewExpr(convertedValueExpr)
+
             case tpe if tpe =:= TypeRepr.of[HeaterSignal.ControllerState] =>
               val convertedValueExpr = '{ (valueStr: String) =>
                 HeaterSignal
@@ -102,6 +106,7 @@ object InputTopicMapper {
                   .getOrElse(HeaterSignal.Off)
               }
               getNewExpr(convertedValueExpr)
+
             case tpe
                 if tpe =:= TypeRepr
                   .of[HeaterSignal.HeaterTermostateState] =>

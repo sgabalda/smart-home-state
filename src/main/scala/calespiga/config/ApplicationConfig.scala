@@ -32,36 +32,44 @@ final case class StatePersistenceConfig(
 )
 
 final case class ProcessorConfig(
-    temperatureRelated: TemperatureRelatedConfig,
+    temperatureRelated: TemperatureFansConfig,
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
     featureFlags: FeatureFlagsConfig
 ) derives ConfigReader
 
-final case class TemperatureRelatedConfig(
+final case class TemperatureFansConfig(
     id: String,
     onlineStatusItem: String,
-    resendInterval: FiniteDuration,
-    timeoutInterval: FiniteDuration,
+    temperaturesItems: TemperaturesItemsConfig,
+    fansConfig: FansConfig
+) derives ConfigReader
+
+final case class TemperaturesItemsConfig(
     // OpenHAB item names for temperature readings
     batteryTemperatureItem: String,
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,
+    goalTemperatureItem: String
+)
+
+final case class FansConfig(
+    resendInterval: FiniteDuration,
+    timeoutInterval: FiniteDuration,
     // Fan control OpenHAB items
     batteryFanStatusItem: String,
-    batteryFanCommandItem: String,
     electronicsFanStatusItem: String,
-    electronicsFanCommandItem: String,
-    fansInconsistencyItem: String,
+    batteryFanInconsistencyItem: String,
+    electronicsFanInconsistencyItem: String,
     // MQTT topics
     batteryFanMqttTopic: String,
     electronicsFanMqttTopic: String,
     // Internal IDs for action tracking
     batteryFanId: String,
     electronicsFanId: String
-) derives ConfigReader
+)
 
 final case class OfflineDetectorConfig(
     timeoutDuration: FiniteDuration,

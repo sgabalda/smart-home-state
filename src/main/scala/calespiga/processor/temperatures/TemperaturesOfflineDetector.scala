@@ -9,13 +9,13 @@ object TemperaturesOfflineDetector {
 
   private def eventMatcher(event: Event.EventData): Boolean = {
     event match {
-      case Event.Temperature.BatteryTemperatureMeasured(_)        => true
-      case Event.Temperature.ElectronicsTemperatureMeasured(_)    => true
-      case Event.Temperature.ExternalTemperatureMeasured(_)       => true
-      case Event.Temperature.BatteryClosetTemperatureMeasured(_)  => true
-      case Event.Temperature.Fans.BatteryFanSwitchReported(_)     => true
-      case Event.Temperature.Fans.ElectronicsFanSwitchReported(_) => true
-      case _                                                      => false
+      case Event.Temperature.BatteryTemperatureMeasured(_)       => true
+      case Event.Temperature.ElectronicsTemperatureMeasured(_)   => true
+      case Event.Temperature.ExternalTemperatureMeasured(_)      => true
+      case Event.Temperature.BatteryClosetTemperatureMeasured(_) => true
+      case Event.Temperature.Fans.BatteryFanStatus(_)            => true
+      case Event.Temperature.Fans.ElectronicsFanStatus(_)        => true
+      case _                                                     => false
     }
   }
 

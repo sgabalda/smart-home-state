@@ -14,7 +14,6 @@ import com.softwaremill.quicklens.*
 
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import calespiga.model.RemoteState
 
 class StatePersistenceSuite extends CatsEffectSuite {
 

@@ -1,19 +1,18 @@
 package calespiga.processor.temperatures
 
-import calespiga.config.TemperatureRelatedConfig
+import calespiga.config.TemperatureFansConfig
 import calespiga.processor.SingleProcessor
-import calespiga.processor.TemperatureRelatedProcessor
 
 object TemperaturesProcessor {
   def apply(
-      temperatureRelatedConfig: TemperatureRelatedConfig,
+      config: TemperatureFansConfig,
       offlineConfig: calespiga.config.OfflineDetectorConfig
   ): SingleProcessor = {
-    TemperatureRelatedProcessor(temperatureRelatedConfig).andThen(
+    TemperaturesUpdater(config.temperaturesItems).andThen(
       TemperaturesOfflineDetector(
         offlineConfig,
-        temperatureRelatedConfig.id,
-        temperatureRelatedConfig.onlineStatusItem
+        config.id,
+        config.onlineStatusItem
       )
     )
   }
