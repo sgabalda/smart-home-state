@@ -10,7 +10,7 @@ import calespiga.model.Event.Temperature.*
 import com.softwaremill.quicklens.*
 import calespiga.config.TemperaturesItemsConfig
 
-object TemperaturesUpdater {
+private object TemperaturesUpdater {
 
   private final case class Impl(config: TemperaturesItemsConfig)
       extends SingleProcessor {

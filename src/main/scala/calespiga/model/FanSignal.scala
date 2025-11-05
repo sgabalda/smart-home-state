@@ -51,4 +51,10 @@ object FanSignal {
       case "off" => Right(Off)
       case "on"  => Right(On)
       case other => Left(s"Invalid ControllerState: $other")
+
+  def controllerStateToCommand(
+      state: ControllerState
+  ): String = state match
+    case Off => "stop"
+    case On  => "start"
 }

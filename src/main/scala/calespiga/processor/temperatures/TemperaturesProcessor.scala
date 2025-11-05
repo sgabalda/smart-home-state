@@ -8,12 +8,16 @@ object TemperaturesProcessor {
       config: TemperatureFansConfig,
       offlineConfig: calespiga.config.OfflineDetectorConfig
   ): SingleProcessor = {
-    TemperaturesUpdater(config.temperaturesItems).andThen(
-      TemperaturesOfflineDetector(
-        offlineConfig,
-        config.id,
-        config.onlineStatusItem
+    TemperaturesUpdater(config.temperaturesItems)
+      .andThen(
+        FansManager(config.fansConfig)
       )
-    )
+      .andThen(
+        TemperaturesOfflineDetector(
+          offlineConfig,
+          config.id,
+          config.onlineStatusItem
+        )
+      )
   }
 }

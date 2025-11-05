@@ -5,7 +5,7 @@ import calespiga.config.OfflineDetectorConfig
 import calespiga.processor.SingleProcessor
 import calespiga.processor.OfflineDetector
 
-object TemperaturesOfflineDetector {
+private object TemperaturesOfflineDetector {
 
   private def eventMatcher(event: Event.EventData): Boolean = {
     event match {

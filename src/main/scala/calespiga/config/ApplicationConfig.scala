@@ -63,6 +63,8 @@ final case class FansConfig(
     electronicsFanStatusItem: String,
     batteryFanInconsistencyItem: String,
     electronicsFanInconsistencyItem: String,
+    batteryFanCommandItem: String,
+    electronicsFanCommandItem: String,
     // MQTT topics
     batteryFanMqttTopic: String,
     electronicsFanMqttTopic: String,
