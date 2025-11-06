@@ -47,7 +47,8 @@ object StateProcessor {
     this.apply(
       TemperaturesProcessor(
         config.temperatureRelated,
-        config.offlineDetector
+        config.offlineDetector,
+        config.syncDetector
       ).toEffectful,
       HeaterProcessor(
         config.heater,

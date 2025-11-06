@@ -30,7 +30,7 @@ class BatteryFanManagerSuite extends FunSuite {
     val event = calespiga.model.Event.Temperature.Fans.BatteryFanStatus(status)
     val (newState, actions) =
       manager.process(state, event, java.time.Instant.now())
-    assertEquals(newState.fans.fanBatteries, status)
+    assertEquals(newState.fans.fanBatteriesStatus, status)
     assertEquals(
       actions,
       Set[Action](

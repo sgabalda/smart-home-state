@@ -129,7 +129,7 @@ private object BatteryFanManager {
           )
 
         case BatteryFanStatus(status) =>
-          val newState = state.modify(_.fans.fanBatteries).setTo(status)
+          val newState = state.modify(_.fans.fanBatteriesStatus).setTo(status)
           (
             newState,
             Set(

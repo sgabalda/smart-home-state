@@ -131,7 +131,7 @@ private object ElectronicsFanManager {
           )
 
         case ElectronicsFanStatus(status) =>
-          val newState = state.modify(_.fans.fanElectronics).setTo(status)
+          val newState = state.modify(_.fans.fanElectronicsStatus).setTo(status)
           (
             newState,
             Set(

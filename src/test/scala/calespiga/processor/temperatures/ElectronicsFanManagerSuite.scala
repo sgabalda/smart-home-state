@@ -31,7 +31,7 @@ class ElectronicsFanManagerSuite extends FunSuite {
       calespiga.model.Event.Temperature.Fans.ElectronicsFanStatus(status)
     val (newState, actions) =
       manager.process(state, event, java.time.Instant.now())
-    assertEquals(newState.fans.fanElectronics, status)
+    assertEquals(newState.fans.fanElectronicsStatus, status)
     assertEquals(
       actions,
       Set[Action](

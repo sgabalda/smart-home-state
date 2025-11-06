@@ -22,11 +22,13 @@ object State {
       fanBatteriesLatestCommandReceived: FanSignal.UserCommand =
         FanSignal.SetAutomatic,
       fanBatteriesLatestCommandSent: Option[FanSignal.ControllerState] = None,
-      fanBatteries: FanSignal.ControllerState = FanSignal.Off,
+      fanBatteriesStatus: FanSignal.ControllerState = FanSignal.Off,
+      fanBatteriesLastSyncing: Option[java.time.Instant] = None,
       fanElectronicsLatestCommandReceived: FanSignal.UserCommand =
         FanSignal.SetAutomatic,
       fanElectronicsLatestCommandSent: Option[FanSignal.ControllerState] = None,
-      fanElectronics: FanSignal.ControllerState = FanSignal.Off
+      fanElectronicsStatus: FanSignal.ControllerState = FanSignal.Off,
+      fanElectronicsLastSyncing: Option[java.time.Instant] = None
   )
 
   case class Heater(
