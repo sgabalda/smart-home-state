@@ -19,10 +19,13 @@ object State {
       goalTemperature: Double = 20.0
   )
   case class Fans(
-      fanBatteriesLatestCommand: FanSignal.UserCommand = FanSignal.SetAutomatic,
-      fanBatteries: FanSignal.ControllerState = FanSignal.Off,
-      fanElectronicsLatestCommand: FanSignal.UserCommand =
+      fanBatteriesLatestCommandReceived: FanSignal.UserCommand =
         FanSignal.SetAutomatic,
+      fanBatteriesLatestCommandSent: Option[FanSignal.ControllerState] = None,
+      fanBatteries: FanSignal.ControllerState = FanSignal.Off,
+      fanElectronicsLatestCommandReceived: FanSignal.UserCommand =
+        FanSignal.SetAutomatic,
+      fanElectronicsLatestCommandSent: Option[FanSignal.ControllerState] = None,
       fanElectronics: FanSignal.ControllerState = FanSignal.Off
   )
 

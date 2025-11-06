@@ -10,7 +10,10 @@ object TemperaturesProcessor {
   ): SingleProcessor = {
     TemperaturesUpdater(config.temperaturesItems)
       .andThen(
-        FansManager(config.fansConfig)
+        BatteryFanManager(config.fansConfig.batteryFan)
+      )
+      .andThen(
+        ElectronicsFanManager(config.fansConfig.electronicsFan)
       )
       .andThen(
         TemperaturesOfflineDetector(
