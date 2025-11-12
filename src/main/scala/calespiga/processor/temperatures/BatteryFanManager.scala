@@ -18,8 +18,6 @@ import calespiga.processor.temperatures.utils.FanCommandsCreator
 
 private object BatteryFanManager {
 
-  val COMMAND_ACTION_SUFFIX = "-command"
-
   private final case class Impl(config: BatteryFanConfig)
       extends SingleProcessor {
 
