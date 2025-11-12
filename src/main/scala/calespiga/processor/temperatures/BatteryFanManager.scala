@@ -9,14 +9,12 @@ import calespiga.model.Action
 import com.softwaremill.quicklens.*
 import calespiga.config.BatteryFanConfig
 import calespiga.model.FanSignal
-import calespiga.model.FanSignal.TurnOff
-import calespiga.model.FanSignal.TurnOn
-import calespiga.model.FanSignal.SetAutomatic
 import calespiga.model.Event.Temperature.{
   BatteryClosetTemperatureMeasured,
   ExternalTemperatureMeasured
 }
 import calespiga.model.Event.Temperature.GoalTemperatureChanged
+import calespiga.processor.temperatures.utils.FanCommandsCreator
 
 private object BatteryFanManager {
 
@@ -25,58 +23,13 @@ private object BatteryFanManager {
   private final case class Impl(config: BatteryFanConfig)
       extends SingleProcessor {
 
-    private object Actions {
-      private def commandAction(command: FanSignal.ControllerState) =
-        Action.SendMqttStringMessage(
-          config.batteryFanMqttTopic,
-          FanSignal.controllerStateToCommand(command)
-        )
-
-      private def periodicCommandAction(
-          command: FanSignal.ControllerState
-      ) = {
-        Action.Periodic(
-          config.batteryFanId + COMMAND_ACTION_SUFFIX,
-          commandAction(command),
-          config.resendInterval
-        )
-      }
-
-      def commandActionWithResendBattery(command: FanSignal.ControllerState) = {
-        Set(
-          commandAction(command),
-          periodicCommandAction(command)
-        )
-      }
-    }
-
-    private object Commands {
-      private def automaticCommand(
-          goalTemp: Double,
-          currentTemp: Option[Double],
-          externalTemp: Option[Double]
-      ): FanSignal.ControllerState =
-        (currentTemp, externalTemp) match
-          case (Some(current), Some(external)) =>
-            if current > goalTemp && current > external then FanSignal.On
-            else if current < goalTemp && current < external then FanSignal.On
-            else FanSignal.Off
-          case _ => FanSignal.Off
-
-      def commandToSendForBattery(
-          command: FanSignal.UserCommand,
-          state: State
-      ): FanSignal.ControllerState = command match
-        case TurnOff      => FanSignal.Off
-        case TurnOn       => FanSignal.On
-        case SetAutomatic =>
-          automaticCommand(
-            state.temperatures.goalTemperature,
-            state.temperatures.batteriesClosetTemperature,
-            state.temperatures.externalTemperature
-          )
-
-    }
+    private val commands =
+      FanCommandsCreator(
+        state => state.temperatures.batteriesClosetTemperature,
+        config.batteryFanId,
+        config.resendInterval,
+        config.batteryFanMqttTopic
+      )
 
     private def processIfSentCommandChangedBattery(
         state: State,
@@ -98,7 +51,7 @@ private object BatteryFanManager {
               .setTo(commandReceived)
               .modify(_.fans.fanBatteriesLatestCommandSent)
               .setTo(Some(commandToSet)),
-            Actions.commandActionWithResendBattery(commandToSet)
+            commands.commandActionWithResend(commandToSet)
           )
       }
     }
@@ -120,8 +73,8 @@ private object BatteryFanManager {
                   state.fans.fanBatteriesLatestCommandReceived
                 )
               )
-            ) ++ Actions.commandActionWithResendBattery(
-              Commands.commandToSendForBattery(
+            ) ++ commands.commandActionWithResend(
+              commands.commandToSend(
                 state.fans.fanBatteriesLatestCommandReceived,
                 state
               )
@@ -142,7 +95,7 @@ private object BatteryFanManager {
 
         case BatteryFanCommand(command) =>
           val commandToSet: FanSignal.ControllerState =
-            Commands.commandToSendForBattery(command, state)
+            commands.commandToSend(command, state)
           processIfSentCommandChangedBattery(state, commandToSet, command)
 
         case BatteryClosetTemperatureMeasured(_) | GoalTemperatureChanged(_) |
@@ -152,7 +105,7 @@ private object BatteryFanManager {
             )
           then
             val commandToSet: FanSignal.ControllerState =
-              Commands.commandToSendForBattery(
+              commands.commandToSend(
                 state.fans.fanBatteriesLatestCommandReceived,
                 state
               )

@@ -9,76 +9,23 @@ import calespiga.model.Action
 import com.softwaremill.quicklens.*
 import calespiga.config.ElectronicsFanConfig
 import calespiga.model.FanSignal
-import calespiga.model.FanSignal.TurnOff
-import calespiga.model.FanSignal.TurnOn
-import calespiga.model.FanSignal.SetAutomatic
 import calespiga.model.Event.Temperature.ElectronicsTemperatureMeasured
 import calespiga.model.Event.Temperature.GoalTemperatureChanged
 import calespiga.model.Event.Temperature.ExternalTemperatureMeasured
+import calespiga.processor.temperatures.utils.FanCommandsCreator
 
 private object ElectronicsFanManager {
-
-  val COMMAND_ACTION_SUFFIX = "-command"
 
   private final case class Impl(config: ElectronicsFanConfig)
       extends SingleProcessor {
 
-    private object Actions {
-      private def commandAction(
-          command: FanSignal.ControllerState
-      ) =
-        Action.SendMqttStringMessage(
-          config.electronicsFanMqttTopic,
-          FanSignal.controllerStateToCommand(command)
-        )
-
-      private def periodicCommandAction(
-          command: FanSignal.ControllerState
-      ) = {
-        Action.Periodic(
-          config.electronicsFanId + COMMAND_ACTION_SUFFIX,
-          commandAction(command),
-          config.resendInterval
-        )
-      }
-
-      def commandActionWithResendElectronics(
-          command: FanSignal.ControllerState
-      ) = {
-        Set(
-          commandAction(command),
-          periodicCommandAction(command)
-        )
-      }
-    }
-
-    private object Commands {
-      private def automaticCommand(
-          goalTemp: Double,
-          currentTemp: Option[Double],
-          externalTemp: Option[Double]
-      ): FanSignal.ControllerState =
-        (currentTemp, externalTemp) match
-          case (Some(current), Some(external)) =>
-            if current > goalTemp && current > external then FanSignal.On
-            else if current < goalTemp && current < external then FanSignal.On
-            else FanSignal.Off
-          case _ => FanSignal.Off
-
-      def commandToSendForElectronics(
-          command: FanSignal.UserCommand,
-          state: State
-      ): FanSignal.ControllerState = command match
-        case TurnOff      => FanSignal.Off
-        case TurnOn       => FanSignal.On
-        case SetAutomatic =>
-          automaticCommand(
-            state.temperatures.goalTemperature,
-            state.temperatures.electronicsTemperature,
-            state.temperatures.externalTemperature
-          )
-
-    }
+    private val commands =
+      FanCommandsCreator(
+        state => state.temperatures.electronicsTemperature,
+        config.electronicsFanId,
+        config.resendInterval,
+        config.electronicsFanMqttTopic
+      )
 
     private def processIfSentCommandChangedElectronics(
         state: State,
@@ -100,7 +47,7 @@ private object ElectronicsFanManager {
               .setTo(commandReceived)
               .modify(_.fans.fanElectronicsLatestCommandSent)
               .setTo(Some(commandToSet)),
-            Actions.commandActionWithResendElectronics(commandToSet)
+            commands.commandActionWithResend(commandToSet)
           )
       }
     }
@@ -122,8 +69,8 @@ private object ElectronicsFanManager {
                   state.fans.fanElectronicsLatestCommandReceived
                 )
               )
-            ) ++ Actions.commandActionWithResendElectronics(
-              Commands.commandToSendForElectronics(
+            ) ++ commands.commandActionWithResend(
+              commands.commandToSend(
                 state.fans.fanElectronicsLatestCommandReceived,
                 state
               )
@@ -144,7 +91,7 @@ private object ElectronicsFanManager {
 
         case ElectronicsFanCommand(command) =>
           val commandToSet: FanSignal.ControllerState =
-            Commands.commandToSendForElectronics(command, state)
+            commands.commandToSend(command, state)
           processIfSentCommandChangedElectronics(state, commandToSet, command)
 
         case ElectronicsTemperatureMeasured(_) | GoalTemperatureChanged(_) |
@@ -154,7 +101,7 @@ private object ElectronicsFanManager {
             )
           then
             val commandToSet: FanSignal.ControllerState =
-              Commands.commandToSendForElectronics(
+              commands.commandToSend(
                 state.fans.fanElectronicsLatestCommandReceived,
                 state
               )
