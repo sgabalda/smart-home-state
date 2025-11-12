@@ -10,11 +10,7 @@ object Fixture {
       externalTemperature = Some(20.0),
       batteriesTemperature = Some(30.0),
       electronicsTemperature = Some(40.0),
-      goalTemperature = Some(20.0)
-    ),
-    State.Fans(
-      fanBatteries = RemoteSwitch(),
-      fanElectronics = RemoteSwitch()
+      goalTemperature = 20.0
     )
   )
 
@@ -23,45 +19,5 @@ object Fixture {
   val event: Event = Event(
     timestamp = now,
     data = Event.Temperature.BatteryTemperatureMeasured(25.0)
-  )
-
-  val allEvents: List[Event] = List(
-    Event(
-      timestamp = now,
-      data = Event.Temperature.BatteryTemperatureMeasured(25.0)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.BatteryClosetTemperatureMeasured(25.0)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.ElectronicsTemperatureMeasured(25.0)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.ExternalTemperatureMeasured(25.0)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.GoalTemperatureChanged(22.0)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.Fans.BatteryFanSwitchManualChanged(Switch.Off)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.Fans.BatteryFanSwitchReported(Switch.Off)
-    ),
-    Event(
-      timestamp = now,
-      data =
-        Event.Temperature.Fans.ElectronicsFanSwitchManualChanged(Switch.Off)
-    ),
-    Event(
-      timestamp = now,
-      data = Event.Temperature.Fans.ElectronicsFanSwitchReported(Switch.Off)
-    )
   )
 }

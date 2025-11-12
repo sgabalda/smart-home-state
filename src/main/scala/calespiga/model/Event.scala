@@ -70,29 +70,24 @@ object Event {
     object Fans {
       sealed trait FanData extends TemperatureData
 
-      @InputEventOHItem("VentiladorGestioSHS")
-      case class FanManagementChanged(
-          status: Switch.Status
-      ) extends FanData
-
       @InputEventOHItem("VentiladorBateriesSetSHS")
-      case class BatteryFanSwitchManualChanged(
-          status: Switch.Status
+      case class BatteryFanCommand(
+          command: FanSignal.UserCommand
       ) extends FanData
 
       @InputEventMqtt("fan/batteries/status")
-      case class BatteryFanSwitchReported(
-          status: Switch.Status
+      case class BatteryFanStatus(
+          status: FanSignal.ControllerState
       ) extends FanData
 
       @InputEventOHItem("VentiladorElectronicaSetSHS")
-      case class ElectronicsFanSwitchManualChanged(
-          status: Switch.Status
+      case class ElectronicsFanCommand(
+          command: FanSignal.UserCommand
       ) extends FanData
 
       @InputEventMqtt("fan/electronics/status")
-      case class ElectronicsFanSwitchReported(
-          status: Switch.Status
+      case class ElectronicsFanStatus(
+          status: FanSignal.ControllerState
       ) extends FanData
     }
   }

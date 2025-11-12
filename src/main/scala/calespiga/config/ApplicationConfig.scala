@@ -32,38 +32,54 @@ final case class StatePersistenceConfig(
 )
 
 final case class ProcessorConfig(
-    temperatureRelated: TemperatureRelatedConfig,
+    temperatureFans: TemperatureFansConfig,
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
     featureFlags: FeatureFlagsConfig
 ) derives ConfigReader
 
-final case class TemperatureRelatedConfig(
-    resendInterval: FiniteDuration,
-    timeoutInterval: FiniteDuration,
+final case class TemperatureFansConfig(
+    id: String,
+    onlineStatusItem: String,
+    temperaturesItems: TemperaturesItemsConfig,
+    fans: FansConfig
+) derives ConfigReader
+
+final case class TemperaturesItemsConfig(
     // OpenHAB item names for temperature readings
     batteryTemperatureItem: String,
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,
-    // Fan control OpenHAB items
+    goalTemperatureItem: String
+) derives ConfigReader
+
+final case class FansConfig(
+    batteryFan: BatteryFanConfig,
+    electronicsFan: ElectronicsFanConfig
+) derives ConfigReader
+
+final case class BatteryFanConfig(
     batteryFanStatusItem: String,
+    batteryFanInconsistencyItem: String,
     batteryFanCommandItem: String,
-    electronicsFanStatusItem: String,
-    electronicsFanCommandItem: String,
-    fansInconsistencyItem: String,
-    // MQTT topics
     batteryFanMqttTopic: String,
-    electronicsFanMqttTopic: String,
-    // Internal IDs for action tracking
     batteryFanId: String,
-    electronicsFanId: String
+    resendInterval: FiniteDuration
+) derives ConfigReader
+
+final case class ElectronicsFanConfig(
+    electronicsFanStatusItem: String,
+    electronicsFanInconsistencyItem: String,
+    electronicsFanCommandItem: String,
+    electronicsFanMqttTopic: String,
+    electronicsFanId: String,
+    resendInterval: FiniteDuration
 ) derives ConfigReader
 
 final case class OfflineDetectorConfig(
     timeoutDuration: FiniteDuration,
-    temperaturesStatusItem: String,
     onlineText: String,
     offlineText: String
 ) derives ConfigReader
