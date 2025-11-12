@@ -24,10 +24,12 @@ private object ElectronicsFanSyncDetector {
     state.modify(_.fans.fanElectronicsLastSyncing).setTo(when)
 
   private val isEventRelevant: Event.EventData => Boolean = {
-    case Event.Temperature.Fans.ElectronicsFanCommand(_) => true
-    case Event.Temperature.Fans.ElectronicsFanStatus(_)  => true
-    case Event.System.StartupEvent                       => true
-    case _                                               => false
+    case Event.Temperature.Fans.ElectronicsFanCommand(_)     => true
+    case Event.Temperature.Fans.ElectronicsFanStatus(_)      => true
+    case Event.Temperature.ElectronicsTemperatureMeasured(_) => true
+    case Event.Temperature.GoalTemperatureChanged(_)         => true
+    case Event.System.StartupEvent                           => true
+    case _                                                   => false
   }
 
   def apply(

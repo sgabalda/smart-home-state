@@ -12,20 +12,20 @@ object TemperaturesProcessor {
   ): SingleProcessor = {
     TemperaturesUpdater(config.temperaturesItems)
       .andThen(
-        BatteryFanManager(config.fansConfig.batteryFan).andThen(
+        BatteryFanManager(config.fans.batteryFan).andThen(
           BatteryFanSyncDetector(
             syncConfig,
-            config.fansConfig.batteryFan.batteryFanId,
-            config.fansConfig.batteryFan.batteryFanInconsistencyItem
+            config.fans.batteryFan.batteryFanId,
+            config.fans.batteryFan.batteryFanInconsistencyItem
           )
         )
       )
       .andThen(
-        ElectronicsFanManager(config.fansConfig.electronicsFan).andThen(
+        ElectronicsFanManager(config.fans.electronicsFan).andThen(
           ElectronicsFanSyncDetector(
             syncConfig,
-            config.fansConfig.electronicsFan.electronicsFanId,
-            config.fansConfig.electronicsFan.electronicsFanInconsistencyItem
+            config.fans.electronicsFan.electronicsFanId,
+            config.fans.electronicsFan.electronicsFanInconsistencyItem
           )
         )
       )

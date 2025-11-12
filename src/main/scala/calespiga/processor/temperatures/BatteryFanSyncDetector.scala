@@ -21,10 +21,12 @@ private object BatteryFanSyncDetector {
     state.modify(_.fans.fanBatteriesLastSyncing).setTo(when)
 
   private val isEventRelevant: Event.EventData => Boolean = {
-    case Event.Temperature.Fans.BatteryFanCommand(_) => true
-    case Event.Temperature.Fans.BatteryFanStatus(_)  => true
-    case Event.System.StartupEvent                   => true
-    case _                                           => false
+    case Event.Temperature.Fans.BatteryFanCommand(_)           => true
+    case Event.Temperature.Fans.BatteryFanStatus(_)            => true
+    case Event.Temperature.BatteryClosetTemperatureMeasured(_) => true
+    case Event.Temperature.GoalTemperatureChanged(_)           => true
+    case Event.System.StartupEvent                             => true
+    case _                                                     => false
   }
 
   def apply(

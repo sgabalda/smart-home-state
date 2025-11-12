@@ -6,5 +6,6 @@ lazy val root = (project in file("."))
   .settings(
     name := "smart-home-state",
     libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing,
-    Global / semanticdbEnabled := true
+    Global / semanticdbEnabled := true,
+    Compile / run / fork := true
   )

@@ -32,7 +32,7 @@ final case class StatePersistenceConfig(
 )
 
 final case class ProcessorConfig(
-    temperatureRelated: TemperatureFansConfig,
+    temperatureFans: TemperatureFansConfig,
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
@@ -43,7 +43,7 @@ final case class TemperatureFansConfig(
     id: String,
     onlineStatusItem: String,
     temperaturesItems: TemperaturesItemsConfig,
-    fansConfig: FansConfig
+    fans: FansConfig
 ) derives ConfigReader
 
 final case class TemperaturesItemsConfig(

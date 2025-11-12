@@ -33,6 +33,20 @@
 - **Testing**: Unit tests are in `src/test/scala/`. Test classes are named `*Suite.scala`.
 - **Logging**: Logs are written to `logs/application.log`.
 
+## Style Guidelines
+
+- Follow Scala coding conventions as per the official Scala style guide.
+- Use meaningful names for classes, methods, and variables.
+- For modifying classes from the model, do not use the copy method, instead use the quicklens dependency for better readability.
+- When adding new tests, add them at the end of the test class.
+
+## Openhab items
+
+- The openhab items in scala code can only be defined as annotations of the Event classes in the model package, or in the application.conf file.
+- No other definition of openhab items is allowed.
+- All openhab items should be in the file `oh/items/smart-home-state.items`, in the section corresponding to their function.
+- The items should also be added to the sitemap file `oh/sitemaps/shs.sitemap`, in the section corresponding to their function.
+
 ## External Integrations
 
 - **OpenHAB REST API**: Used for reading/writing item states.
