@@ -14,6 +14,7 @@ import calespiga.openhab.APIClient
 import calespiga.persistence.StatePersistence
 import calespiga.processor.StateProcessor
 import calespiga.userinput.UserInputManager
+import calespiga.http.Endpoints
 import cats.effect.{IO, IOApp, ResourceIO}
 import fs2.Stream
 import cats.effect.Ref
@@ -52,11 +53,14 @@ object Main extends IOApp.Simple {
       errorManager <- ErrorManager()
       scheduledExecutor <- ScheduledExecutor(directExecutor, errorManager)
       executor = Executor(directExecutor, scheduledExecutor)
+      stateRef <- Ref.of[IO, Option[State]](None).toResource
       statePersistence <- StatePersistence(
         appConfig.statePersistenceConfig,
-        errorManager
+        errorManager,
+        stateRef
       )
       processor = StateProcessor(appConfig.processor, mqttBlacklist)
+      _ <- Endpoints.server(stateRef, appConfig.httpServerConfig)
     } yield (
       appConfig,
       mqttInputProcessor,
