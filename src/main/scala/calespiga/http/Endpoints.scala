@@ -1,15 +1,13 @@
 package calespiga.http
 
-import cats.effect.{IO, Resource}
 import cats.effect._
 import org.http4s._
 import calespiga.model.State
-import io.circe.generic.auto.*
-import sttp.tapir.*
+import io.circe.generic.auto._
+import sttp.tapir._
 import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe.*
+import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s.Http4sServerInterpreter
-import org.http4s.HttpRoutes
 import org.http4s.netty.server.NettyServerBuilder
 import calespiga.config.HttpServerConfig
 

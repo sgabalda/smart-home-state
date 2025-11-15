@@ -12,7 +12,7 @@ object Dependencies {
 
     val http4s = "0.23.33"
 
-    val https_netty = "0.5.25"
+    val http4s_netty = "0.5.25"
 
     val janino = "3.1.12"
 
@@ -42,7 +42,7 @@ object Dependencies {
     "co.fs2" %% "fs2-scodec" % Versions.fs2,
     "net.sigusr" %% "fs2-mqtt" % Versions.fs2_mqtt,
     "org.codehaus.janino" % "janino" % Versions.janino,
-    "org.http4s" %% "http4s-netty-server" % Versions.https_netty,
+    "org.http4s" %% "http4s-netty-server" % Versions.http4s_netty,
     "org.http4s" %% "http4s-dsl" % Versions.http4s,
     "org.http4s" %% "http4s-circe" % Versions.http4s,
     "org.typelevel" %% "log4cats-core" % Versions.log4cats,
