@@ -14,6 +14,8 @@ import com.softwaremill.quicklens.*
 
 import scala.concurrent.duration.*
 import scala.language.postfixOps
+import calespiga.model.State
+import cats.effect.ResourceIO
 
 class StatePersistenceSuite extends CatsEffectSuite {
 
@@ -25,8 +27,25 @@ class StatePersistenceSuite extends CatsEffectSuite {
   private val someState = Fixture.state
   private val someStateJson = someState.asJson.noSpaces
 
+  private def getSut(
+      statePersistenceConfig: StatePersistenceConfig,
+      errorManager: ErrorManager,
+      currentStateRef: Option[State] = None,
+      readInput: String => IO[String],
+      saveOutput: (String, String) => IO[Unit]
+  ): ResourceIO[StatePersistence] =
+    Ref.of[IO, Option[State]](currentStateRef).toResource.flatMap { ref =>
+      StatePersistence(
+        statePersistenceConfig,
+        errorManager,
+        ref,
+        readInput,
+        saveOutput
+      )
+    }
+
   test("StatePersistence should load state upon request") {
-    val sut = StatePersistence(
+    val sut = getSut(
       config,
       errorManager = ErrorManagerStub(),
       readInput = _ => IO.pure(someStateJson),
@@ -43,7 +62,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
   }
   test("StatePersistence should return an error if reading file fails") {
     val error = new Exception("File not found")
-    val sut = StatePersistence(
+    val sut = getSut(
       config,
       errorManager = ErrorManagerStub(),
       readInput = _ => IO.raiseError(error),
@@ -62,7 +81,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
   test("StatePersistence should return an error if data read is not valid") {
-    val sut = StatePersistence(
+    val sut = getSut(
       config,
       errorManager = ErrorManagerStub(),
       readInput = _ => IO.pure("blabla"),
@@ -86,7 +105,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     "StatePersistence should store state after storePeriod, but not before"
   ) {
     Ref[IO].of[Option[(String, String)]](None).flatMap { ref =>
-      val sut = StatePersistence(
+      val sut = getSut(
         config,
         errorManager = ErrorManagerStub(),
         readInput =
@@ -117,7 +136,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
       val anotherState = someState
         .modify(_.temperatures.batteriesClosetTemperature)
         .setTo(someState.temperatures.batteriesClosetTemperature.map(_ + 1))
-      val sut = StatePersistence(
+      val sut = getSut(
         config,
         errorManager = ErrorManagerStub(),
         readInput =
@@ -150,7 +169,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
   ) {
     val program = Ref[IO].of[Option[ErrorManager.Error]](None).flatMap { ref =>
       val error = new Exception("expected error")
-      val sut = StatePersistence(
+      val sut = getSut(
         config,
         errorManager = ErrorManagerStub(e => ref.set(Some(e))),
         readInput =

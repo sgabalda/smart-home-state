@@ -5,11 +5,17 @@ import pureconfig.ConfigReader
 import scala.concurrent.duration.FiniteDuration
 
 final case class ApplicationConfig(
+    httpServerConfig: HttpServerConfig,
     mqttConfig: MqttConfig,
     openHabConfig: OpenHabConfig,
     statePersistenceConfig: StatePersistenceConfig,
     processor: ProcessorConfig
 ) derives ConfigReader
+
+final case class HttpServerConfig(
+    host: String,
+    port: Int
+)
 
 final case class MqttConfig(
     host: String,

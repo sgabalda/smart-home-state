@@ -66,24 +66,27 @@ object StatePersistence {
   def apply(
       statePersistenceConfig: StatePersistenceConfig,
       errorManager: ErrorManager,
+      currentStateRef: Ref[IO, Option[State]],
       readInput: String => IO[String] = s =>
         IO.blocking(Files.readString(Paths.get(s))),
       saveOutput: (String, String) => IO[Unit] = (s, o) =>
         IO.blocking(Files.writeString(Paths.get(s), o)).as(())
-  ): ResourceIO[StatePersistence] = for {
-    currentStateRef <- Ref[IO].of[Option[State]](None).toResource
-    impl = Impl(statePersistenceConfig, currentStateRef, readInput, saveOutput)
-    _ <- (IO.sleep(statePersistenceConfig.storePeriod) *> impl.fileUpdate(
-      errorManager
-    )).foreverM.background.onFinalize(
-      // Save state when resource is finalized (on application shutdown)
-      logger.info("StatePersistence: Saving state on finalization") *>
-        impl.fileUpdate(errorManager).handleErrorWith { error =>
-          logger.error(error)(
-            "StatePersistence: Failed to save state on finalization"
-          )
-        }
-    )
-  } yield impl
+  ): ResourceIO[StatePersistence] = {
+    val impl =
+      Impl(statePersistenceConfig, currentStateRef, readInput, saveOutput)
+    for {
+      _ <- (IO.sleep(statePersistenceConfig.storePeriod) *> impl.fileUpdate(
+        errorManager
+      )).foreverM.background.onFinalize(
+        // Save state when resource is finalized (on application shutdown)
+        logger.info("StatePersistence: Saving state on finalization") *>
+          impl.fileUpdate(errorManager).handleErrorWith { error =>
+            logger.error(error)(
+              "StatePersistence: Failed to save state on finalization"
+            )
+          }
+      )
+    } yield impl
+  }
 
 }

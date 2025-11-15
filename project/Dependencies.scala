@@ -10,6 +10,10 @@ object Dependencies {
 
     val fs2_mqtt = "1.0.1"
 
+    val http4s = "0.23.33"
+
+    val http4s_netty = "0.5.25"
+
     val janino = "3.1.12"
 
     val log4cats = "2.7.1"
@@ -23,6 +27,8 @@ object Dependencies {
     val quicklens = "1.9.12"
 
     val sttp = "4.0.13"
+
+    val tapir = "1.12.3"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
@@ -36,6 +42,9 @@ object Dependencies {
     "co.fs2" %% "fs2-scodec" % Versions.fs2,
     "net.sigusr" %% "fs2-mqtt" % Versions.fs2_mqtt,
     "org.codehaus.janino" % "janino" % Versions.janino,
+    "org.http4s" %% "http4s-netty-server" % Versions.http4s_netty,
+    "org.http4s" %% "http4s-dsl" % Versions.http4s,
+    "org.http4s" %% "http4s-circe" % Versions.http4s,
     "org.typelevel" %% "log4cats-core" % Versions.log4cats,
     "org.typelevel" %% "log4cats-slf4j" % Versions.log4cats,
     "ch.qos.logback" % "logback-classic" % Versions.logback,
@@ -43,7 +52,9 @@ object Dependencies {
     "com.softwaremill.quicklens" %% "quicklens" % Versions.quicklens,
     "com.softwaremill.sttp.client4" %% "core" % Versions.sttp,
     "com.softwaremill.sttp.client4" %% "cats" % Versions.sttp,
-    "com.softwaremill.sttp.client4" %% "fs2" % Versions.sttp
+    "com.softwaremill.sttp.client4" %% "fs2" % Versions.sttp,
+    "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Versions.tapir
   )
 
   val testing: Seq[ModuleID] = Seq(
