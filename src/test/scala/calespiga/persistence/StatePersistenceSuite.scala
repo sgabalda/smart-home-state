@@ -16,6 +16,8 @@ import scala.concurrent.duration.*
 import scala.language.postfixOps
 import calespiga.model.State
 import cats.effect.ResourceIO
+import calespiga.HealthStatusManager
+import calespiga.HealthComponentManagerStub
 
 class StatePersistenceSuite extends CatsEffectSuite {
 
@@ -29,16 +31,19 @@ class StatePersistenceSuite extends CatsEffectSuite {
 
   private def getSut(
       statePersistenceConfig: StatePersistenceConfig,
-      errorManager: ErrorManager,
+      errorManager: ErrorManager = ErrorManagerStub(),
+      healthComponentManager: HealthStatusManager.HealthComponentManager =
+        HealthComponentManagerStub(),
       currentStateRef: Option[State] = None,
-      readInput: String => IO[String],
-      saveOutput: (String, String) => IO[Unit]
+      readInput: String => IO[String] = IO.pure,
+      saveOutput: (String, String) => IO[Unit] = (_, _) => IO.unit
   ): ResourceIO[StatePersistence] =
     Ref.of[IO, Option[State]](currentStateRef).toResource.flatMap { ref =>
       StatePersistence(
         statePersistenceConfig,
         errorManager,
         ref,
+        healthComponentManager,
         readInput,
         saveOutput
       )
@@ -47,7 +52,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
   test("StatePersistence should load state upon request") {
     val sut = getSut(
       config,
-      errorManager = ErrorManagerStub(),
       readInput = _ => IO.pure(someStateJson),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
@@ -64,7 +68,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
     val error = new Exception("File not found")
     val sut = getSut(
       config,
-      errorManager = ErrorManagerStub(),
       readInput = _ => IO.raiseError(error),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
@@ -83,7 +86,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
   test("StatePersistence should return an error if data read is not valid") {
     val sut = getSut(
       config,
-      errorManager = ErrorManagerStub(),
       readInput = _ => IO.pure("blabla"),
       saveOutput = (_, _) =>
         IO.raiseError(new Exception("Not expected call to save input"))
@@ -107,7 +109,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
     Ref[IO].of[Option[(String, String)]](None).flatMap { ref =>
       val sut = getSut(
         config,
-        errorManager = ErrorManagerStub(),
         readInput =
           _ => IO.raiseError(new Exception("Not expected call to load file")),
         saveOutput = (path, state) => ref.set(Some((path, state))).as(())
@@ -138,7 +139,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
         .setTo(someState.temperatures.batteriesClosetTemperature.map(_ + 1))
       val sut = getSut(
         config,
-        errorManager = ErrorManagerStub(),
         readInput =
           _ => IO.raiseError(new Exception("Not expected call to read input")),
         saveOutput = (path, state) => ref.set(Some((path, state))).as(())
@@ -196,5 +196,57 @@ class StatePersistenceSuite extends CatsEffectSuite {
       }
     }
     TestControl.executeEmbed(program)
+  }
+
+  test(
+    "StatePersistence should set unhealthy if any error on saving the state"
+  ) {
+    val program = Ref[IO].of[Boolean](false).flatMap { ref =>
+      val error = new Exception("expected error")
+      val sut = getSut(
+        config,
+        healthComponentManager =
+          HealthComponentManagerStub(onUnhealthy = ref.set(true)),
+        saveOutput = (_, _) => IO.raiseError(error)
+      )
+      sut.use { statePersistence =>
+        for {
+          _ <- statePersistence.saveState(someState)
+          before <- ref.get
+          _ <- IO.sleep(config.storePeriod + (2 seconds))
+          after <- ref.get
+        } yield {
+          assertEquals(before, false)
+          assertEquals(after, true)
+        }
+      }
+    }
+    TestControl.executeEmbed(program)
+  }
+  test("StatePersistence should set healthy if saving the state succeeds") {
+    Ref[IO].of[Boolean](false).flatMap { ref =>
+      val anotherState = someState
+        .modify(_.temperatures.batteriesClosetTemperature)
+        .setTo(someState.temperatures.batteriesClosetTemperature.map(_ + 1))
+      val sut = getSut(
+        config,
+        healthComponentManager =
+          HealthComponentManagerStub(onHealthy = ref.set(true)),
+        readInput =
+          _ => IO.raiseError(new Exception("Not expected call to read input"))
+      )
+      val program = sut.use { statePersistence =>
+        for {
+          _ <- statePersistence.saveState(anotherState)
+          before <- ref.get
+          _ <- IO.sleep(config.storePeriod + (10 seconds))
+          after <- ref.get
+        } yield {
+          assertEquals(before, false)
+          assertEquals(after, true)
+        }
+      }
+      TestControl.executeEmbed(program)
+    }
   }
 }

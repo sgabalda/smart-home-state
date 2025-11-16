@@ -27,28 +27,29 @@ object Endpoints {
       .errorOut(statusCode(StatusCode.InternalServerError).and(stringBody))
       .out(stringBody)
 
-  private def routes(ref: Ref[IO, Option[State]], healthStatusManager: HealthStatusManager): HttpRoutes[IO] =
-    
+  private def routes(
+      ref: Ref[IO, Option[State]],
+      healthStatusManager: HealthStatusManager
+  ): HttpRoutes[IO] =
+
     val stateEndpointLogic = stateEndpoint.serverLogic { _ =>
-          ref.get.map {
-            case Some(state) => Right(state)
-            case None        => Left("State not initialized")
-          }
-        }
+      ref.get.map {
+        case Some(state) => Right(state)
+        case None        => Left("State not initialized")
+      }
+    }
 
     val healthEndpointLogic = healthEndpoint.serverLogic { _ =>
-          healthStatusManager.status.map {
-            case HealthStatusManager.Healthy =>
-              Right("Healthy")
-            case HealthStatusManager.Unhealthy(reason) =>
-              Left(reason)
-          }
-        }  
+      healthStatusManager.status.map {
+        case HealthStatusManager.Healthy =>
+          Right("Healthy")
+        case HealthStatusManager.Unhealthy(reason) =>
+          Left(reason)
+      }
+    }
 
     Http4sServerInterpreter[IO]().toRoutes(
-      List(stateEndpointLogic,
-        healthEndpointLogic
-      )
+      List(stateEndpointLogic, healthEndpointLogic)
     )
 
   def apply(

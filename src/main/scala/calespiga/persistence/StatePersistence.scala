@@ -13,6 +13,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.nio.file.{Files, Paths}
+import calespiga.HealthStatusManager.HealthComponentManager
 
 trait StatePersistence {
 
@@ -27,6 +28,7 @@ object StatePersistence {
 
   private final case class Impl(
       config: StatePersistenceConfig,
+      healthComponentManager: HealthComponentManager,
       currentState: Ref[IO, Option[State]],
       readInput: String => IO[String],
       saveOutput: (String, String) => IO[Unit]
@@ -48,6 +50,7 @@ object StatePersistence {
         .handleError { t =>
           Left(StateReadingFileError(config.path, t))
         }
+        .productL(healthComponentManager.setHealthy)
 
     def fileUpdate(errorManager: ErrorManager): IO[Unit] =
       currentState.get.flatMap {
@@ -55,11 +58,18 @@ object StatePersistence {
           saveOutput(config.path, state.asJson.noSpaces)
             .redeemWith(
               e =>
-                errorManager.manageError(StateFileUpdateError(config.path, e)),
-              _ => logger.info(s"fileUpdate: state saved to ${config.path}")
+                healthComponentManager.setUnhealthy(e.toString) *>
+                  errorManager.manageError(
+                    StateFileUpdateError(config.path, e)
+                  ),
+              _ =>
+                healthComponentManager.setHealthy *>
+                  logger.info(s"fileUpdate: state saved to ${config.path}")
             )
         case None =>
-          logger.info("fileUpdate: no state to save")
+          healthComponentManager.setHealthy *> logger.info(
+            "fileUpdate: no state to save"
+          )
       }
   }
 
@@ -67,13 +77,20 @@ object StatePersistence {
       statePersistenceConfig: StatePersistenceConfig,
       errorManager: ErrorManager,
       currentStateRef: Ref[IO, Option[State]],
+      healthComponentManager: HealthComponentManager,
       readInput: String => IO[String] = s =>
         IO.blocking(Files.readString(Paths.get(s))),
       saveOutput: (String, String) => IO[Unit] = (s, o) =>
         IO.blocking(Files.writeString(Paths.get(s), o)).as(())
   ): ResourceIO[StatePersistence] = {
     val impl =
-      Impl(statePersistenceConfig, currentStateRef, readInput, saveOutput)
+      Impl(
+        statePersistenceConfig,
+        healthComponentManager,
+        currentStateRef,
+        readInput,
+        saveOutput
+      )
     for {
       _ <- (IO.sleep(statePersistenceConfig.storePeriod) *> impl.fileUpdate(
         errorManager

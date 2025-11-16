@@ -36,6 +36,7 @@ object Main extends IOApp.Simple {
     for {
       appConfig <- ConfigLoader.loadResource
       inputTopicsManager = InputTopicsManager.apply
+      healthStatusManager <- HealthStatusManager()
       mqttConsumer <- Consumer(
         appConfig.mqttConfig,
         inputTopicsManager.inputTopics
@@ -57,10 +58,12 @@ object Main extends IOApp.Simple {
       statePersistence <- StatePersistence(
         appConfig.statePersistenceConfig,
         errorManager,
-        stateRef
+        stateRef,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.StatePersistence
+        )
       )
       processor = StateProcessor(appConfig.processor, mqttBlacklist)
-      healthStatusManager <- HealthStatusManager()
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
     } yield (
       appConfig,
