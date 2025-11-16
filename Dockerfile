@@ -38,7 +38,7 @@ RUN mkdir -p /app/data /app/logs && \
 USER smarthome
 
 # Expose default port (if your app uses HTTP/WebSocket)
-EXPOSE 8080
+EXPOSE 8081
 
 # Health check (simple process check since we removed curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

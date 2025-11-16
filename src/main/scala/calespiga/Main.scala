@@ -60,7 +60,8 @@ object Main extends IOApp.Simple {
         stateRef
       )
       processor = StateProcessor(appConfig.processor, mqttBlacklist)
-      _ <- Endpoints.server(stateRef, appConfig.httpServerConfig)
+      healthStatusManager <- HealthStatusManager()
+      _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
     } yield (
       appConfig,
       mqttInputProcessor,
