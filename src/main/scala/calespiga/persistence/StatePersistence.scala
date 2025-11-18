@@ -64,10 +64,10 @@ object StatePersistence {
                   ),
               _ =>
                 healthComponentManager.setHealthy *>
-                  logger.info(s"fileUpdate: state saved to ${config.path}")
+                  logger.debug(s"fileUpdate: state saved to ${config.path}")
             )
         case None =>
-          healthComponentManager.setHealthy *> logger.info(
+          healthComponentManager.setHealthy *> logger.warn(
             "fileUpdate: no state to save"
           )
       }

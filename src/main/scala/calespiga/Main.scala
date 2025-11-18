@@ -37,15 +37,23 @@ object Main extends IOApp.Simple {
       appConfig <- ConfigLoader.loadResource
       inputTopicsManager = InputTopicsManager.apply
       healthStatusManager <- HealthStatusManager()
+      mqttProducer <- Producer(
+        appConfig.mqttConfig,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.MqttProducer
+        )
+      )
       mqttConsumer <- Consumer(
         appConfig.mqttConfig,
-        inputTopicsManager.inputTopics
+        inputTopicsManager.inputTopics,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.MqttConsumer
+        )
       )
       mqttInputProcessor = MqttToEventInputProcessor(
         mqttConsumer,
         inputTopicsManager.inputTopicsConversions
       )
-      mqttProducer <- Producer(appConfig.mqttConfig)
       mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
       openHabApiClient <- APIClient(appConfig.openHabConfig)
