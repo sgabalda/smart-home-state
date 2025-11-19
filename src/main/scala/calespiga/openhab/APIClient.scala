@@ -10,9 +10,12 @@ import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.ws.async.asWebSocketUnsafe
 import sttp.client4.{Response, UriContext, WebSocketBackend, basicRequest}
 import sttp.ws.WebSocket
+import calespiga.HealthStatusManager.HealthComponentManager
 
 import scala.concurrent.duration.*
 import scala.language.postfixOps
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
 
 trait APIClient {
 
@@ -24,6 +27,8 @@ trait APIClient {
 }
 
 object APIClient {
+
+  private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   case class WSEvent(`type`: String, topic: String, payload: String)
   case class ItemChangedEvent(item: String, value: String)
@@ -63,7 +68,9 @@ object APIClient {
 
   final private case class Impl(
       webSocketBackend: WebSocketBackend[IO],
-      openHabConfig: OpenHabConfig
+      openHabConfig: OpenHabConfig,
+      healthRestApi: HealthComponentManager,
+      healthWebSocket: HealthComponentManager
   ) extends APIClient {
 
     private val apiUrl =
@@ -78,70 +85,85 @@ object APIClient {
         .send(webSocketBackend)
         .flatMap {
           case Response(Right(webSocket), code, _, _, _, _) =>
-            IO.pure(webSocket)
+            logger.info("WebSocket opened") *>
+              healthWebSocket.setHealthy *> IO.pure(webSocket)
           case Response(Left(error), code, text, headers, _, _) =>
-            IO.raiseError(
-              Exception(
-                s"Failed to open WebSocket, error $code ($text): $error"
-              )
+            val message =
+              s"Failed to open WebSocket, error $code ($text): $error"
+            healthWebSocket.setUnhealthy(message) *> IO.raiseError(
+              Exception(message)
             )
         }
     }
 
-    override def itemChanges(
-        items: Set[String]
-    ): Stream[IO, Either[Throwable, ItemChangedEvent]] = {
-      for {
-        ws <- Stream.eval(openWebSocket())
-        _ <- Stream.eval(ws.sendText(filterMessage))
-        ping = Stream
-          .awakeDelay[IO](5 seconds)
-          .evalTap(_ => ws.sendText(pingMessage))
-        result <- Stream
-          .repeatEval(ws.receiveText())
-          .evalMapFilter { frame =>
-            decode[WSEvent](frame) match {
-              case Left(error) =>
-                IO.pure(Some(Left(error)))
-              case Right(value) =>
-                value.`type` match {
-                  case "ItemStateChangedEvent" =>
-                    ItemChangedEvent(value) match {
-                      case error @ Left(_) => IO.pure(Some(error))
-                      case Right(itemChangedEvent)
-                          if items.contains(itemChangedEvent.item) =>
-                        IO.pure(Some(Right(itemChangedEvent)))
-                      case _ => IO.pure(None)
-                    }
-                  case _ => IO.pure(None)
-                }
-            }
-          }
-          .concurrently(ping)
-      } yield {
-        result
-      }
+    private val getWsStream: Stream[IO, String] = (for {
+      ws <- Stream.eval(openWebSocket())
+      _ <- Stream.eval(ws.sendText(filterMessage))
+      ping = Stream
+        .awakeDelay[IO](5 seconds)
+        .evalTap(_ => ws.sendText(pingMessage))
+      result <- Stream
+        .repeatEval(ws.receiveText())
+        .concurrently(ping)
+    } yield {
+      result
+    }).handleErrorWith { error =>
+      Stream
+        .eval(
+          healthWebSocket.setUnhealthy(error.getMessage) *>
+            logger.error("WebSocket stream error: " + error.getMessage) *>
+            IO.sleep(openHabConfig.retryDelay)
+        )
+        .flatMap(_ => getWsStream)
     }
 
-    override def changeItem(item: String, value: String): IO[Unit] =
+    override def itemChanges(
+        items: Set[String]
+    ): Stream[IO, Either[Throwable, ItemChangedEvent]] =
+      getWsStream.evalMapFilter { frame =>
+        decode[WSEvent](frame) match {
+          case Left(error) =>
+            IO.pure(Some(Left(error)))
+          case Right(value) =>
+            value.`type` match {
+              case "ItemStateChangedEvent" =>
+                ItemChangedEvent(value) match {
+                  case error @ Left(_) => IO.pure(Some(error))
+                  case Right(itemChangedEvent)
+                      if items.contains(itemChangedEvent.item) =>
+                    IO.pure(Some(Right(itemChangedEvent)))
+                  case _ => IO.pure(None)
+                }
+              case _ => IO.pure(None)
+            }
+        }
+      }
+
+    override def changeItem(item: String, value: String): IO[Unit] = {
+      // maybe in the future we want to have a Queue to ensure order
+      // and retry if some failure happens
       basicRequest
         .post(apiUrl.addPath(item))
         .body(value)
         .send(webSocketBackend)
         .flatMap {
-          case Response(Right(successBody), code, _, _, _, _) => IO.unit
-          case Response(Left(error), code, _, _, _, _)        =>
-            IO.raiseError(
-              new Exception(s"Failed to change item, error $code: $error")
-            )
+          case Response(Right(successBody), code, _, _, _, _) =>
+            healthRestApi.setHealthy *>
+              logger.debug(s"Changed item $item to value $value")
+          case Response(Left(error), code, _, _, _, _) =>
+            val message = s"Failed to change item, error $code: $error"
+            healthRestApi.setUnhealthy(message)
+              *> logger.error(message) *> IO.raiseError(Exception(message))
         }
-
+    }
   }
 
   def apply(
       config: OpenHabConfig,
+      healthRestApi: HealthComponentManager,
+      healthWebSocket: HealthComponentManager,
       backendResource: ResourceIO[WebSocketBackend[IO]] =
         HttpClientCatsBackend.resource[IO]()
   ): ResourceIO[APIClient] =
-    backendResource.map { Impl(_, config) }
+    backendResource.map { Impl(_, config, healthRestApi, healthWebSocket) }
 }

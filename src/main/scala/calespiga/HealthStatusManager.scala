@@ -38,7 +38,8 @@ object HealthStatusManager {
   enum Component {
     case MqttConsumer
     case MqttProducer
-    case OpenHabApiClient
+    case OpenHabRestClient
+    case OpenHabWebsocketClient
     case StatePersistence
   }
 
