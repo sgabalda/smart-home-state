@@ -25,7 +25,8 @@ FROM eclipse-temurin:25-jre-jammy AS runtime
 RUN groupadd -r smarthome && useradd -r -g smarthome -d /app -s /bin/false smarthome
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app

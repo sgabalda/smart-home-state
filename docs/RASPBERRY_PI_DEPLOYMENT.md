@@ -90,7 +90,7 @@ nano .env
 
 add a cronjob that restarts unhealthy containers:
 
-```cronjob
+```cron
 * * * * * docker ps -q -f health=unhealthy | xargs --no-run-if-empty docker restart
 ```
 

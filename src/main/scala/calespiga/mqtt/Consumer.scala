@@ -43,10 +43,12 @@ object Consumer {
           _ <- session.state.discrete
             .evalMap {
               case ConnectionState.SessionStarted =>
-                healthCheck.setHealthy *> logger.info("MQTT Consumer HEALTHY")
+                healthCheck.setHealthy *> logger.info(
+                  "MQTT Consumer set healthy"
+                )
               case other =>
                 healthCheck.setUnhealthy(other.toString) *> logger.error(
-                  s"MQTT Consumer connection UNHEALTHY: $other"
+                  s"MQTT Consumer connection set unhealthy: $other"
                 )
             }
             .compile

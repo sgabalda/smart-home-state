@@ -109,11 +109,12 @@ object APIClient {
       result
     }).handleErrorWith { error =>
       Stream
-        .eval(
-          healthWebSocket.setUnhealthy(error.getMessage) *>
-            logger.error("WebSocket stream error: " + error.getMessage) *>
+        .eval {
+          val errorMsg = Option(error.getMessage).getOrElse(error.toString)
+          healthWebSocket.setUnhealthy(errorMsg) *>
+            logger.error("WebSocket stream error: " + errorMsg) *>
             IO.sleep(openHabConfig.retryDelay)
-        )
+        }
         .flatMap(_ => getWsStream)
     }
 
