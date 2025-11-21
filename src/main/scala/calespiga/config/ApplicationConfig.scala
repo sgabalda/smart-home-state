@@ -29,7 +29,8 @@ final case class MqttConfig(
 final case class OpenHabConfig(
     host: String,
     port: Int,
-    apiToken: String
+    apiToken: String,
+    retryDelay: FiniteDuration
 )
 
 final case class StatePersistenceConfig(

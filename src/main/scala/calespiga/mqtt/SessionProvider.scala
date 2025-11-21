@@ -6,6 +6,7 @@ import com.comcast.ip4s.{Host, Port}
 import net.sigusr.mqtt.api.*
 import net.sigusr.mqtt.api.RetryConfig.Custom
 import retry.RetryPolicies
+import scala.concurrent.duration.DurationInt
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
@@ -17,7 +18,7 @@ object SessionProvider {
   ): ResourceIO[Session[IO]] = {
     val retryConfig: Custom[IO] = Custom[IO](
       RetryPolicies
-        .limitRetries[IO](5)
+        .exponentialBackoff[IO](100.milliseconds)
         .join(RetryPolicies.fullJitter[IO](FiniteDuration(2, SECONDS)))
     )
     val transportConfig =

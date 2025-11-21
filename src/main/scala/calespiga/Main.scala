@@ -36,18 +36,35 @@ object Main extends IOApp.Simple {
     for {
       appConfig <- ConfigLoader.loadResource
       inputTopicsManager = InputTopicsManager.apply
+      healthStatusManager <- HealthStatusManager()
+      mqttProducer <- Producer(
+        appConfig.mqttConfig,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.MqttProducer
+        )
+      )
       mqttConsumer <- Consumer(
         appConfig.mqttConfig,
-        inputTopicsManager.inputTopics
+        inputTopicsManager.inputTopics,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.MqttConsumer
+        )
       )
       mqttInputProcessor = MqttToEventInputProcessor(
         mqttConsumer,
         inputTopicsManager.inputTopicsConversions
       )
-      mqttProducer <- Producer(appConfig.mqttConfig)
       mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
-      openHabApiClient <- APIClient(appConfig.openHabConfig)
+      openHabApiClient <- APIClient(
+        appConfig.openHabConfig,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.OpenHabRestClient
+        ),
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.OpenHabWebsocketClient
+        )
+      )
       userInputManager = UserInputManager(openHabApiClient)
       directExecutor = DirectExecutor(openHabApiClient, mqttActionToProducer)
       errorManager <- ErrorManager()
@@ -57,10 +74,13 @@ object Main extends IOApp.Simple {
       statePersistence <- StatePersistence(
         appConfig.statePersistenceConfig,
         errorManager,
-        stateRef
+        stateRef,
+        healthStatusManager.componentHealthManager(
+          HealthStatusManager.Component.StatePersistence
+        )
       )
       processor = StateProcessor(appConfig.processor, mqttBlacklist)
-      _ <- Endpoints.server(stateRef, appConfig.httpServerConfig)
+      _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
     } yield (
       appConfig,
       mqttInputProcessor,
