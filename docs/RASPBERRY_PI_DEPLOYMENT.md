@@ -86,6 +86,14 @@ cp .env.template .env
 nano .env
 ```
 
+5. **(Optional) set up cron to restart unhealthy containers to try to autoheal**
+
+add a cronjob that restarts unhealthy containers:
+
+```cronjob
+* * * * * docker ps -q -f health=unhealthy | xargs --no-run-if-empty docker restart
+```
+
 **Required configuration in .env:**
 
 ```bash
@@ -280,21 +288,3 @@ tar -czf backup-$(date +%Y%m%d).tar.gz data/ .env docker-compose.yml
    ```bash
    docker exec smart-home-state netcat -zv mqtt-broker 1883
    ```
-
-## Security Considerations
-
-1. **Firewall:** Only expose necessary ports
-2. **Updates:** Keep Raspberry Pi OS updated
-3. **Monitoring:** Set up log monitoring for suspicious activity
-4. **Backups:** Regular backup of configuration and state data
-
-## Optional: Slack Notifications
-
-To receive notifications when deployments happen:
-
-1. Create a Slack webhook URL
-2. Add it to your `.env` file:
-   ```
-   SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
-   ```
-3. Restart watchtower: `docker-compose restart watchtower`

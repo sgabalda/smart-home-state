@@ -24,6 +24,9 @@ FROM eclipse-temurin:25-jre-jammy AS runtime
 # Create application user for security
 RUN groupadd -r smarthome && useradd -r -g smarthome -d /app -s /bin/false smarthome
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl
+
 # Set working directory
 WORKDIR /app
 
@@ -39,10 +42,6 @@ USER smarthome
 
 # Expose default port (if your app uses HTTP/WebSocket)
 EXPOSE 8081
-
-# Health check (simple process check since we removed curl)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ps aux | grep "[s]mart-home-state" > /dev/null || exit 1
 
 # Set default environment variables (can be overridden by docker-compose)
 ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseG1GC -XX:+UseContainerSupport"
