@@ -126,3 +126,22 @@ final case class FeatureFlagsConfig(
     heaterMqttTopic: Set[String],
     setHeaterManagementItem: String
 ) derives ConfigReader
+
+final case class PowerProductionConfig(
+    sunnyBoyConfig: SunnyBoyConfig,
+    powerProductionSourceConfig: PowerProductionSourceConfig
+)
+
+final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration)
+
+final case class SunnyBoyConfig(
+    username: String,
+    password: String,
+    loginUrl: String,
+    dataUrl: String,
+    totalPowerCode: String,
+    frequencyCode: String,
+    linesCode: String,
+    serialId: String,
+    maxPowerAvailable: Float
+)
