@@ -42,7 +42,9 @@ object Consumer {
           _ <- session.state.discrete
             .evalMap {
               case ConnectionState.SessionStarted =>
-                session.subscribe(subscribedTopics) *> healthCheck.setHealthy *> logger.info(
+                session.subscribe(
+                  subscribedTopics
+                ) *> healthCheck.setHealthy *> logger.info(
                   "MQTT Consumer set healthy"
                 )
               case other =>
