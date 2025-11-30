@@ -38,12 +38,13 @@ object Consumer {
       ).use { session =>
         for {
           _ <- logger.info("MQTT Consumer session started")
-          _ <- session.subscribe(subscribedTopics)
           _ <- sessionDeferred.complete(session)
           _ <- session.state.discrete
             .evalMap {
               case ConnectionState.SessionStarted =>
-                healthCheck.setHealthy *> logger.info(
+                session.subscribe(
+                  subscribedTopics
+                ) *> healthCheck.setHealthy *> logger.info(
                   "MQTT Consumer set healthy"
                 )
               case other =>
