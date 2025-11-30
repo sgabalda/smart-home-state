@@ -8,6 +8,7 @@ final case class ApplicationConfig(
     httpServerConfig: HttpServerConfig,
     mqttConfig: MqttConfig,
     uiConfig: UIConfig,
+    powerProduction: PowerProductionConfig,
     statePersistenceConfig: StatePersistenceConfig,
     processor: ProcessorConfig
 ) derives ConfigReader
@@ -128,8 +129,8 @@ final case class FeatureFlagsConfig(
 ) derives ConfigReader
 
 final case class PowerProductionConfig(
-    sunnyBoyConfig: SunnyBoyConfig,
-    powerProductionSourceConfig: PowerProductionSourceConfig
+    sunnyBoy: SunnyBoyConfig,
+    powerProductionSource: PowerProductionSourceConfig
 )
 
 final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration)
