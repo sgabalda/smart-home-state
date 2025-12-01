@@ -34,7 +34,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor delegates direct actions to DirectExecutor") {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
     val directAction2 = Action.SendMqttStringMessage("topic", "message")
     val scheduledAction = Action.Delayed("id1", directAction1, 1.second)
 
@@ -66,7 +66,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor executes direct actions before scheduled actions") {
-    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val directAction = Action.SetUIItemValue("item", "value")
     val scheduledAction = Action.Delayed("id1", directAction, 1.second)
 
     val actions = Set[Action](directAction, scheduledAction)
@@ -91,7 +91,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor handles both Delayed and Periodic scheduled actions") {
-    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val directAction = Action.SetUIItemValue("item", "value")
     val delayedAction = Action.Delayed("id1", directAction, 1.second)
     val periodicAction = Action.Periodic("id2", directAction, 5.seconds)
 
@@ -115,7 +115,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor merges errors from both executors") {
-    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val directAction = Action.SetUIItemValue("item", "value")
     val scheduledAction = Action.Delayed("id1", directAction, 1.second)
 
     val actions = Set[Action](directAction, scheduledAction)
@@ -148,7 +148,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor returns empty list when no errors occur") {
-    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val directAction = Action.SetUIItemValue("item", "value")
     val scheduledAction = Action.Delayed("id1", directAction, 1.second)
 
     val actions = Set[Action](directAction, scheduledAction)
@@ -192,7 +192,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor handles only direct actions") {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
     val directAction2 = Action.SendMqttStringMessage("topic", "message")
 
     val actions = Set[Action](directAction1, directAction2)
@@ -220,7 +220,7 @@ class ExecutorSuite extends CatsEffectSuite {
   }
 
   test("Executor handles only scheduled actions") {
-    val directAction = Action.SetOpenHabItemValue("item", "value")
+    val directAction = Action.SetUIItemValue("item", "value")
     val delayedAction = Action.Delayed("id1", directAction, 1.second)
     val periodicAction = Action.Periodic("id2", directAction, 5.seconds)
 

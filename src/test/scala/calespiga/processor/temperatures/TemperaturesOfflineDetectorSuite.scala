@@ -23,10 +23,10 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val event = Event.Temperature.BatteryTemperatureMeasured(25.0)
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.onlineText),
+      Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id + calespiga.processor.OfflineDetector.ID_SUFFIX,
-        Action.SetOpenHabItemValue(statusItem, config.offlineText),
+        Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
     )
@@ -39,10 +39,10 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val event = Event.Temperature.ElectronicsTemperatureMeasured(30.0)
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.onlineText),
+      Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id + calespiga.processor.OfflineDetector.ID_SUFFIX,
-        Action.SetOpenHabItemValue(statusItem, config.offlineText),
+        Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
     )
@@ -57,7 +57,7 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
         id + calespiga.processor.OfflineDetector.ID_SUFFIX,
-        Action.SetOpenHabItemValue(statusItem, config.offlineText),
+        Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
     )

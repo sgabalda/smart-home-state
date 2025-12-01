@@ -32,7 +32,7 @@ object OfflineDetector {
         // Handle startup event - schedule initial offline timeout
         case Event.System.StartupEvent =>
           val offlineAction =
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               statusItem,
               config.offlineText
             )
@@ -48,14 +48,14 @@ object OfflineDetector {
 
           // Set status to online immediately
           val setOnlineAction =
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               statusItem,
               config.onlineText
             )
 
           // Schedule new offline timeout (automatically cancels previous one with same ID)
           val offlineAction =
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               statusItem,
               config.offlineText
             )

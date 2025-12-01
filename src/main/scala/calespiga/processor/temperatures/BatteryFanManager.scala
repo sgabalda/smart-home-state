@@ -65,7 +65,7 @@ private object BatteryFanManager {
           (
             state,
             Set(
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.batteryFanCommandItem,
                 FanSignal.userCommandToString(
                   state.fans.fanBatteriesLatestCommandReceived
@@ -84,7 +84,7 @@ private object BatteryFanManager {
           (
             newState,
             Set(
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.batteryFanStatusItem,
                 status.toString
               )

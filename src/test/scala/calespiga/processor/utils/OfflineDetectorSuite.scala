@@ -35,10 +35,10 @@ class OfflineDetectorSuite extends FunSuite {
     val state = State()
     val (newState, actions) = detector.process(state, matchingEvent, now)
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.onlineText),
+      Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id,
-        Action.SetOpenHabItemValue(statusItem, config.offlineText),
+        Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
     )
@@ -53,7 +53,7 @@ class OfflineDetectorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
         id,
-        Action.SetOpenHabItemValue(statusItem, config.offlineText),
+        Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
     )

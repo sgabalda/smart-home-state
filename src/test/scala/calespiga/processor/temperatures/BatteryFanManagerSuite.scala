@@ -34,7 +34,7 @@ class BatteryFanManagerSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.batteryFanStatusItem,
           status.toString
         )

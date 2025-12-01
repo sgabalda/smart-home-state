@@ -85,11 +85,11 @@ private object HeaterPowerProcessor {
               .setTo(newEnergyToday)
 
             val actions: Set[Action] = Set(
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.energyTodayItem,
                 newEnergyToday.toInt.toString
               ),
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.statusItem,
                 status.power.toString
               )
@@ -124,10 +124,10 @@ private object HeaterPowerProcessor {
                   (
                     newState,
                     Actions.commandActionWithResend(commandToSend) + Action
-                      .SetOpenHabItemValue(
+                      .SetUIItemValue(
                         config.lastTimeHotItem,
                         timestamp.atZone(zone).toLocalDateTime.format(formatter)
-                      ) + Action.SetOpenHabItemValue(
+                      ) + Action.SetUIItemValue(
                       config.isHotItem,
                       HeaterSignal.Hot.toString
                     )
@@ -147,11 +147,11 @@ private object HeaterPowerProcessor {
                   (
                     newState,
                     Actions.commandActionWithResend(commandToSend) + Action
-                      .SetOpenHabItemValue(
+                      .SetUIItemValue(
                         config.lastTimeHotItem,
                         timestamp.atZone(zone).toLocalDateTime.format(formatter)
                       ) + Action
-                      .SetOpenHabItemValue(
+                      .SetUIItemValue(
                         config.isHotItem,
                         HeaterSignal.Cold.toString
                       )
@@ -173,7 +173,7 @@ private object HeaterPowerProcessor {
         (
           newState,
           Actions.commandActionWithResend(commandToSend) +
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.lastCommandItem,
               HeaterSignal.userCommandToString(
                 state.heater.lastCommandReceived.getOrElse(TurnOff)

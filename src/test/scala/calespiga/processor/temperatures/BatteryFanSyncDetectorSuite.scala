@@ -41,7 +41,7 @@ class BatteryFanSyncDetectorSuite extends FunSuite {
     )
     assertEquals(newState.fans.fanBatteriesLastSyncing, None)
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.syncText),
+      Action.SetUIItemValue(statusItem, config.syncText),
       Action.Cancel(id + calespiga.processor.SyncDetector.ID_SUFFIX)
     )
     assertEquals(actions, expectedActions)
@@ -78,10 +78,10 @@ class BatteryFanSyncDetectorSuite extends FunSuite {
     )
     assertEquals(newState.fans.fanBatteriesLastSyncing, Some(now))
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.syncingText),
+      Action.SetUIItemValue(statusItem, config.syncingText),
       Action.Delayed(
         id + calespiga.processor.SyncDetector.ID_SUFFIX,
-        Action.SetOpenHabItemValue(statusItem, config.nonSyncText),
+        Action.SetUIItemValue(statusItem, config.nonSyncText),
         config.timeoutDuration
       )
     )

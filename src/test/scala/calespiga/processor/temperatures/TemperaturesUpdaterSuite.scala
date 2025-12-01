@@ -17,7 +17,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.externalTemperatureItem,
           temp.toString
         )
@@ -53,7 +53,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.batteryTemperatureItem,
           temp.toString
         )
@@ -70,7 +70,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.batteryClosetTemperatureItem,
           temp.toString
         )
@@ -87,7 +87,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.electronicsTemperatureItem,
           temp.toString
         )
@@ -104,7 +104,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.externalTemperatureItem,
           temp.toString
         )

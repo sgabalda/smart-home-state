@@ -63,7 +63,7 @@ private object ElectronicsFanManager {
           (
             state,
             Set(
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.electronicsFanCommandItem,
                 FanSignal.userCommandToString(
                   state.fans.fanElectronicsLatestCommandReceived
@@ -82,7 +82,7 @@ private object ElectronicsFanManager {
           (
             newState,
             Set(
-              Action.SetOpenHabItemValue(
+              Action.SetUIItemValue(
                 config.electronicsFanStatusItem,
                 status.toString
               )

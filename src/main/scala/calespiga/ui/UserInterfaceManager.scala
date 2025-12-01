@@ -1,4 +1,4 @@
-package calespiga.userinput
+package calespiga.ui
 
 import calespiga.ErrorManager
 import calespiga.model.Event
@@ -6,19 +6,64 @@ import calespiga.openhab.APIClient
 import cats.effect.IO
 import fs2.Stream
 import scala.util.Try
+import calespiga.config.UIConfig
+import cats.effect.Ref
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
+import cats.implicits.catsSyntaxApplicativeByName
 
-trait UserInputManager {
+trait UserInterfaceManager {
 
   def userInputEventsStream(): Stream[IO, Either[ErrorManager.Error, Event]]
-
+  def updateUIItem(item: String, value: String): IO[Unit]
+  def sendNotification(
+      id: String,
+      message: String,
+      repeatInterval: Option[FiniteDuration]
+  ): IO[Unit]
 }
 
-object UserInputManager {
+object UserInterfaceManager {
 
   private final case class Impl(
       openhabApiClient: APIClient,
-      itemsConverter: OpenHabItemsConverter
-  ) extends UserInputManager {
+      itemsConverter: OpenHabItemsConverter,
+      uiConfig: UIConfig,
+      sentMessages: Ref[IO, Map[String, Instant]]
+  ) extends UserInterfaceManager {
+
+    override def updateUIItem(item: String, value: String): IO[Unit] =
+      openhabApiClient.changeItem(item, value)
+
+    override def sendNotification(
+        id: String,
+        message: String,
+        repeatInterval: Option[FiniteDuration]
+    ): IO[Unit] =
+      for {
+        now <- IO.realTimeInstant
+        repeatIntervalValue = repeatInterval.getOrElse(
+          uiConfig.defaultRepeatInterval
+        )
+        shouldSend <- sentMessages.modify { sent =>
+          sent.get(id) match {
+            case None =>
+              (sent + (id -> now), true)
+            case Some(lastSent) =>
+              if (
+                now.isAfter(lastSent.plusMillis(repeatIntervalValue.toMillis))
+              ) {
+                (sent + (id -> now), true)
+              } else {
+                (sent, false)
+              }
+          }
+        }
+        _ <- openhabApiClient
+          .changeItem(uiConfig.notificationsItem, message)
+          .whenA(shouldSend)
+      } yield ()
+
     override def userInputEventsStream()
         : Stream[IO, Either[ErrorManager.Error, Event]] = {
 
@@ -66,10 +111,11 @@ object UserInputManager {
 
   def apply(
       openhabApiClient: APIClient,
+      uiConfig: UIConfig,
       itemsConverter: OpenHabItemsConverter = openHabItems
-  ): UserInputManager = Impl(
-    openhabApiClient,
-    itemsConverter
-  )
+  ): IO[UserInterfaceManager] =
+    Ref.of[IO, Map[String, Instant]](Map.empty).map { sentMessages =>
+      Impl(openhabApiClient, itemsConverter, uiConfig, sentMessages)
+    }
 
 }

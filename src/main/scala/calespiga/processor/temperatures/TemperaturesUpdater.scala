@@ -25,7 +25,7 @@ private object TemperaturesUpdater {
         (
           state,
           Set(
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.externalTemperatureItem,
               state.temperatures.goalTemperature.toString
             )
@@ -37,7 +37,7 @@ private object TemperaturesUpdater {
             .modify(_.temperatures.batteriesTemperature)
             .setTo(Some(celsius)),
           Set(
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.batteryTemperatureItem,
               celsius.toString
             )
@@ -49,7 +49,7 @@ private object TemperaturesUpdater {
             .modify(_.temperatures.batteriesClosetTemperature)
             .setTo(Some(celsius)),
           Set(
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.batteryClosetTemperatureItem,
               celsius.toString
             )
@@ -61,7 +61,7 @@ private object TemperaturesUpdater {
             .modify(_.temperatures.electronicsTemperature)
             .setTo(Some(celsius)),
           Set(
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.electronicsTemperatureItem,
               celsius.toString
             )
@@ -71,7 +71,7 @@ private object TemperaturesUpdater {
         (
           state.modify(_.temperatures.externalTemperature).setTo(Some(celsius)),
           Set(
-            Action.SetOpenHabItemValue(
+            Action.SetUIItemValue(
               config.externalTemperatureItem,
               celsius.toString
             )

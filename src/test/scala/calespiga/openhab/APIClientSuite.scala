@@ -1,24 +1,17 @@
 package calespiga.openhab
 
-import calespiga.config.OpenHabConfig
 import cats.effect.{IO, Resource}
 import munit.CatsEffectSuite
 import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.testing.*
 import sttp.client4.testing.StubBody.Adjust
 import sttp.model.StatusCode
-import scala.concurrent.duration.*
 import calespiga.HealthComponentManagerStub
 import cats.effect.Ref
+import calespiga.openhab.ApiClientStub
 
 class APIClientSuite extends CatsEffectSuite {
-
-  private val config = OpenHabConfig(
-    host = "localhost",
-    port = 8080,
-    apiToken = "testToken",
-    retryDelay = 5.seconds
-  )
+  private val config = ApiClientStub.config
 
   test("APIClient should process properly a success") {
 

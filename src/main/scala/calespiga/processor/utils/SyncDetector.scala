@@ -51,7 +51,7 @@ object SyncDetector {
         getLastSyncing(state) match
           case Some(value) =>
             val actions = Set(
-              Action.SetOpenHabItemValue(statusItem, config.syncText),
+              Action.SetUIItemValue(statusItem, config.syncText),
               Action.Cancel(
                 id
               )
@@ -68,10 +68,10 @@ object SyncDetector {
             (state, Set.empty)
           case None =>
             val actions = Set(
-              Action.SetOpenHabItemValue(statusItem, config.syncingText),
+              Action.SetUIItemValue(statusItem, config.syncingText),
               Action.Delayed(
                 id,
-                Action.SetOpenHabItemValue(statusItem, config.nonSyncText),
+                Action.SetUIItemValue(statusItem, config.nonSyncText),
                 config.timeoutDuration
               )
             )

@@ -40,11 +40,11 @@ object FeatureFlagsProcessor {
               (
                 state,
                 Set(
-                  Action.SetOpenHabItemValue(
+                  Action.SetUIItemValue(
                     config.setFanManagementItem,
                     state.featureFlags.fanManagementEnabled.toString
                   ),
-                  Action.SetOpenHabItemValue(
+                  Action.SetUIItemValue(
                     config.setHeaterManagementItem,
                     state.featureFlags.heaterManagementEnabled.toString
                   )

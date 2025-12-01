@@ -35,7 +35,7 @@ class ElectronicsFanManagerSuite extends FunSuite {
     assertEquals(
       actions,
       Set[Action](
-        Action.SetOpenHabItemValue(
+        Action.SetUIItemValue(
           dummyConfig.electronicsFanStatusItem,
           status.toString
         )

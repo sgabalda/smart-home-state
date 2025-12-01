@@ -62,7 +62,7 @@ class SyncDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, dummyEvent, now)
     assertEquals(newState.heater.lastSyncing, None)
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.syncText),
+      Action.SetUIItemValue(statusItem, config.syncText),
       Action.Cancel(id + calespiga.processor.SyncDetector.ID_SUFFIX)
     )
     assertEquals(actions, expectedActions)
@@ -96,10 +96,10 @@ class SyncDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, dummyEvent, now)
     assertEquals(newState.heater.lastSyncing, Some(now))
     val expectedActions = Set(
-      Action.SetOpenHabItemValue(statusItem, config.syncingText),
+      Action.SetUIItemValue(statusItem, config.syncingText),
       Action.Delayed(
         id + calespiga.processor.SyncDetector.ID_SUFFIX,
-        Action.SetOpenHabItemValue(statusItem, config.nonSyncText),
+        Action.SetUIItemValue(statusItem, config.nonSyncText),
         config.timeoutDuration
       )
     )
