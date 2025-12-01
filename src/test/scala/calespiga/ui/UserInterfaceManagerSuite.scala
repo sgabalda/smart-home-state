@@ -24,24 +24,23 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
   test("sendNotification should call the APIClient with correct parameters") {
     val notificationId = "TestNotification"
     val message = "Test Message"
-    val repeatInterval = 5.minutes
 
     for {
-      called <- IO.ref[Option[(String, String, Option[FiniteDuration])]](None)
+      called <- IO.ref[Option[(String, String)]](None)
       apiClient = ApiClientStub(
-        changeItemStub = (item: String, value: String) =>
-          called.set(Some((item, value, Some(repeatInterval))))
+        changeItemStub =
+          (item: String, value: String) => called.set(Some((item, value)))
       )
       sut <- UserInterfaceManager(
         apiClient,
         uiConfig
       )
-      _ <- sut.sendNotification(notificationId, message, Some(repeatInterval))
+      _ <- sut.sendNotification(notificationId, message, None)
       calledValue <- called.get
     } yield {
       assertEquals(
         calledValue,
-        Some((uiConfig.notificationsItem, message, Some(repeatInterval))),
+        Some((uiConfig.notificationsItem, message)),
         "APIClient was not called with correct parameters"
       )
     }

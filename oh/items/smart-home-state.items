@@ -38,7 +38,7 @@ SYSTEM
 ----------------------
 */
 
-String NotificationsSHS "Notificacions SHS"
+String NotificacionsSHS "Notificacions SHS"
 
 String SystemTitle "Estat"
 

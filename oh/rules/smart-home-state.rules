@@ -1,7 +1,7 @@
 
 rule "Send SHS notification"
 when
-    Item NotificationsSHS received command
+    Item NotificacionsSHS received command
 then
     val message = receivedCommand.toString
     sendBroadcastNotification(message)
