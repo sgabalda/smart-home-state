@@ -65,7 +65,10 @@ final case class TemperaturesItemsConfig(
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,
-    goalTemperatureItem: String
+    goalTemperatureItem: String,
+    highTemperatureThreshold: Double,
+    lowTemperatureThreshold: Double,
+    thresholdNotificationPeriod: FiniteDuration
 ) derives ConfigReader
 
 final case class FansConfig(

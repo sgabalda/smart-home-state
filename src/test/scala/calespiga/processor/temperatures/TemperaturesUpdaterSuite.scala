@@ -5,8 +5,22 @@ import calespiga.model.{State, Action, Event}
 import calespiga.config.TemperaturesItemsConfig
 import java.time.Instant
 import com.softwaremill.quicklens.*
+import scala.concurrent.duration.*
 
 class TemperaturesUpdaterSuite extends FunSuite {
+
+  val dummyConfig = TemperaturesItemsConfig(
+    batteryTemperatureItem = "BatteryTempItem",
+    batteryClosetTemperatureItem = "BatteryClosetTempItem",
+    electronicsTemperatureItem = "ElectronicsTempItem",
+    externalTemperatureItem = "ExternalTempItem",
+    goalTemperatureItem = "DummyGoalTempItem",
+    lowTemperatureThreshold = 5.0,
+    highTemperatureThreshold = 30.0,
+    thresholdNotificationPeriod = 2.hours
+  )
+  val updater = TemperaturesUpdater(dummyConfig)
+  val now = Instant.parse("2023-08-17T10:00:00Z")
 
   test("SystemStartup emits action to set goal temperature if present") {
     val temp = 21.5
@@ -24,16 +38,6 @@ class TemperaturesUpdaterSuite extends FunSuite {
       )
     )
   }
-
-  val dummyConfig = TemperaturesItemsConfig(
-    batteryTemperatureItem = "BatteryTempItem",
-    batteryClosetTemperatureItem = "BatteryClosetTempItem",
-    electronicsTemperatureItem = "ElectronicsTempItem",
-    externalTemperatureItem = "ExternalTempItem",
-    goalTemperatureItem = "DummyGoalTempItem"
-  )
-  val updater = TemperaturesUpdater(dummyConfig)
-  val now = Instant.parse("2023-08-17T10:00:00Z")
 
   test("GoalTemperatureChanged updates state and emits no action") {
     val temp = 22.2
@@ -93,6 +97,84 @@ class TemperaturesUpdaterSuite extends FunSuite {
         )
       )
     )
+  }
+
+  test(
+    "BatteryTemperatureMeasured emits notification if under lower threshold"
+  ) {
+    val temp = 4.0
+    val state = State()
+    val event = Event.Temperature.BatteryTemperatureMeasured(temp)
+    val (newState, actions) = updater.process(state, event, now)
+    assert(actions.find {
+      case Action.SendNotification(id, msg, repeat)
+          if id.endsWith(
+            TemperaturesUpdater.LOW_TEMPERATURE_NOTIFICATION_ID_SUFFIX
+          )
+            && msg.contains("Bateria")
+            && repeat.contains(2.hours) =>
+        true
+      case _ => false
+    }.isDefined)
+
+  }
+
+  test(
+    "BatteryTemperatureMeasured emits notification if above high threshold"
+  ) {
+    val temp = 44.0
+    val state = State()
+    val event = Event.Temperature.BatteryTemperatureMeasured(temp)
+    val (newState, actions) = updater.process(state, event, now)
+    assert(actions.find {
+      case Action.SendNotification(id, msg, repeat)
+          if id.endsWith(
+            TemperaturesUpdater.HIGH_TEMPERATURE_NOTIFICATION_ID_SUFFIX
+          )
+            && msg.contains("Bateria")
+            && repeat.contains(2.hours) =>
+        true
+      case _ => false
+    }.isDefined)
+  }
+
+  test(
+    "ElectronicsTemperatureMeasured emits notification if under lower threshold"
+  ) {
+    val temp = 4.0
+    val state = State()
+    val event = Event.Temperature.ElectronicsTemperatureMeasured(temp)
+    val (newState, actions) = updater.process(state, event, now)
+    assert(actions.find {
+      case Action.SendNotification(id, msg, repeat)
+          if id.endsWith(
+            TemperaturesUpdater.LOW_TEMPERATURE_NOTIFICATION_ID_SUFFIX
+          )
+            && msg.contains("Electrònica")
+            && repeat.contains(2.hours) =>
+        true
+      case _ => false
+    }.isDefined)
+
+  }
+
+  test(
+    "ElectronicsTemperatureMeasured emits notification if above high threshold"
+  ) {
+    val temp = 44.0
+    val state = State()
+    val event = Event.Temperature.ElectronicsTemperatureMeasured(temp)
+    val (newState, actions) = updater.process(state, event, now)
+    assert(actions.find {
+      case Action.SendNotification(id, msg, repeat)
+          if id.endsWith(
+            TemperaturesUpdater.HIGH_TEMPERATURE_NOTIFICATION_ID_SUFFIX
+          )
+            && msg.contains("Electrònica")
+            && repeat.contains(2.hours) =>
+        true
+      case _ => false
+    }.isDefined)
   }
 
   test("ExternalTemperatureMeasured updates state and emits action") {

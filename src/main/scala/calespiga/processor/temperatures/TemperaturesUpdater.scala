@@ -12,9 +12,36 @@ import calespiga.config.TemperaturesItemsConfig
 
 private object TemperaturesUpdater {
 
+  val HIGH_TEMPERATURE_NOTIFICATION_ID_SUFFIX = "-high-temp"
+  val LOW_TEMPERATURE_NOTIFICATION_ID_SUFFIX = "-low-temp"
+
   private final case class Impl(config: TemperaturesItemsConfig)
       extends SingleProcessor {
 
+    private def notifyIfThresholdExceeded(
+        currentTemp: Double,
+        tempIdentifier: String
+    ): Set[Action] = {
+      if (currentTemp >= config.highTemperatureThreshold) {
+        Set(
+          Action.SendNotification(
+            tempIdentifier + HIGH_TEMPERATURE_NOTIFICATION_ID_SUFFIX,
+            s"Atenció: $tempIdentifier temperatura alta: $currentTemp °C",
+            Some(config.thresholdNotificationPeriod)
+          )
+        )
+      } else if (currentTemp <= config.lowTemperatureThreshold) {
+        Set(
+          Action.SendNotification(
+            tempIdentifier + LOW_TEMPERATURE_NOTIFICATION_ID_SUFFIX,
+            s"Atenció: $tempIdentifier temperatura baixa: $currentTemp °C",
+            Some(config.thresholdNotificationPeriod)
+          )
+        )
+      } else {
+        Set.empty
+      }
+    }
     override def process(
         state: State,
         eventData: EventData,
@@ -41,7 +68,7 @@ private object TemperaturesUpdater {
               config.batteryTemperatureItem,
               celsius.toString
             )
-          )
+          ) ++ notifyIfThresholdExceeded(celsius, "Bateria")
         )
       case BatteryClosetTemperatureMeasured(celsius) =>
         (
@@ -65,7 +92,7 @@ private object TemperaturesUpdater {
               config.electronicsTemperatureItem,
               celsius.toString
             )
-          )
+          ) ++ notifyIfThresholdExceeded(celsius, "Electrònica")
         )
       case ExternalTemperatureMeasured(celsius) =>
         (
