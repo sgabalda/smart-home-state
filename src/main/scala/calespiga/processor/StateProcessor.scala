@@ -6,6 +6,7 @@ import java.time.ZoneId
 import cats.effect.IO
 import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
+import calespiga.processor.power.PowerAvailableProcessor
 
 trait StateProcessor {
   def process(
@@ -56,6 +57,7 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
+      PowerAvailableProcessor(config.powerAvailable).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
 

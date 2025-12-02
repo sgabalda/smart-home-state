@@ -50,7 +50,16 @@ final case class ProcessorConfig(
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
-    featureFlags: FeatureFlagsConfig
+    featureFlags: FeatureFlagsConfig,
+    powerAvailable: PowerAvailableProcessorConfig
+) derives ConfigReader
+
+final case class PowerAvailableProcessorConfig(
+    periodAlarmNoData: FiniteDuration,
+    periodAlarmNoProduction: FiniteDuration,
+    powerAvailableItem: String,
+    powerProducedItem: String,
+    powerDiscardedItem: String
 ) derives ConfigReader
 
 final case class TemperatureFansConfig(

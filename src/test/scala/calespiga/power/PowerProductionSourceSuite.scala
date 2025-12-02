@@ -5,10 +5,8 @@ import cats.effect.testkit.TestControl
 import munit.CatsEffectSuite
 import scala.concurrent.duration._
 import calespiga.config.PowerProductionSourceConfig
-import calespiga.model.Event.Power.{
-  PowerProductionReported,
-  PowerProductionError
-}
+import calespiga.model.Event.Power.{PowerProductionReported}
+import calespiga.ErrorManager
 
 class PowerProductionSourceSuite extends CatsEffectSuite {
 
@@ -33,12 +31,14 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](effects)
       stubProvider = StubProvider(effectsQueue)
 
-      count <- PowerProductionSource(testConfig, stubProvider).use { source =>
-        source.getEnergyProductionInfo
-          .take(3)
-          .compile
-          .drain *> callCount.get
-      }
+      count <- PowerProductionSource(
+        testConfig,
+        stubProvider
+      ).getEnergyProductionInfo
+        .take(3)
+        .compile
+        .drain *> callCount.get
+
     } yield assertEquals(count, 3)
 
     TestControl.executeEmbed(program)
@@ -55,17 +55,18 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(testConfig, stubProvider).use { source =>
-        source.getEnergyProductionInfo
-          .take(3)
-          .compile
-          .toList
-      }
+      results <- PowerProductionSource(
+        testConfig,
+        stubProvider
+      ).getEnergyProductionInfo
+        .take(3)
+        .compile
+        .toList
 
       expected = List(
-        PowerProductionReported(100.0, 50.0, 10.0, List.empty),
-        PowerProductionReported(200.0, 75.0, 15.0, List.empty),
-        PowerProductionReported(150.0, 60.0, 12.0, List.empty)
+        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
+        Right(PowerProductionReported(200.0, 75.0, 15.0, List.empty)),
+        Right(PowerProductionReported(150.0, 60.0, 12.0, List.empty))
       )
     } yield assertEquals(results, expected)
 
@@ -83,13 +84,18 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      result <- PowerProductionSource(testConfig, stubProvider).use { source =>
-        source.getEnergyProductionInfo
-          .take(1)
-          .compile
-          .lastOrError
-      }
-    } yield assertEquals(result, PowerProductionError)
+      result <- PowerProductionSource(
+        testConfig,
+        stubProvider
+      ).getEnergyProductionInfo
+        .take(1)
+        .compile
+        .lastOrError
+
+    } yield assertEquals(
+      result,
+      Left(ErrorManager.Error.PowerInputError(error))
+    )
 
     TestControl.executeEmbed(program)
   }
@@ -108,17 +114,18 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(testConfig, stubProvider).use { source =>
-        source.getEnergyProductionInfo
-          .take(3)
-          .compile
-          .toList
-      }
+      results <- PowerProductionSource(
+        testConfig,
+        stubProvider
+      ).getEnergyProductionInfo
+        .take(3)
+        .compile
+        .toList
 
       expected = List(
-        PowerProductionError,
-        PowerProductionReported(100.0, 50.0, 10.0, List.empty),
-        PowerProductionReported(100.0, 50.0, 10.0, List.empty)
+        Left(ErrorManager.Error.PowerInputError(error)),
+        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
+        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
       )
     } yield assertEquals(results, expected)
 
@@ -140,18 +147,19 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(testConfig, stubProvider).use { source =>
-        source.getEnergyProductionInfo
-          .take(4)
-          .compile
-          .toList
-      }
+      results <- PowerProductionSource(
+        testConfig,
+        stubProvider
+      ).getEnergyProductionInfo
+        .take(4)
+        .compile
+        .toList
 
       expected = List(
-        PowerProductionError,
-        PowerProductionError,
-        PowerProductionReported(100.0, 50.0, 10.0, List.empty),
-        PowerProductionReported(100.0, 50.0, 10.0, List.empty)
+        Left(ErrorManager.Error.PowerInputError(error)),
+        Left(ErrorManager.Error.PowerInputError(error)),
+        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
+        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
       )
     } yield assertEquals(results, expected)
 

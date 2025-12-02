@@ -120,7 +120,5 @@ object Event {
         powerDiscarded: Float,
         linesPower: List[Float]
     ) extends PowerData
-
-    case object PowerProductionError extends PowerData
   }
 }

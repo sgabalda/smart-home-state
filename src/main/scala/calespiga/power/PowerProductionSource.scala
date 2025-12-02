@@ -1,20 +1,17 @@
 package calespiga.power
 
-import cats.effect.{IO, ResourceIO, Resource}
+import cats.effect.IO
 import fs2.Stream
 
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.Logger
 import calespiga.config.PowerProductionSourceConfig
-import calespiga.model.Event.Power.{
-  PowerProductionReported,
-  PowerProductionError,
-  PowerData
-}
+import calespiga.model.Event.Power.{PowerProductionReported, PowerData}
+import calespiga.ErrorManager
 
 trait PowerProductionSource {
 
-  def getEnergyProductionInfo: Stream[IO, PowerData]
+  def getEnergyProductionInfo: Stream[IO, Either[ErrorManager.Error, PowerData]]
 
 }
 
@@ -32,32 +29,27 @@ object PowerProductionSource {
       config: PowerProductionSourceConfig,
       provider: PowerProductionOnRequestProvider
   ) extends PowerProductionSource {
-    override def getEnergyProductionInfo: Stream[IO, PowerData] =
+    override def getEnergyProductionInfo
+        : Stream[IO, Either[ErrorManager.Error, PowerData]] =
       Stream.awakeDelay(config.pollingInterval).evalMap { _ =>
         (for {
           powerData <- provider.getCurrentPowerData
-          _ <- logger.debug(s"Retrieved power production data: $powerData")
-        } yield PowerProductionReported(
-          powerAvailable = powerData.powerAvailable,
-          powerProduced = powerData.powerProduced,
-          powerDiscarded = powerData.powerDiscarded,
-          linesPower = powerData.linesPower
-        )).handleErrorWith(err =>
-          logger
-            .error(err)(
-              s"Error while retrieving power production data: ${err.getMessage}"
-            )
-            .as(
-              PowerProductionError
-            )
-        )
+          _ <- logger.info(s"Retrieved power production data: $powerData")
+        } yield Right(
+          PowerProductionReported(
+            powerAvailable = powerData.powerAvailable,
+            powerProduced = powerData.powerProduced,
+            powerDiscarded = powerData.powerDiscarded,
+            linesPower = powerData.linesPower
+          )
+        )).handleError(err => Left(ErrorManager.Error.PowerInputError(err)))
       }
   }
 
   def apply(
       config: PowerProductionSourceConfig,
       provider: PowerProductionOnRequestProvider
-  ): ResourceIO[PowerProductionSource] =
-    Resource.pure(Impl(config, provider))
+  ): PowerProductionSource =
+    Impl(config, provider)
 
 }

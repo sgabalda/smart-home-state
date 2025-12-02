@@ -14,7 +14,8 @@ import cats.implicits.catsSyntaxApplicativeByName
 
 trait UserInterfaceManager {
 
-  def userInputEventsStream(): Stream[IO, Either[ErrorManager.Error, Event]]
+  def userInputEventsStream
+      : Stream[IO, Either[ErrorManager.Error, Event.EventData]]
   def updateUIItem(item: String, value: String): IO[Unit]
   def sendNotification(
       id: String,
@@ -64,34 +65,30 @@ object UserInterfaceManager {
           .whenA(shouldSend)
       } yield ()
 
-    override def userInputEventsStream()
-        : Stream[IO, Either[ErrorManager.Error, Event]] = {
+    override def userInputEventsStream
+        : Stream[IO, Either[ErrorManager.Error, Event.EventData]] = {
 
       openhabApiClient
         .itemChanges(itemsConverter.keySet)
-        .evalMap {
+        .map[Either[ErrorManager.Error, Event.EventData]] {
           case Left(value) =>
-            IO.pure(Left(ErrorManager.Error.OpenHabInputError(value)))
+            Left(ErrorManager.Error.OpenHabInputError(value))
           case Right(itemValue) =>
             itemsConverter
               .get(itemValue.item) match {
               case None =>
-                IO.pure(
-                  Left(
-                    ErrorManager.Error.OpenHabInputError(
-                      new Exception(
-                        s"Item not found for conversion, but registered: $itemValue"
-                      )
+                Left(
+                  ErrorManager.Error.OpenHabInputError(
+                    new Exception(
+                      s"Item not found for conversion, but registered: $itemValue"
                     )
                   )
                 )
               case Some(f) =>
-                f(itemValue.value) match {
-                  case Left(value) =>
-                    IO.pure(Left(ErrorManager.Error.OpenHabInputError(value)))
-                  case Right(eventData) =>
-                    IO.realTimeInstant.map(ts => Right(Event(ts, eventData)))
-                }
+                f(itemValue.value).fold(
+                  value => Left(ErrorManager.Error.OpenHabInputError(value)),
+                  r => Right(r)
+                )
 
             }
         }

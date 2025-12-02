@@ -1,12 +1,19 @@
 package calespiga.model
 
-import calespiga.model.State.{Fans, Temperatures, FeatureFlags}
+import calespiga.model.State.{
+  Fans,
+  Temperatures,
+  FeatureFlags,
+  Heater,
+  PowerProduction
+}
 
 case class State(
     featureFlags: FeatureFlags = FeatureFlags(),
     temperatures: Temperatures = Temperatures(),
     fans: Fans = Fans(),
-    heater: State.Heater = State.Heater()
+    heater: Heater = Heater(),
+    powerProduction: PowerProduction = PowerProduction()
 )
 
 object State {
@@ -40,6 +47,15 @@ object State {
       lastTimeHot: Option[java.time.Instant] = None,
       energyToday: Float = 0.0f,
       lastSyncing: Option[java.time.Instant] = None
+  )
+
+  case class PowerProduction(
+      powerAvailable: Option[Float] = None,
+      powerProduced: Option[Float] = None,
+      powerDiscarded: Option[Float] = None,
+      linesPower: List[Float] = List.empty,
+      lastUpdate: Option[java.time.Instant] = None,
+      lastProducedPower: Option[java.time.Instant] = None
   )
 
   case class FeatureFlags(

@@ -1,6 +1,6 @@
 package calespiga
 
-import calespiga.config.{ApplicationConfig, ConfigLoader}
+import calespiga.config.ConfigLoader
 import calespiga.executor.{DirectExecutor, ScheduledExecutor, Executor}
 import calespiga.model.{Event, State}
 import calespiga.mqtt.{
@@ -18,18 +18,53 @@ import calespiga.http.Endpoints
 import cats.effect.{IO, IOApp, ResourceIO}
 import fs2.Stream
 import cats.effect.Ref
+import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
+import calespiga.power.PowerProductionSource
+import calespiga.config.PowerProductionConfig
 
 object Main extends IOApp.Simple {
 
   private type Resources =
     (
-        ApplicationConfig,
-        MqttToEventInputProcessor,
-        UserInterfaceManager,
-        Executor,
-        StatePersistence,
         ErrorManager,
-        StateProcessor
+        StatePersistence,
+        Stream[IO, Event],
+        StateProcessor,
+        Executor
+    )
+
+  private def buildInputStream(
+      mqttInputProcessor: MqttToEventInputProcessor,
+      userInterfaceManager: UserInterfaceManager,
+      powerProductionSource: PowerProductionSource,
+      errorManager: ErrorManager
+  ): Stream[IO, Event] = {
+    (Stream.emit(Right(Event.System.StartupEvent)) ++
+      mqttInputProcessor.inputEventsStream
+        .merge(
+          userInterfaceManager.userInputEventsStream
+        )
+        .merge(
+          powerProductionSource.getEnergyProductionInfo
+        ))
+      .evalMapFilter {
+        case Left(value) =>
+          errorManager.manageError(value).as(None)
+        case Right(value) =>
+          IO.realTimeInstant.map(instant => Some(Event(instant, value)))
+      }
+  }
+  private def powerDeps(
+      config: PowerProductionConfig
+  ): ResourceIO[PowerProductionSource] =
+    for {
+      sunnyBoy <- SunnyBoyAPIClient(
+        config.sunnyBoy,
+        SunnyBoyDecoder(config.sunnyBoy)
+      )
+    } yield PowerProductionSource(
+      config.powerProductionSource,
+      sunnyBoy
     )
 
   private def resources: ResourceIO[Resources] =
@@ -87,26 +122,29 @@ object Main extends IOApp.Simple {
       )
       processor = StateProcessor(appConfig.processor, mqttBlacklist)
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
+      powerSource <- powerDeps(appConfig.powerProduction)
+      inputStream = buildInputStream(
+        mqttInputProcessor,
+        userInterfaceManager,
+        powerSource,
+        errorManager
+      )
     } yield (
-      appConfig,
-      mqttInputProcessor,
-      userInterfaceManager,
-      executor,
-      statePersistence,
       errorManager,
-      processor
+      statePersistence,
+      inputStream,
+      processor,
+      executor
     )
 
   def run: IO[Unit] = {
     resources.use {
       case (
-            config,
-            mqttInputProcessor,
-            userInterfaceManager,
-            executor,
-            statePersistence,
             errorManager,
-            processor
+            statePersistence,
+            inputStream,
+            processor,
+            executor
           ) =>
         Stream
           .eval(statePersistence.loadState.flatMap {
@@ -115,33 +153,17 @@ object Main extends IOApp.Simple {
           })
           .flatMap { initialState =>
             // Process startup event first, then continue with regular events
-
-            Stream.eval(
-              IO.realTimeInstant.map(instant =>
-                Event(instant, Event.System.StartupEvent)
-              )
-            ) ++
-              mqttInputProcessor.inputEventsStream
-                .merge(
-                  userInterfaceManager
-                    .userInputEventsStream()
-                )
-                .evalMapFilter {
-                  case Left(value) =>
-                    errorManager.manageError(value).as(None)
-                  case Right(value) =>
-                    IO.pure(Some(value))
+            inputStream
+              .evalMapAccumulate(initialState) { case (current, event) =>
+                processor.process(current, event)
+              }
+              .evalMap { (state, actions) =>
+                statePersistence
+                  .saveState(state) *> executor.execute(actions).flatMap {
+                  errors =>
+                    errorManager.manageErrors(errors)
                 }
-                .evalMapAccumulate(initialState) { case (current, event) =>
-                  processor.process(current, event)
-                }
-                .evalMap { (state, actions) =>
-                  statePersistence
-                    .saveState(state) *> executor.execute(actions).flatMap {
-                    errors =>
-                      errorManager.manageErrors(errors)
-                  }
-                }
+              }
           }
           .compile
           .drain
