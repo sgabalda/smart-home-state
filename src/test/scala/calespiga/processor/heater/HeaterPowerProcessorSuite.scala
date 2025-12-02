@@ -74,11 +74,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
       0.1f
     )
     val expectedActions: Set[Action] = Set(
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.energyTodayItem,
         newState.heater.energyToday.toInt.toString
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.statusItem,
         HeaterSignal.Power1000.power.toString
       )
@@ -112,11 +112,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
       "energyToday should reset for new day"
     )
     val expectedActions: Set[Action] = Set(
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.energyTodayItem,
         newState2.heater.energyToday.toInt.toString
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.statusItem,
         HeaterSignal.Power1000.power.toString
       )
@@ -166,11 +166,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
         Action.SendMqttStringMessage("dummy/topic", "0"),
         scala.concurrent.duration.DurationInt(20).seconds
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
         now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.isHotItem,
         HeaterSignal.Hot.toString
       )
@@ -197,11 +197,11 @@ class HeaterPowerProcessorSuite extends FunSuite {
         Action.SendMqttStringMessage("dummy/topic", "500"),
         scala.concurrent.duration.DurationInt(20).seconds
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
         now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.isHotItem,
         HeaterSignal.Cold.toString
       )
@@ -227,7 +227,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
         Action.SendMqttStringMessage("dummy/topic", "2000"),
         scala.concurrent.duration.DurationInt(20).seconds
       ),
-      Action.SetOpenHabItemValue(
+      Action.SetUIItemValue(
         dummyConfig.lastCommandItem,
         HeaterSignal.userCommandToString(HeaterSignal.SetPower2000)
       )

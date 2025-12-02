@@ -32,7 +32,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor executes delayed action after specified delay") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val delayedAction = Action.Delayed("delayed1", directAction, 100.millis)
 
     val program = for {
@@ -74,8 +74,8 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor cancels previous delayed action with same ID") {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
-    val directAction2 = Action.SetOpenHabItemValue("item2", "value2")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
+    val directAction2 = Action.SetUIItemValue("item2", "value2")
     val delayedAction1 = Action.Delayed("same-id", directAction1, 200.millis)
     val delayedAction2 = Action.Delayed("same-id", directAction2, 100.millis)
 
@@ -119,7 +119,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor passes DirectExecutor errors to ErrorManager") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val delayedAction = Action.Delayed("error-test", directAction, 50.millis)
     val testError = ErrorManager.Error.ExecutionError(
       new RuntimeException("Test error"),
@@ -160,7 +160,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   test(
     "ScheduledExecutor handles multiple delayed actions with different IDs"
   ) {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
     val directAction2 = Action.SendMqttStringMessage("topic", "message")
     val delayedAction1 = Action.Delayed("id1", directAction1, 50.millis)
     val delayedAction2 = Action.Delayed("id2", directAction2, 100.millis)
@@ -198,7 +198,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor returns empty error list on successful execution") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val delayedAction = Action.Delayed("success-test", directAction, 50.millis)
 
     val directExecutor = DirectExecutorStub()
@@ -232,7 +232,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor fiber cleanup after execution") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val delayedAction = Action.Delayed("cleanup-test", directAction, 50.millis)
 
     val program = for {
@@ -295,7 +295,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor executes periodic action repeatedly") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val periodicAction = Action.Periodic("periodic1", directAction, 50.millis)
 
     val program = for {
@@ -355,8 +355,8 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor cancels previous periodic action with same ID") {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
-    val directAction2 = Action.SetOpenHabItemValue("item2", "value2")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
+    val directAction2 = Action.SetUIItemValue("item2", "value2")
     val periodicAction1 = Action.Periodic("same-id", directAction1, 100.millis)
     val periodicAction2 = Action.Periodic("same-id", directAction2, 50.millis)
 
@@ -420,7 +420,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   test(
     "ScheduledExecutor passes periodic DirectExecutor errors to ErrorManager"
   ) {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val periodicAction =
       Action.Periodic("error-periodic", directAction, 50.millis)
     val testError = ErrorManager.Error.ExecutionError(
@@ -473,7 +473,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor handles mixed delayed and periodic actions") {
-    val delayedAction = Action.SetOpenHabItemValue("item1", "delayed")
+    val delayedAction = Action.SetUIItemValue("item1", "delayed")
     val periodicAction = Action.SendMqttStringMessage("topic", "periodic")
     val delayed = Action.Delayed("delayed-id", delayedAction, 75.millis)
     val periodic = Action.Periodic("periodic-id", periodicAction, 50.millis)
@@ -535,7 +535,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor cancels delayed action with Cancel action") {
-    val directAction = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction = Action.SetUIItemValue("item1", "value1")
     val delayedAction = Action.Delayed("cancel-test", directAction, 100.millis)
     val cancelAction = Action.Cancel("cancel-test")
 
@@ -659,7 +659,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
   }
 
   test("ScheduledExecutor handles multiple Cancel actions") {
-    val directAction1 = Action.SetOpenHabItemValue("item1", "value1")
+    val directAction1 = Action.SetUIItemValue("item1", "value1")
     val directAction2 = Action.SendMqttStringMessage("topic", "message")
     val delayedAction1 = Action.Delayed("id1", directAction1, 100.millis)
     val periodicAction2 = Action.Periodic("id2", directAction2, 50.millis)

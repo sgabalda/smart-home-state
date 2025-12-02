@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 final case class ApplicationConfig(
     httpServerConfig: HttpServerConfig,
     mqttConfig: MqttConfig,
-    openHabConfig: OpenHabConfig,
+    uiConfig: UIConfig,
     statePersistenceConfig: StatePersistenceConfig,
     processor: ProcessorConfig
 ) derives ConfigReader
@@ -15,7 +15,7 @@ final case class ApplicationConfig(
 final case class HttpServerConfig(
     host: String,
     port: Int
-)
+) derives ConfigReader
 
 final case class MqttConfig(
     host: String,
@@ -24,19 +24,25 @@ final case class MqttConfig(
     keepAlive: Int,
     cleanSession: Boolean,
     traceMessages: Boolean
-)
+) derives ConfigReader
 
 final case class OpenHabConfig(
     host: String,
     port: Int,
     apiToken: String,
     retryDelay: FiniteDuration
-)
+) derives ConfigReader
+
+final case class UIConfig(
+    notificationsItem: String,
+    defaultRepeatInterval: FiniteDuration,
+    openHabConfig: OpenHabConfig
+) derives ConfigReader
 
 final case class StatePersistenceConfig(
     path: String,
     storePeriod: FiniteDuration
-)
+) derives ConfigReader
 
 final case class ProcessorConfig(
     temperatureFans: TemperatureFansConfig,
@@ -59,7 +65,10 @@ final case class TemperaturesItemsConfig(
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,
-    goalTemperatureItem: String
+    goalTemperatureItem: String,
+    highTemperatureThreshold: Double,
+    lowTemperatureThreshold: Double,
+    thresholdNotificationPeriod: FiniteDuration
 ) derives ConfigReader
 
 final case class FansConfig(

@@ -7,13 +7,18 @@ sealed trait Action
 object Action {
 
   sealed trait Direct extends Action
-  case class SetOpenHabItemValue(
+  case class SetUIItemValue(
       item: String,
       value: String
   ) extends Direct
   case class SendMqttStringMessage(
       topic: String,
       message: String
+  ) extends Direct
+  case class SendNotification(
+      id: String,
+      message: String,
+      repeatInterval: Option[FiniteDuration]
   ) extends Direct
 
   sealed trait Scheduled extends Action

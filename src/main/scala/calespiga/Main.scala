@@ -13,7 +13,7 @@ import calespiga.mqtt.{
 import calespiga.openhab.APIClient
 import calespiga.persistence.StatePersistence
 import calespiga.processor.StateProcessor
-import calespiga.userinput.UserInputManager
+import calespiga.ui.UserInterfaceManager
 import calespiga.http.Endpoints
 import cats.effect.{IO, IOApp, ResourceIO}
 import fs2.Stream
@@ -25,7 +25,7 @@ object Main extends IOApp.Simple {
     (
         ApplicationConfig,
         MqttToEventInputProcessor,
-        UserInputManager,
+        UserInterfaceManager,
         Executor,
         StatePersistence,
         ErrorManager,
@@ -57,7 +57,7 @@ object Main extends IOApp.Simple {
       mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
       openHabApiClient <- APIClient(
-        appConfig.openHabConfig,
+        appConfig.uiConfig.openHabConfig,
         healthStatusManager.componentHealthManager(
           HealthStatusManager.Component.OpenHabRestClient
         ),
@@ -65,8 +65,14 @@ object Main extends IOApp.Simple {
           HealthStatusManager.Component.OpenHabWebsocketClient
         )
       )
-      userInputManager = UserInputManager(openHabApiClient)
-      directExecutor = DirectExecutor(openHabApiClient, mqttActionToProducer)
+      userInterfaceManager <- UserInterfaceManager(
+        openHabApiClient,
+        appConfig.uiConfig
+      ).toResource
+      directExecutor = DirectExecutor(
+        userInterfaceManager,
+        mqttActionToProducer
+      )
       errorManager <- ErrorManager()
       scheduledExecutor <- ScheduledExecutor(directExecutor, errorManager)
       executor = Executor(directExecutor, scheduledExecutor)
@@ -84,7 +90,7 @@ object Main extends IOApp.Simple {
     } yield (
       appConfig,
       mqttInputProcessor,
-      userInputManager,
+      userInterfaceManager,
       executor,
       statePersistence,
       errorManager,
@@ -96,7 +102,7 @@ object Main extends IOApp.Simple {
       case (
             config,
             mqttInputProcessor,
-            userInputManager,
+            userInterfaceManager,
             executor,
             statePersistence,
             errorManager,
@@ -117,7 +123,7 @@ object Main extends IOApp.Simple {
             ) ++
               mqttInputProcessor.inputEventsStream
                 .merge(
-                  userInputManager
+                  userInterfaceManager
                     .userInputEventsStream()
                 )
                 .evalMapFilter {

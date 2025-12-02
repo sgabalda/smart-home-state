@@ -13,8 +13,8 @@ class StateProcessorSuite extends CatsEffectSuite {
 
   val initialState =
     State().modify(_.temperatures.batteriesTemperature).setTo(Some(0d))
-  val action1 = Action.SetOpenHabItemValue("item1", "value1")
-  val action2 = Action.SetOpenHabItemValue("item2", "value2")
+  val action1 = Action.SetUIItemValue("item1", "value1")
+  val action2 = Action.SetUIItemValue("item2", "value2")
   // Dummy processors
   val processor1 = new EffectfulProcessor {
     override def process(

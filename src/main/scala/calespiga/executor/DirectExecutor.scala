@@ -3,9 +3,9 @@ package calespiga.executor
 import calespiga.ErrorManager
 import calespiga.model.Action
 import calespiga.mqtt.ActionToMqttProducer
-import calespiga.openhab.APIClient
 import cats.effect.IO
 import cats.implicits.catsSyntaxParallelTraverse1
+import calespiga.ui.UserInterfaceManager
 
 trait DirectExecutor {
 
@@ -18,7 +18,7 @@ trait DirectExecutor {
 object DirectExecutor {
 
   final case class Impl(
-      openHabApiClient: APIClient,
+      uiManager: UserInterfaceManager,
       mqttProducer: ActionToMqttProducer
   ) extends DirectExecutor {
 
@@ -26,10 +26,12 @@ object DirectExecutor {
         action: Action.Direct
     ): IO[Unit] = {
       action match {
-        case Action.SetOpenHabItemValue(item, value) =>
-          openHabApiClient.changeItem(item, value)
+        case Action.SetUIItemValue(item, value) =>
+          uiManager.updateUIItem(item, value)
         case a: Action.SendMqttStringMessage =>
           mqttProducer.actionToMqtt(a)
+        case Action.SendNotification(id, message, repeatInterval) =>
+          uiManager.sendNotification(id, message, repeatInterval)
       }
     }
 
@@ -48,8 +50,8 @@ object DirectExecutor {
   }
 
   def apply(
-      openHabApiClient: APIClient,
+      uiManager: UserInterfaceManager,
       mqttProducer: ActionToMqttProducer
   ): DirectExecutor =
-    Impl(openHabApiClient, mqttProducer)
+    Impl(uiManager, mqttProducer)
 }

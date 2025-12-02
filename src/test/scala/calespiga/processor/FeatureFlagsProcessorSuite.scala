@@ -41,11 +41,11 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       assertEquals(
         actions,
         Set[Action](
-          Action.SetOpenHabItemValue(
+          Action.SetUIItemValue(
             dummyConfig.setFanManagementItem,
             "false"
           ),
-          Action.SetOpenHabItemValue(
+          Action.SetUIItemValue(
             dummyConfig.setHeaterManagementItem,
             "false"
           )
@@ -70,11 +70,11 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       assertEquals(
         actions,
         Set[Action](
-          Action.SetOpenHabItemValue(
+          Action.SetUIItemValue(
             dummyConfig.setFanManagementItem,
             "true"
           ),
-          Action.SetOpenHabItemValue(
+          Action.SetUIItemValue(
             dummyConfig.setHeaterManagementItem,
             "true"
           )

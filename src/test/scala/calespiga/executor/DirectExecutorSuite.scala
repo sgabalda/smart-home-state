@@ -3,9 +3,10 @@ package calespiga.executor
 import calespiga.ErrorManager
 import calespiga.model.Action
 import calespiga.mqtt.ActionToMqttProducerStub
-import calespiga.openhab.ApiClientStub
+import calespiga.ui.UserInterfaceManagerStub
 import cats.effect.IO
 import munit.CatsEffectSuite
+import scala.concurrent.duration.*
 
 class DirectExecutorSuite extends CatsEffectSuite {
 
@@ -16,11 +17,11 @@ class DirectExecutorSuite extends CatsEffectSuite {
 
     for {
       called <- IO.ref(false)
-      apiClient = ApiClientStub(
-        changeItemStub = (_: String, _: String) => called.set(true)
+      uiManager = UserInterfaceManagerStub(
+        updateUIItemStub = (_: String, _: String) => called.set(true)
       )
-      executor = DirectExecutor(apiClient, ActionToMqttProducerStub())
-      _ <- executor.execute(Set(Action.SetOpenHabItemValue(item, value)))
+      executor = DirectExecutor(uiManager, ActionToMqttProducerStub())
+      _ <- executor.execute(Set(Action.SetUIItemValue(item, value)))
       calledValue <- called.get
     } yield {
       assertEquals(calledValue, true, "APIClient was not called")
@@ -33,11 +34,11 @@ class DirectExecutorSuite extends CatsEffectSuite {
     val value = "TestValue"
 
     val error = new Exception("API error")
-    val action = Action.SetOpenHabItemValue(item, value)
+    val action = Action.SetUIItemValue(item, value)
 
     DirectExecutor(
-      ApiClientStub(
-        changeItemStub = (_: String, _: String) => IO.raiseError(error)
+      UserInterfaceManagerStub(
+        updateUIItemStub = (_: String, _: String) => IO.raiseError(error)
       ),
       ActionToMqttProducerStub()
     ).execute(Set(action)).map {
@@ -53,11 +54,11 @@ class DirectExecutorSuite extends CatsEffectSuite {
     val item = "TestItem"
     val value = "TestValue"
 
-    val action = Action.SetOpenHabItemValue(item, value)
+    val action = Action.SetUIItemValue(item, value)
 
     DirectExecutor(
-      ApiClientStub(
-        changeItemStub = (_: String, _: String) => IO.unit
+      UserInterfaceManagerStub(
+        updateUIItemStub = (_: String, _: String) => IO.unit
       ),
       ActionToMqttProducerStub()
     ).execute(Set(action)).map {
@@ -80,7 +81,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
       actionToMqtt = ActionToMqttProducerStub(
         actionToMqttStub = (_: Action.SendMqttStringMessage) => called.set(true)
       )
-      executor = DirectExecutor(ApiClientStub(), actionToMqtt)
+      executor = DirectExecutor(UserInterfaceManagerStub(), actionToMqtt)
       _ <- executor.execute(Set(action))
       calledValue <- called.get
     } yield {
@@ -97,7 +98,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
     )
 
     DirectExecutor(
-      ApiClientStub(),
+      UserInterfaceManagerStub(),
       ActionToMqttProducerStub(
         actionToMqttStub =
           (_: Action.SendMqttStringMessage) => IO.raiseError(error)
@@ -118,13 +119,40 @@ class DirectExecutorSuite extends CatsEffectSuite {
     )
 
     DirectExecutor(
-      ApiClientStub(),
+      UserInterfaceManagerStub(),
       ActionToMqttProducerStub(
         actionToMqttStub = (_: Action.SendMqttStringMessage) => IO.unit
       )
     ).execute(Set(action)).map {
       case some :: _ => fail("The error was not propagated")
       case Nil       => // No error, as expected
+    }
+  }
+
+  test(
+    "Executor should call sendNotification on UserInterfaceManager for SendNotification action"
+  ) {
+    val notificationId = "notif-123"
+    val message = "Test notification"
+    val repeatInterval = Some(5.minutes)
+    for {
+      called <- IO.ref(Option.empty[(String, String, Option[FiniteDuration])])
+      uiManager = UserInterfaceManagerStub(
+        sendNotificationStub =
+          (id: String, msg: String, repeat: Option[FiniteDuration]) =>
+            called.set(Some((id, msg, repeat)))
+      )
+      executor = DirectExecutor(uiManager, ActionToMqttProducerStub())
+      _ <- executor.execute(
+        Set(Action.SendNotification(notificationId, message, repeatInterval))
+      )
+      calledValue <- called.get
+    } yield {
+      assertEquals(
+        calledValue,
+        Some((notificationId, message, repeatInterval)),
+        "sendNotification was not called with the correct parameters"
+      )
     }
   }
 }

@@ -40,8 +40,8 @@ class EffectfulProcessorSuite extends CatsEffectSuite {
 
   test("andThen returns state and actions in order (effectful)") {
     val initialState = State()
-    val action1 = Action.SetOpenHabItemValue("item1", "value1")
-    val action2 = Action.SetOpenHabItemValue("item2", "value2")
+    val action1 = Action.SetUIItemValue("item1", "value1")
+    val action2 = Action.SetUIItemValue("item2", "value2")
     val processor1 = new AddFlagProcessor(true, action1)
     val processor2 = new SetHeaterStatusProcessor(
       Some(calespiga.model.HeaterSignal.Power500),
