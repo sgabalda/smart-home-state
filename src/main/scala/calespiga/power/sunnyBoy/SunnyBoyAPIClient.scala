@@ -84,7 +84,7 @@ object SunnyBoyAPIClient {
                     .as(sid)
               case Left(decodingError) =>
                 val message =
-                  s"Failed to decode token response: ${decodingError.getMessage} from $successBody"
+                  s"Failed to decode token response: ${decodingError.getMessage}"
                 logger.error(message) *> IO.raiseError(decodingError)
             }
           case Response(Left(error), code, _, _, _, _) =>

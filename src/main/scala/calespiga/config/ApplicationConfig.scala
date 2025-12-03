@@ -140,9 +140,9 @@ final case class FeatureFlagsConfig(
 final case class PowerProductionConfig(
     sunnyBoy: SunnyBoyConfig,
     powerProductionSource: PowerProductionSourceConfig
-)
+) derives ConfigReader
 
-final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration)
+final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration) derives ConfigReader
 
 final case class SunnyBoyConfig(
     username: String,
@@ -154,4 +154,4 @@ final case class SunnyBoyConfig(
     linesCode: String,
     serialId: String,
     maxPowerAvailable: Float
-)
+) derives ConfigReader

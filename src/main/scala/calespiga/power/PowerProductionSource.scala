@@ -23,8 +23,6 @@ object PowerProductionSource {
     def getCurrentPowerData: IO[PowerProductionData]
   }
 
-  private final case class AuthToken(token: String)
-
   private final case class Impl(
       config: PowerProductionSourceConfig,
       provider: PowerProductionOnRequestProvider

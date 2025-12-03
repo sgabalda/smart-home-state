@@ -35,7 +35,7 @@ object PowerAvailableProcessor {
             ALERT_NO_PRODUCTION_IN_HOURS_ID,
             Action.SendNotification(
               ALERT_NO_PRODUCTION_IN_HOURS_ID,
-              s"No s'ha rebut cap potencia generada en ${config.periodAlarmNoProduction}",
+              s"No s'ha rebut cap potència generada en ${config.periodAlarmNoProduction}",
               None
             ),
             config.periodAlarmNoProduction
