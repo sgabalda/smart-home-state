@@ -142,7 +142,8 @@ final case class PowerProductionConfig(
     powerProductionSource: PowerProductionSourceConfig
 ) derives ConfigReader
 
-final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration) derives ConfigReader
+final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration)
+    derives ConfigReader
 
 final case class SunnyBoyConfig(
     username: String,
