@@ -52,15 +52,15 @@ object PowerAvailableProcessor {
       Set(
         Action.SetUIItemValue(
           config.powerAvailableItem,
-          f"$powerAvailable%.2f"
+          f"$powerAvailable%.0f"
         ),
         Action.SetUIItemValue(
           config.powerProducedItem,
-          f"$powerProduced%.2f"
+          f"$powerProduced%.0f"
         ),
         Action.SetUIItemValue(
           config.powerDiscardedItem,
-          f"$powerDiscarded%.2f"
+          f"$powerDiscarded%.0f"
         )
       )
     }

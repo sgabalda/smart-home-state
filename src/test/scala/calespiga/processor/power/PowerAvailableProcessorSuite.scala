@@ -93,7 +93,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       actions.contains(
         Action.SetUIItemValue(
           dummyConfig.powerAvailableItem,
-          f"$powerAvailable%.2f"
+          f"$powerAvailable%.0f"
         )
       ),
       "Should set powerAvailableItem"
@@ -102,7 +102,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     assert(
       actions.contains(
         Action
-          .SetUIItemValue(dummyConfig.powerProducedItem, f"$powerProduced%.2f")
+          .SetUIItemValue(dummyConfig.powerProducedItem, f"$powerProduced%.0f")
       ),
       "Should set powerProducedItem"
     )
@@ -111,7 +111,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       actions.contains(
         Action.SetUIItemValue(
           dummyConfig.powerDiscardedItem,
-          f"$powerDiscarded%.2f"
+          f"$powerDiscarded%.0f"
         )
       ),
       "Should set powerDiscardedItem"

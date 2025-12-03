@@ -60,7 +60,7 @@ object SunnyBoyAPIClient {
                 IO.pure(producedPower)
               case Left(decodingError) =>
                 val message =
-                  s"Failed to decode data response: ${decodingError.getMessage}"
+                  s"Failed to decode data response: ${decodingError.getMessage}, response: $successBody"
                 logger.error(message) *> IO.raiseError(decodingError)
             }
           case Response(Left(error), code, _, _, _, _) =>
@@ -84,11 +84,12 @@ object SunnyBoyAPIClient {
                     .as(sid)
               case Left(decodingError) =>
                 val message =
-                  s"Failed to decode token response: ${decodingError.getMessage}"
+                  s"Failed to decode token response: ${decodingError.getMessage} from $successBody"
                 logger.error(message) *> IO.raiseError(decodingError)
             }
           case Response(Left(error), code, _, _, _, _) =>
-            val message = s"Failed to obtain token, error $code: $error"
+            val message =
+              s"Failed to obtain token on request, error $code: $error"
             logger.error(message) *> IO.raiseError(Exception(message))
         }
   }

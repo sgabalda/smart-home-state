@@ -39,6 +39,7 @@ object Main extends IOApp.Simple {
       powerProductionSource: PowerProductionSource,
       errorManager: ErrorManager
   ): Stream[IO, Event] = {
+    // Process startup event first, then continue with regular events
     (Stream.emit(Right(Event.System.StartupEvent)) ++
       mqttInputProcessor.inputEventsStream
         .merge(
@@ -152,7 +153,6 @@ object Main extends IOApp.Simple {
             case Right(value) => IO.pure(value)
           })
           .flatMap { initialState =>
-            // Process startup event first, then continue with regular events
             inputStream
               .evalMapAccumulate(initialState) { case (current, event) =>
                 processor.process(current, event)
