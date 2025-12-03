@@ -110,4 +110,15 @@ object Event {
         status: HeaterSignal.HeaterTermostateState
     ) extends HeaterData
   }
+
+  object Power {
+    sealed trait PowerData extends EventData
+
+    case class PowerProductionReported(
+        powerAvailable: Float,
+        powerProduced: Float,
+        powerDiscarded: Float,
+        linesPower: List[Float]
+    ) extends PowerData
+  }
 }

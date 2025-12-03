@@ -8,6 +8,7 @@ final case class ApplicationConfig(
     httpServerConfig: HttpServerConfig,
     mqttConfig: MqttConfig,
     uiConfig: UIConfig,
+    powerProduction: PowerProductionConfig,
     statePersistenceConfig: StatePersistenceConfig,
     processor: ProcessorConfig
 ) derives ConfigReader
@@ -49,7 +50,16 @@ final case class ProcessorConfig(
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
-    featureFlags: FeatureFlagsConfig
+    featureFlags: FeatureFlagsConfig,
+    powerAvailable: PowerAvailableProcessorConfig
+) derives ConfigReader
+
+final case class PowerAvailableProcessorConfig(
+    periodAlarmNoData: FiniteDuration,
+    periodAlarmNoProduction: FiniteDuration,
+    powerAvailableItem: String,
+    powerProducedItem: String,
+    powerDiscardedItem: String
 ) derives ConfigReader
 
 final case class TemperatureFansConfig(
@@ -125,4 +135,24 @@ final case class FeatureFlagsConfig(
     setFanManagementItem: String,
     heaterMqttTopic: Set[String],
     setHeaterManagementItem: String
+) derives ConfigReader
+
+final case class PowerProductionConfig(
+    sunnyBoy: SunnyBoyConfig,
+    powerProductionSource: PowerProductionSourceConfig
+) derives ConfigReader
+
+final case class PowerProductionSourceConfig(pollingInterval: FiniteDuration)
+    derives ConfigReader
+
+final case class SunnyBoyConfig(
+    username: String,
+    password: String,
+    loginUrl: String,
+    dataUrl: String,
+    totalPowerCode: String,
+    frequencyCode: String,
+    linesCode: String,
+    serialId: String,
+    maxPowerAvailable: Float
 ) derives ConfigReader

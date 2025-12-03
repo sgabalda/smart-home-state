@@ -23,6 +23,7 @@ object ErrorManager {
   object Error {
     case class MqttInputError(throwable: Throwable, topic: String) extends Error
     case class OpenHabInputError(throwable: Throwable) extends Error
+    case class PowerInputError(throwable: Throwable) extends Error
     case class ExecutionError(throwable: Throwable, action: Action)
         extends Error
 
@@ -62,6 +63,10 @@ object ErrorManager {
       case Error.StateFileUpdateError(path, error) =>
         logger.error(error)(
           s"Error updating state file $path: ${error.getMessage}"
+        )
+      case calespiga.ErrorManager.Error.PowerInputError(error) =>
+        logger.error(error)(
+          s"Error getting power produced data: ${error.getMessage}"
         )
     }
   }

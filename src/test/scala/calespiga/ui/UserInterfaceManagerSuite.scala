@@ -185,7 +185,7 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
           _ => Stream.eval(called.set(true)).flatMap(_ => Stream.empty)
       )
       sut <- UserInterfaceManager(apiClient, uiConfig)
-      _ <- sut.userInputEventsStream().compile.drain
+      _ <- sut.userInputEventsStream.compile.drain
       calledValue <- called.get
     } yield {
       assertEquals(calledValue, true, "APIClient was not called")
@@ -200,7 +200,7 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
     )
     for {
       sut <- UserInterfaceManager(apiClient, uiConfig)
-      last <- sut.userInputEventsStream().compile.last
+      last <- sut.userInputEventsStream.compile.last
     } yield {
       assertEquals(
         last,
@@ -220,7 +220,7 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
     val itemsConverter: UserInterfaceManager.OpenHabItemsConverter = Map()
     for {
       sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
-      last <- sut.userInputEventsStream().compile.last
+      last <- sut.userInputEventsStream.compile.last
     } yield {
       last match {
         case Some(Left(ErrorManager.Error.OpenHabInputError(e))) =>
@@ -244,7 +244,7 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       Map("TestItem" -> (_ => Left(error)))
     for {
       sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
-      last <- sut.userInputEventsStream().compile.last
+      last <- sut.userInputEventsStream.compile.last
     } yield {
       assertEquals(
         last,
@@ -267,19 +267,16 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       Map("TestItem" -> (_ => Right(resultEventData)))
     for {
       sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
-      last <- sut.userInputEventsStream().compile.last
+      last <- sut.userInputEventsStream.compile.last
     } yield {
       last match {
         case Some(
               Right(
-                Event(
-                  ts,
-                  Event.Temperature.Fans
-                    .BatteryFanCommand(FanSignal.TurnOn)
-                )
+                Event.Temperature.Fans
+                  .BatteryFanCommand(FanSignal.TurnOn)
               )
             ) =>
-          assert(ts != null, "Timestamp was not set")
+          () // Test passed
         case _ => fail("The event was not propagated")
       }
     }

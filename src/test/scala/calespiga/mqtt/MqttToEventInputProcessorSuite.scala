@@ -95,10 +95,10 @@ class MqttToEventInputProcessorSuite extends CatsEffectSuite {
       last match {
         case Some(
               Right(
-                Event(ts, Event.Temperature.BatteryTemperatureMeasured(42.0))
+                Event.Temperature.BatteryTemperatureMeasured(42.0)
               )
             ) =>
-          assert(ts != null, "Timestamp was not set")
+          () // Test passed
         case _ => fail("The event was not propagated")
       }
     }
