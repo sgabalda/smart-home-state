@@ -58,7 +58,6 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=CalentadorMicroControladorEstatSHS icon="receiver" label="Estat micro calent. [%s]"
         }
         Frame label="Controls" {
-            Selection item=VentiladorsHabilitatsSHS icon="network" label="Control vent. [%s]" mappings=["true"="SHS", "false"="OH"]
             Selection item=CalentadorHabilitatsSHS icon="network" label="Control calent. [%s]" mappings=["true"="SHS", "false"="OH"]
         }
     }

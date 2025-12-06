@@ -3,7 +3,6 @@ package calespiga.persistence
 import calespiga.ErrorManager.Error.StateFileUpdateError
 import calespiga.{ErrorManager, ErrorManagerStub}
 import calespiga.config.StatePersistenceConfig
-import calespiga.model.Fixture
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import cats.effect.testkit.TestControl
@@ -26,7 +25,14 @@ class StatePersistenceSuite extends CatsEffectSuite {
     storePeriod = 10 second
   )
 
-  private val someState = Fixture.state
+  private val someState: State = State(
+    temperatures = State.Temperatures(
+      externalTemperature = Some(20.0),
+      batteriesTemperature = Some(30.0),
+      electronicsTemperature = Some(40.0),
+      goalTemperature = 20.0
+    )
+  )
   private val someStateJson = someState.asJson.noSpaces
 
   private def getSut(

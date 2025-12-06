@@ -58,8 +58,6 @@ String SystemTitle "Estat"
 String TemperaturesMicroControladorEstat "Estat microcontrolador temperatures"
 String CalentadorMicroControladorEstatSHS "Estat microcontrolador calentador"
 
-
 /* feature flags */
-String VentiladorsHabilitatsSHS "Habilitar ventiladors per SHS"
 String CalentadorHabilitatsSHS "Habilitar calentador per SHS"
 

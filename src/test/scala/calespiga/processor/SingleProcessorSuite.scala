@@ -3,6 +3,7 @@ package calespiga.processor
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
 import java.time.Instant
+import com.softwaremill.quicklens.*
 
 class SingleProcessorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
@@ -15,9 +16,8 @@ class SingleProcessorSuite extends FunSuite {
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = {
-      val newState = state.copy(featureFlags =
-        state.featureFlags.copy(fanManagementEnabled = true)
-      ) // just to mutate something
+      val newState = state.modify(_.temperatures.goalTemperature).setTo(42.0)
+      // just to mutate something
       (newState, Set(action))
     }
   }
@@ -54,7 +54,7 @@ class SingleProcessorSuite extends FunSuite {
       finalState.heater.status,
       Some(calespiga.model.HeaterSignal.Power500)
     )
-    assertEquals(finalState.featureFlags.fanManagementEnabled, true)
+    assertEquals(finalState.temperatures.goalTemperature, 42.0)
     // Check that both actions are present
     assertEquals(actions, Set[Action](action1, action2))
   }

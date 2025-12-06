@@ -32,9 +32,6 @@ object Event {
   object FeatureFlagEvents {
     sealed trait FeatureFlagEvent extends EventData
 
-    @InputEventOHItem("VentiladorsHabilitatsSHS")
-    case class SetFanManagement(enable: Boolean) extends FeatureFlagEvent
-
     @InputEventOHItem("CalentadorHabilitatsSHS")
     case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
   }

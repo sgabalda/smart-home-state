@@ -29,9 +29,6 @@ object FeatureFlagsProcessor {
           mqttBlacklist
             .update(bl =>
               bl ++
-                (if (!state.featureFlags.fanManagementEnabled)
-                   config.temperaturesMqttTopic
-                 else Set.empty) ++
                 (if (!state.featureFlags.heaterManagementEnabled)
                    config.heaterMqttTopic
                  else Set.empty)
@@ -41,31 +38,12 @@ object FeatureFlagsProcessor {
                 state,
                 Set(
                   Action.SetUIItemValue(
-                    config.setFanManagementItem,
-                    state.featureFlags.fanManagementEnabled.toString
-                  ),
-                  Action.SetUIItemValue(
                     config.setHeaterManagementItem,
                     state.featureFlags.heaterManagementEnabled.toString
                   )
                 )
               )
             ) <* logger.info("Feature flags initialized on startup")
-        case Event.FeatureFlagEvents.SetFanManagement(enable) =>
-          val modifier = if (enable) { (bl: Set[String]) =>
-            bl -- config.temperaturesMqttTopic
-          } else { (bl: Set[String]) =>
-            bl ++ config.temperaturesMqttTopic
-          }
-          mqttBlacklist
-            .update(modifier)
-            .as(
-              (
-                state.modify(_.featureFlags.fanManagementEnabled).setTo(enable),
-                Set.empty
-              )
-            ) <* logger.info("Fan management feature flag set to " + enable)
-
         case Event.FeatureFlagEvents.SetHeaterManagement(enable) =>
           val modifier = if (enable) { (bl: Set[String]) =>
             bl -- config.heaterMqttTopic
