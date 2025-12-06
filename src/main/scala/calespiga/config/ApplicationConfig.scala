@@ -131,8 +131,6 @@ final case class HeaterConfig(
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(
-    temperaturesMqttTopic: Set[String],
-    setFanManagementItem: String,
     heaterMqttTopic: Set[String],
     setHeaterManagementItem: String
 ) derives ConfigReader
