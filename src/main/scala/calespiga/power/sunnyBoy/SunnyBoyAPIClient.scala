@@ -55,9 +55,9 @@ object SunnyBoyAPIClient {
           case Response(Right(successBody), code, _, _, _, _) =>
             decoder
               .getData(successBody)
-              .flatMap(decoder.toPowerProduction) match {
-              case Right(producedPower) =>
-                IO.pure(producedPower)
+              .flatMap(dp => (dp,decoder.toPowerProduction(dp))) match {
+              case Right(dp, producedPower) =>
+                logger.info(s"Successfully decoded data: $dp => $producedPower") *> IO.pure(producedPower)
               case Left(decodingError) =>
                 val message =
                   s"Failed to decode data response: ${decodingError.getMessage}, response: $successBody"
