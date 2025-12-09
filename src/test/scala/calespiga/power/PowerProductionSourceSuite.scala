@@ -21,7 +21,12 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       }.flatten
   }
 
-  val testConfig = PowerProductionSourceConfig(pollingInterval = 100.millis)
+  val testConfig = PowerProductionSourceConfig(
+    pollingInterval = 100.millis,
+    fvStartingHour = 6,
+    fvEndingHour = 21
+  )
+  val testZoneId = java.time.ZoneId.of("GMT+0")
 
   test("provider is called every period defined in the config") {
     val program = for {
@@ -33,7 +38,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
       count <- PowerProductionSource(
         testConfig,
-        stubProvider
+        stubProvider,
+        testZoneId
       ).getEnergyProductionInfo
         .take(3)
         .compile
@@ -57,7 +63,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
       results <- PowerProductionSource(
         testConfig,
-        stubProvider
+        stubProvider,
+        testZoneId
       ).getEnergyProductionInfo
         .take(3)
         .compile
@@ -86,7 +93,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
       result <- PowerProductionSource(
         testConfig,
-        stubProvider
+        stubProvider,
+        testZoneId
       ).getEnergyProductionInfo
         .take(1)
         .compile
@@ -116,7 +124,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
       results <- PowerProductionSource(
         testConfig,
-        stubProvider
+        stubProvider,
+        testZoneId
       ).getEnergyProductionInfo
         .take(3)
         .compile
@@ -149,7 +158,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
       results <- PowerProductionSource(
         testConfig,
-        stubProvider
+        stubProvider,
+        testZoneId
       ).getEnergyProductionInfo
         .take(4)
         .compile
@@ -162,6 +172,41 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
         Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
       )
     } yield assertEquals(results, expected)
+
+    TestControl.executeEmbed(program)
+  }
+
+  test(
+    "no elements are emitted when current time is outside configured hours"
+  ) {
+    // Create a config with hours that will never match (future hours)
+    val outsideHoursConfig = PowerProductionSourceConfig(
+      pollingInterval = 100.millis,
+      fvStartingHour = 25,
+      fvEndingHour = 25
+    )
+    val data = PowerProductionData(100.0, 50.0, 10.0, List.empty)
+
+    val program = for {
+      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
+        List.fill(5)(IO.pure(data))
+      )
+      stubProvider = StubProvider(effectsQueue)
+
+      results <- PowerProductionSource(
+        outsideHoursConfig,
+        stubProvider,
+        testZoneId
+      ).getEnergyProductionInfo
+        .interruptAfter(300.millis)
+        .compile
+        .toList
+
+    } yield assertEquals(
+      results,
+      List.empty,
+      "No elements should be emitted outside configured hours"
+    )
 
     TestControl.executeEmbed(program)
   }

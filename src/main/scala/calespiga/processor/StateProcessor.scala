@@ -43,7 +43,8 @@ object StateProcessor {
 
   def apply(
       config: calespiga.config.ProcessorConfig,
-      mqttBlacklist: Ref[IO, Set[String]]
+      mqttBlacklist: Ref[IO, Set[String]],
+      zoneId: ZoneId
   ): StateProcessor =
     this.apply(
       TemperaturesProcessor(
@@ -53,7 +54,7 @@ object StateProcessor {
       ).toEffectful,
       HeaterProcessor(
         config.heater,
-        ZoneId.systemDefault(),
+        zoneId,
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
