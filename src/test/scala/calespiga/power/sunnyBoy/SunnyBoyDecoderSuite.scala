@@ -63,7 +63,7 @@ class SunnyBoyDecoderSuite extends FunSuite {
           },
           "${config.frequencyCode}": {
             "1": [
-              {"val": 50.5}
+              {"val": 5050.0}
             ]
           },
           "${config.linesCode}": {
@@ -96,7 +96,7 @@ class SunnyBoyDecoderSuite extends FunSuite {
           },
           "${config.frequencyCode}": {
             "1": [
-              {"val": 51.8}
+              {"val": 5180.0}
             ]
           },
           "${config.linesCode}": {
@@ -162,7 +162,7 @@ class SunnyBoyDecoderSuite extends FunSuite {
           },
           "${config.frequencyCode}": {
             "1": [
-              {"val": 50.5}
+              {"val": 5050.0}
             ]
           },
           "${config.linesCode}": {
@@ -216,8 +216,8 @@ class SunnyBoyDecoderSuite extends FunSuite {
         assertEquals(data.generatedPower, 5000.0f)
         assertEquals(
           data.frequency,
-          0.0f,
-          "Null frequency should be converted to 0.0f"
+          50.0f,
+          "Null frequency should be converted to 50.0f"
         )
         assertEquals(data.linesPower, List(1500.0f))
       case Left(error) =>
@@ -236,7 +236,7 @@ class SunnyBoyDecoderSuite extends FunSuite {
           },
           "${config.frequencyCode}": {
             "1": [
-              {"val": 50.5}
+              {"val": 5050.0}
             ]
           },
           "${config.linesCode}": {

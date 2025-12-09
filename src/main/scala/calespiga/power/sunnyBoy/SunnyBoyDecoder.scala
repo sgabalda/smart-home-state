@@ -73,9 +73,11 @@ object SunnyBoyDecoder {
             )
             frequency <-
               if (frequencyCursor.focus.exists(_.isNull))
-                Right(0.0f)
+                Right(50.0f)
               else
-                frequencyCursor.as[Float]
+                frequencyCursor
+                  .as[Float]
+                  .map(_ / 100.0f) // API gives frequency * 100
 
             linesPowerArray <- resultCursor
               .downField(config.linesCode)
