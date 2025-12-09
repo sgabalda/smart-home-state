@@ -114,7 +114,10 @@ class SunnyBoyDecoderSuite extends FunSuite {
       case Right(dataResponse) =>
         assertEquals(dataResponse.generatedPower, 8000.0f)
         assertEquals(dataResponse.frequency, 51.8f)
-        assertEquals(dataResponse.linesPower, List(2000.0f, 3000.0f, 2500.0f))
+        assertEquals(
+          dataResponse.linesPower,
+          List(2000.0f, 3000.0f, 2500.0f)
+        )
       case Left(error) =>
         fail(s"Expected Right but got Left: ${error.getMessage}")
     }
@@ -146,6 +149,117 @@ class SunnyBoyDecoderSuite extends FunSuite {
     }"""
     val result = decoder.getData(missingFieldJson)
     assert(result.isLeft)
+  }
+
+  test("getData: null value in totalPower field returns 0.0") {
+    val nullValueJson = s"""{
+      "result": {
+        "${config.serialId}": {
+          "${config.totalPowerCode}": {
+            "1": [
+              {"val": null}
+            ]
+          },
+          "${config.frequencyCode}": {
+            "1": [
+              {"val": 50.5}
+            ]
+          },
+          "${config.linesCode}": {
+            "1": [
+              {"val": 1500.0}
+            ]
+          }
+        }
+      }
+    }"""
+    val result = decoder.getData(nullValueJson)
+    result match {
+      case Right(data) =>
+        assertEquals(
+          data.generatedPower,
+          0.0f,
+          "Null totalPower should be converted to 0.0f"
+        )
+        assertEquals(data.frequency, 50.5f)
+        assertEquals(data.linesPower, List(1500.0f))
+      case Left(error) =>
+        fail(s"Expected Right but got Left: ${error.getMessage}")
+    }
+  }
+
+  test("getData: null in frequency field returns 0.0") {
+    val nullFrequencyJson = s"""{
+      "result": {
+        "${config.serialId}": {
+          "${config.totalPowerCode}": {
+            "1": [
+              {"val": 5000.0}
+            ]
+          },
+          "${config.frequencyCode}": {
+            "1": [
+              {"val": null}
+            ]
+          },
+          "${config.linesCode}": {
+            "1": [
+              {"val": 1500.0}
+            ]
+          }
+        }
+      }
+    }"""
+    val result = decoder.getData(nullFrequencyJson)
+    result match {
+      case Right(data) =>
+        assertEquals(data.generatedPower, 5000.0f)
+        assertEquals(
+          data.frequency,
+          0.0f,
+          "Null frequency should be converted to 0.0f"
+        )
+        assertEquals(data.linesPower, List(1500.0f))
+      case Left(error) =>
+        fail(s"Expected Right but got Left: ${error.getMessage}")
+    }
+  }
+
+  test("getData: null in lines field returns 0.0 for that line") {
+    val nullLinesJson = s"""{
+      "result": {
+        "${config.serialId}": {
+          "${config.totalPowerCode}": {
+            "1": [
+              {"val": 5000.0}
+            ]
+          },
+          "${config.frequencyCode}": {
+            "1": [
+              {"val": 50.5}
+            ]
+          },
+          "${config.linesCode}": {
+            "1": [
+              {"val": null}
+            ]
+          }
+        }
+      }
+    }"""
+    val result = decoder.getData(nullLinesJson)
+    result match {
+      case Right(dataResponse) =>
+        assertEquals(dataResponse.generatedPower, 5000.0f)
+        assertEquals(dataResponse.frequency, 50.5f)
+        assertEquals(
+          dataResponse.linesPower,
+          List(0.0f),
+          "Null lines value should be converted to 0.0f"
+        )
+      case Left(error) =>
+        fail(s"Expected Right but got Left: ${error.getMessage}")
+    }
   }
 
   // ============================================================

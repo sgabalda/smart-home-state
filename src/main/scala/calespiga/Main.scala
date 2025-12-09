@@ -21,6 +21,7 @@ import cats.effect.Ref
 import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
 import calespiga.power.PowerProductionSource
 import calespiga.config.PowerProductionConfig
+import java.time.ZoneId
 
 object Main extends IOApp.Simple {
 
@@ -56,7 +57,8 @@ object Main extends IOApp.Simple {
       }
   }
   private def powerDeps(
-      config: PowerProductionConfig
+      config: PowerProductionConfig,
+      zoneId: ZoneId
   ): ResourceIO[PowerProductionSource] =
     for {
       sunnyBoy <- SunnyBoyAPIClient(
@@ -65,7 +67,8 @@ object Main extends IOApp.Simple {
       )
     } yield PowerProductionSource(
       config.powerProductionSource,
-      sunnyBoy
+      sunnyBoy,
+      zoneId
     )
 
   private def resources: ResourceIO[Resources] =
@@ -121,9 +124,10 @@ object Main extends IOApp.Simple {
           HealthStatusManager.Component.StatePersistence
         )
       )
-      processor = StateProcessor(appConfig.processor, mqttBlacklist)
+      zoneId = ZoneId.systemDefault()
+      processor = StateProcessor(appConfig.processor, mqttBlacklist, zoneId)
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
-      powerSource <- powerDeps(appConfig.powerProduction)
+      powerSource <- powerDeps(appConfig.powerProduction, zoneId)
       inputStream = buildInputStream(
         mqttInputProcessor,
         userInterfaceManager,

@@ -2,11 +2,10 @@ package calespiga.power.sunnyBoy
 
 import io.circe.parser.decode
 import io.circe.{Decoder, HCursor}
-import cats.implicits.*
 import calespiga.config.SunnyBoyConfig
 import calespiga.power.sunnyBoy.SunnyBoyDecoder.DataResponse
-
 import calespiga.power.PowerProductionData
+import cats.implicits.*
 
 trait SunnyBoyDecoder {
   def getToken(responseBody: String): Either[Throwable, String]
@@ -52,27 +51,42 @@ object SunnyBoyDecoder {
           val resultCursor = c.downField("result").downField(config.serialId)
 
           for {
-            totalPower <- resultCursor
-              .downField(config.totalPowerCode)
-              .downField("1")
-              .downN(0)
-              .downField("val")
-              .as[Float]
+            totalPowerCursor <- Right(
+              resultCursor
+                .downField(config.totalPowerCode)
+                .downField("1")
+                .downN(0)
+                .downField("val")
+            )
+            totalPower <-
+              if (totalPowerCursor.focus.exists(_.isNull))
+                Right(0.0f)
+              else
+                totalPowerCursor.as[Float]
 
-            frequency <- resultCursor
-              .downField(config.frequencyCode)
-              .downField("1")
-              .downN(0)
-              .downField("val")
-              .as[Float]
+            frequencyCursor <- Right(
+              resultCursor
+                .downField(config.frequencyCode)
+                .downField("1")
+                .downN(0)
+                .downField("val")
+            )
+            frequency <-
+              if (frequencyCursor.focus.exists(_.isNull))
+                Right(0.0f)
+              else
+                frequencyCursor.as[Float]
 
             linesPowerArray <- resultCursor
               .downField(config.linesCode)
               .downField("1")
               .as[List[io.circe.Json]]
 
-            linesPower <- linesPowerArray
-              .traverse(json => json.hcursor.downField("val").as[Float])
+            linesPower <- linesPowerArray.traverse { json =>
+              val cursor = json.hcursor.downField("val")
+              if (cursor.focus.exists(_.isNull)) Right(0.0f)
+              else cursor.as[Float]
+            }
           } yield DataResponse(totalPower, frequency, linesPower)
         }
     }
