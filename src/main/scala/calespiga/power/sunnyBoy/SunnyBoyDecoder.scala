@@ -4,8 +4,8 @@ import io.circe.parser.decode
 import io.circe.{Decoder, HCursor}
 import calespiga.config.SunnyBoyConfig
 import calespiga.power.sunnyBoy.SunnyBoyDecoder.DataResponse
-
 import calespiga.power.PowerProductionData
+import cats.implicits.*
 
 trait SunnyBoyDecoder {
   def getToken(responseBody: String): Either[Throwable, String]
@@ -82,13 +82,11 @@ object SunnyBoyDecoder {
               .downField("1")
               .as[List[io.circe.Json]]
 
-            linesPower <- Right(
-              linesPowerArray.map { json =>
-                val cursor = json.hcursor.downField("val")
-                if (cursor.focus.exists(_.isNull)) 0.0f
-                else cursor.as[Float].getOrElse(0.0f)
-              }
-            )
+            linesPower <- linesPowerArray.traverse { json =>
+              val cursor = json.hcursor.downField("val")
+              if (cursor.focus.exists(_.isNull)) Right(0.0f)
+              else cursor.as[Float]
+            }
           } yield DataResponse(totalPower, frequency, linesPower)
         }
     }

@@ -56,7 +56,7 @@ object SunnyBoyAPIClient {
             decoder
               .getData(successBody)
               .flatMap(dp => decoder.toPowerProduction(dp).map((dp, _))) match {
-              case Right(dp, producedPower) =>
+              case Right((dp, producedPower)) =>
                 logger.info(
                   s"Successfully decoded data: $dp => $producedPower"
                 ) *> IO.pure(producedPower)
