@@ -12,11 +12,14 @@ class PowerAvailableProcessorSuite extends FunSuite {
   val dummyConfig = PowerAvailableProcessorConfig(
     periodAlarmNoData = 5.minutes,
     periodAlarmNoProduction = 10.hours,
+    fvStartingHour = 7,
+    fvEndingHour = 22,
     powerAvailableItem = "PowerAvailableItem",
     powerProducedItem = "PowerProducedItem",
     powerDiscardedItem = "PowerDiscardedItem"
   )
-  val processor = PowerAvailableProcessor(dummyConfig)
+  val processor =
+    PowerAvailableProcessor(dummyConfig, java.time.ZoneId.of("UTC"))
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
   test(
@@ -146,6 +149,38 @@ class PowerAvailableProcessorSuite extends FunSuite {
       delayedAction.isDefined,
       s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
         s"and delay ${dummyConfig.periodAlarmNoData}"
+    )
+  }
+
+  test(
+    "PowerProductionReported emits delayed action when outside FV hours previous day"
+  ) {
+    val powerAvailable = 100.5f
+    val powerProduced = 75.3f
+    val powerDiscarded = 25.2f
+    val linesPower = List.empty[Float]
+    val state = State()
+    val event = Event.Power.PowerProductionReported(
+      powerAvailable,
+      powerProduced,
+      powerDiscarded,
+      linesPower
+    )
+    val now = Instant.parse("2023-08-17T23:00:00Z")
+    val (newState, actions) = processor.process(state, event, now)
+
+    val delayedAction = actions.find {
+      case Action.Delayed(id, _, delay)
+          if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
+            && delay == dummyConfig.periodAlarmNoData.plus(8.hours) =>
+        true
+      case _ => false
+    }
+
+    assert(
+      delayedAction.isDefined,
+      s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
+        s"and delay to the day after ${dummyConfig.periodAlarmNoData}"
     )
   }
 
