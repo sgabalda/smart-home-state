@@ -185,6 +185,38 @@ class PowerAvailableProcessorSuite extends FunSuite {
   }
 
   test(
+    "PowerProductionReported emits delayed action when outside FV hours same day"
+  ) {
+    val powerAvailable = 100.5f
+    val powerProduced = 75.3f
+    val powerDiscarded = 25.2f
+    val linesPower = List.empty[Float]
+    val state = State()
+    val event = Event.Power.PowerProductionReported(
+      powerAvailable,
+      powerProduced,
+      powerDiscarded,
+      linesPower
+    )
+    val now = Instant.parse("2023-08-17T03:00:00Z")
+    val (newState, actions) = processor.process(state, event, now)
+
+    val delayedAction = actions.find {
+      case Action.Delayed(id, _, delay)
+          if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
+            && delay == dummyConfig.periodAlarmNoData.plus((dummyConfig.fvStartingHour - 3).hours) =>
+        true
+      case _ => false
+    }
+
+    assert(
+      delayedAction.isDefined,
+      s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
+        s"and delay to the day after ${dummyConfig.periodAlarmNoData}"
+    )
+  }
+
+  test(
     "PowerProductionReported with power > 0 emits delayed action for no production notification"
   ) {
     val powerAvailable = 100.5f
