@@ -58,7 +58,7 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      PowerAvailableProcessor(config.powerAvailable).toEffectful,
+      PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
 

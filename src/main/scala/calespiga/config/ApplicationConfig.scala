@@ -57,6 +57,8 @@ final case class ProcessorConfig(
 final case class PowerAvailableProcessorConfig(
     periodAlarmNoData: FiniteDuration,
     periodAlarmNoProduction: FiniteDuration,
+    fvStartingHour: Int,
+    fvEndingHour: Int,
     powerAvailableItem: String,
     powerProducedItem: String,
     powerDiscardedItem: String

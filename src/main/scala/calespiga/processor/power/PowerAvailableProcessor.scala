@@ -6,18 +6,47 @@ import calespiga.model.Event.Power.PowerProductionReported
 import calespiga.model.{State, Action, Event}
 import java.time.Instant
 import calespiga.config.PowerAvailableProcessorConfig
+import java.time.ZoneId
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit
 
 object PowerAvailableProcessor {
 
   val ALERT_NO_UPDATES_ID = "power-available-no-updates"
   val ALERT_NO_PRODUCTION_IN_HOURS_ID = "power-available-no-production-hours"
 
-  private final case class Impl(config: PowerAvailableProcessorConfig)
-      extends SingleProcessor {
+  private final case class Impl(
+      config: PowerAvailableProcessorConfig,
+      zoneId: ZoneId
+  ) extends SingleProcessor {
 
     def actionsBasedOnPower(
-        powerAvailable: Float
+        powerAvailable: Float,
+        now: Instant
     ): Set[Action] = {
+      val nextUpdateExpected = now.plusMillis(config.periodAlarmNoData.toMillis)
+      val nextUpdateHour = nextUpdateExpected.atZone(zoneId).getHour
+      val durationToNextUpdate =
+        if (
+          nextUpdateHour >= config.fvStartingHour && nextUpdateHour < config.fvEndingHour
+        )
+          // Next update is within FV hours, use normal period
+          config.periodAlarmNoData
+        else if (nextUpdateHour < config.fvStartingHour)
+          // Before FV hours today, wait until FV starts today
+          FiniteDuration(
+            config.fvStartingHour.toLong - nextUpdateHour.toLong,
+            TimeUnit.HOURS
+          )
+            .plus(config.periodAlarmNoData)
+        else
+          // After FV hours today, wait until FV starts tomorrow
+          FiniteDuration(
+            24L - nextUpdateHour.toLong + config.fvStartingHour.toLong,
+            TimeUnit.HOURS
+          )
+            .plus(config.periodAlarmNoData)
+
       Set(
         Some(
           Action.Delayed(
@@ -27,7 +56,7 @@ object PowerAvailableProcessor {
               s"No s'han rebut dades de potència disponible en ${config.periodAlarmNoData}",
               None
             ),
-            config.periodAlarmNoData
+            durationToNextUpdate
           )
         ),
         Option.when(powerAvailable > 0) {
@@ -96,13 +125,16 @@ object PowerAvailableProcessor {
         (
           newState,
           updateUIItemActions(powerAvailable, powerProduced, powerDiscarded)
-            ++ actionsBasedOnPower(powerAvailable)
+            ++ actionsBasedOnPower(powerAvailable, timestamp)
         )
       case _ =>
         (state, Set.empty)
   }
 
-  def apply(config: PowerAvailableProcessorConfig): SingleProcessor =
-    Impl(config)
+  def apply(
+      config: PowerAvailableProcessorConfig,
+      zoneId: ZoneId
+  ): SingleProcessor =
+    Impl(config, zoneId)
 
 }
