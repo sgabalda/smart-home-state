@@ -180,7 +180,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     assert(
       delayedAction.isDefined,
       s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
-        s"and delay to the day after ${dummyConfig.periodAlarmNoData}"
+        s"and delay to the next day after starting hour plus ${dummyConfig.periodAlarmNoData}"
     )
   }
 
@@ -204,7 +204,9 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val delayedAction = actions.find {
       case Action.Delayed(id, _, delay)
           if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
-            && delay == dummyConfig.periodAlarmNoData.plus((dummyConfig.fvStartingHour - 3).hours) =>
+            && delay == dummyConfig.periodAlarmNoData.plus(
+              (dummyConfig.fvStartingHour - 3).hours
+            ) =>
         true
       case _ => false
     }
@@ -212,7 +214,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     assert(
       delayedAction.isDefined,
       s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
-        s"and delay to the day after ${dummyConfig.periodAlarmNoData}"
+        s"and delay to the same day later after starting hour plus ${dummyConfig.periodAlarmNoData}"
     )
   }
 

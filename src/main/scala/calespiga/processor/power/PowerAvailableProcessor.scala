@@ -30,14 +30,17 @@ object PowerAvailableProcessor {
         if (
           nextUpdateHour >= config.fvStartingHour && nextUpdateHour < config.fvEndingHour
         )
+          // Next update is within FV hours, use normal period
           config.periodAlarmNoData
         else if (nextUpdateHour < config.fvStartingHour)
+          // Before FV hours today, wait until FV starts today
           FiniteDuration(
             config.fvStartingHour.toLong - nextUpdateHour.toLong,
             TimeUnit.HOURS
           )
             .plus(config.periodAlarmNoData)
         else
+          // After FV hours today, wait until FV starts tomorrow
           FiniteDuration(
             24L - nextUpdateHour.toLong + config.fvStartingHour.toLong,
             TimeUnit.HOURS
