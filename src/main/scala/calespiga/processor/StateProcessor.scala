@@ -7,6 +7,8 @@ import cats.effect.IO
 import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
 import calespiga.processor.power.PowerAvailableProcessor
+import calespiga.processor.power.PowerProcessor
+import calespiga.processor.heater.HeaterDynamicPowerConsumer
 
 trait StateProcessor {
   def process(
@@ -57,6 +59,11 @@ object StateProcessor {
         zoneId,
         config.offlineDetector,
         config.syncDetector
+      ).toEffectful,
+      PowerProcessor(
+        config.powerAvailable,
+        zoneId,
+        Set(HeaterDynamicPowerConsumer(config.heater))
       ).toEffectful,
       PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)

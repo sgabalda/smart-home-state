@@ -8,6 +8,7 @@ import java.time.Instant
 import calespiga.model.Action
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
+import calespiga.processor.power.dynamic.DynamicPowerConsumer.*
 
 object DynamicPowerProcessor {
 
@@ -23,19 +24,21 @@ object DynamicPowerProcessor {
       case PowerProductionReported(_, _, powerDiscarded, _) =>
         val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 
-        val totalDynamicPower = powerDiscarded + orderedConsumers
+        val initialPower = Power(powerDiscarded)
+
+        val totalDynamicPower = initialPower + orderedConsumers
           .map(_.currentlyUsedDynamicPower(state))
-          .sum
+          .fold(DynamicPowerConsumer.zeroPower)(_ + _)
 
         orderedConsumers.foldLeft(
           (state, Set.empty[Action], totalDynamicPower)
         ) { case ((currentState, currentActions, remainingPower), consumer) =>
-          if (remainingPower <= 0f) {
-            (currentState, currentActions, 0f)
+          if (remainingPower <= DynamicPowerConsumer.zeroPower) {
+            (currentState, currentActions, DynamicPowerConsumer.zeroPower)
           } else {
             val result = consumer.usePower(currentState, remainingPower)
             (
-              result.newState,
+              result.state,
               currentActions ++ result.actions,
               remainingPower - result.powerUsed
             )

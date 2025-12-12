@@ -140,7 +140,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
       Action.Periodic(
-        dummyConfig.id + HeaterPowerProcessor.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
         dummyConfig.resendInterval
