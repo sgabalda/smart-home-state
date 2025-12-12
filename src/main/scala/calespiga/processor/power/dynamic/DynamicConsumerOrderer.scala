@@ -17,4 +17,6 @@ object DynamicConsumerOrderer {
       consumers.toSeq
     }
   }
+
+  def apply(): DynamicConsumerOrderer = Impl()
 }

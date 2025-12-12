@@ -2,18 +2,20 @@ package calespiga.processor.power.dynamic
 
 import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
+import calespiga.processor.power.dynamic.DynamicPowerConsumer.Power
 
 object DynamicPowerConsumerStub {
 
   def apply(
-      currentlyUsedDynamicPowerStub: State => Float = _ => 0.0f,
-      usePowerStub: (State, Float) => DynamicPowerResult = (state, _) =>
-        DynamicPowerResult(state, Set.empty, 0.0f)
+      currentlyUsedDynamicPowerStub: State => Power = _ =>
+        DynamicPowerConsumer.zeroPower,
+      usePowerStub: (State, Power) => DynamicPowerResult = (state, _) =>
+        DynamicPowerResult(state, Set.empty, DynamicPowerConsumer.zeroPower)
   ): DynamicPowerConsumer = new DynamicPowerConsumer {
-    override def currentlyUsedDynamicPower(state: State): Float =
+    override def currentlyUsedDynamicPower(state: State): Power =
       currentlyUsedDynamicPowerStub(state)
 
-    override def usePower(state: State, powerToUse: Float): DynamicPowerResult =
+    override def usePower(state: State, powerToUse: Power): DynamicPowerResult =
       usePowerStub(state, powerToUse)
   }
 }
