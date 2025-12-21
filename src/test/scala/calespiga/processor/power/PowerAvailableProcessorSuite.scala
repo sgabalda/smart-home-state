@@ -280,13 +280,59 @@ class PowerAvailableProcessorSuite extends FunSuite {
   }
 
   test(
-    "Non-PowerProductionReported event returns state unchanged with no actions"
+    "StartupEvent resets powerProduction fields to None and updates UI items to 0"
   ) {
+    // Start with a state that has power values
     val state = State()
+      .modify(_.powerProduction.powerAvailable)
+      .setTo(Some(100.0f))
+      .modify(_.powerProduction.powerProduced)
+      .setTo(Some(75.0f))
+      .modify(_.powerProduction.powerDiscarded)
+      .setTo(Some(25.0f))
+
     val event = Event.System.StartupEvent
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState, state, "State should not change")
-    assertEquals(actions, Set.empty, "No actions should be emitted")
+    // Check that power fields are reset to None
+    assertEquals(
+      newState.powerProduction.powerAvailable,
+      None,
+      "powerAvailable should be reset to None"
+    )
+    assertEquals(
+      newState.powerProduction.powerProduced,
+      None,
+      "powerProduced should be reset to None"
+    )
+    assertEquals(
+      newState.powerProduction.powerDiscarded,
+      None,
+      "powerDiscarded should be reset to None"
+    )
+
+    // Check that UI items are updated to 0
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerAvailableItem, "0")
+      ),
+      "Should set powerAvailableItem to 0"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerProducedItem, "0")
+      ),
+      "Should set powerProducedItem to 0"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerDiscardedItem, "0")
+      ),
+      "Should set powerDiscardedItem to 0"
+    )
+
+    assertEquals(actions.size, 3, "Should emit exactly 3 UI update actions")
   }
 }

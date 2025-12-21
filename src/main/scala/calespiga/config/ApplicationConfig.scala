@@ -51,7 +51,12 @@ final case class ProcessorConfig(
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
     featureFlags: FeatureFlagsConfig,
-    powerAvailable: PowerAvailableProcessorConfig
+    power: PowerProcessorConfig
+) derives ConfigReader
+
+final case class PowerProcessorConfig(
+    powerAvailable: PowerAvailableProcessorConfig,
+    dynamicPower: DynamicPowerProcessorConfig
 ) derives ConfigReader
 
 final case class PowerAvailableProcessorConfig(
@@ -62,6 +67,10 @@ final case class PowerAvailableProcessorConfig(
     powerAvailableItem: String,
     powerProducedItem: String,
     powerDiscardedItem: String
+) derives ConfigReader
+
+final case class DynamicPowerProcessorConfig(
+    dynamicFVPowerUsedItem: String
 ) derives ConfigReader
 
 final case class TemperatureFansConfig(

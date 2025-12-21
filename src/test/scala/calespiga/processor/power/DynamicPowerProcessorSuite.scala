@@ -15,6 +15,10 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
+  val processorConfig = calespiga.config.DynamicPowerProcessorConfig(
+    dynamicFVPowerUsedItem = "DynamicFVPowerUsed"
+  )
+
   test(
     "DynamicPowerProcessor respects consumer ordering from DynamicConsumerOrderer"
   ) {
@@ -46,7 +50,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val processor = DynamicPowerProcessor(
       ordererWithTracking,
-      Set(trackingConsumer1, trackingConsumer2, trackingConsumer3)
+      Set(trackingConsumer1, trackingConsumer2, trackingConsumer3),
+      processorConfig
     )
 
     val state = State()
@@ -72,24 +77,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val powerOffered = ListBuffer.empty[Power]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(10f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(10f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(15f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(15f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(5f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(5f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(20f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(20f))
       }
     )
     val consumer3 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(10f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(10f))
       }
     )
 
@@ -99,7 +104,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val processor = DynamicPowerProcessor(
       orderer,
-      Set(consumer1, consumer2, consumer3)
+      Set(consumer1, consumer2, consumer3),
+      processorConfig
     )
 
     val state = State()
@@ -115,7 +121,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     // Total dynamic power = powerDiscarded + currentlyUsedDynamicPower from all consumers
     // = 30 + 10 + 5 + 0 = 45
-    val totalDynamicPower = Power.ofUnusedFV(45f)
+    val totalDynamicPower = Power.ofFv(45f)
 
     assertEquals(powerOffered.size, 3, "All three consumers should be called")
     assertEquals(
@@ -125,12 +131,12 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
     assertEquals(
       powerOffered(1),
-      totalDynamicPower - Power.ofUnusedFV(15f),
+      totalDynamicPower - Power.ofFv(15f),
       "Second consumer gets remaining after first used 15"
     )
     assertEquals(
       powerOffered(2),
-      totalDynamicPower - Power.ofUnusedFV(15f) - Power.ofUnusedFV(20f),
+      totalDynamicPower - Power.ofFv(15f) - Power.ofFv(20f),
       "Third consumer gets remaining after first two"
     )
   }
@@ -141,24 +147,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val callCount = ListBuffer.empty[Int]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
         callCount += 1
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(25f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(25f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
         callCount += 2
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(10f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(10f))
       }
     )
     val consumer3 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
         callCount += 3
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(5f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(5f))
       }
     )
 
@@ -168,7 +174,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val processor = DynamicPowerProcessor(
       orderer,
-      Set(consumer1, consumer2, consumer3)
+      Set(consumer1, consumer2, consumer3),
+      processorConfig
     )
 
     val state = State()
@@ -193,19 +200,19 @@ class DynamicPowerProcessorSuite extends FunSuite {
     import com.softwaremill.quicklens.*
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
         val newState =
           state.modify(_.powerProduction.powerAvailable).setTo(Some(100f))
-        DynamicPowerResult(newState, Set.empty, Power.ofUnusedFV(10f))
+        DynamicPowerResult(newState, Set.empty, Power.ofFv(10f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
         val newState =
           state.modify(_.powerProduction.powerProduced).setTo(Some(50f))
-        DynamicPowerResult(newState, Set.empty, Power.ofUnusedFV(5f))
+        DynamicPowerResult(newState, Set.empty, Power.ofFv(5f))
       }
     )
 
@@ -215,7 +222,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val processor = DynamicPowerProcessor(
       orderer,
-      Set(consumer1, consumer2)
+      Set(consumer1, consumer2),
+      processorConfig
     )
 
     val state = State()
@@ -240,21 +248,27 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
   }
 
-  test("DynamicPowerProcessor aggregates actions from consumers") {
+  test(
+    "DynamicPowerProcessor aggregates actions from consumers, plus the total"
+  ) {
     val action1 = Action.SetUIItemValue("Item1", "value1")
     val action2 = Action.SetUIItemValue("Item2", "value2")
     val action3 = Action.SetUIItemValue("Item3", "value3")
+    val total = Action.SetUIItemValue(
+      processorConfig.dynamicFVPowerUsedItem,
+      "15.0"
+    )
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
-        DynamicPowerResult(state, Set(action1), Power.ofUnusedFV(10f))
+        DynamicPowerResult(state, Set(action1), Power.ofFv(10f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(0f),
       usePowerStub = (state, _) => {
-        DynamicPowerResult(state, Set(action2, action3), Power.ofUnusedFV(5f))
+        DynamicPowerResult(state, Set(action2, action3), Power.ofFv(5f))
       }
     )
 
@@ -264,7 +278,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val processor = DynamicPowerProcessor(
       orderer,
-      Set(consumer1, consumer2)
+      Set(consumer1, consumer2),
+      processorConfig
     )
 
     val state = State()
@@ -279,7 +294,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     assertEquals(
       actions,
-      Set[Action](action1, action2, action3),
+      Set[Action](action1, action2, action3, total),
       "All actions from consumers should be aggregated"
     )
   }
@@ -292,14 +307,15 @@ class DynamicPowerProcessorSuite extends FunSuite {
         DynamicPowerResult(
           state,
           Set(Action.SetUIItemValue("Item", "value")),
-          Power.ofUnusedFV(10f)
+          Power.ofFv(10f)
         )
       }
     )
 
     val orderer = DynamicConsumerOrdererStub()
 
-    val processor = DynamicPowerProcessor(orderer, Set(consumer))
+    val processor =
+      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
 
     val state = State()
     val event = Event.System.StartupEvent
@@ -316,10 +332,10 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val powerOffered = ListBuffer.empty[Power]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(20f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofFv(20f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(0f))
+        DynamicPowerResult(state, Set.empty, Power.ofFv(0f))
       }
     )
 
@@ -327,7 +343,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq(consumer1)
     )
 
-    val processor = DynamicPowerProcessor(orderer, Set(consumer1))
+    val processor =
+      DynamicPowerProcessor(orderer, Set(consumer1), processorConfig)
 
     val state = State()
     val powerDiscarded = 30f
@@ -342,19 +359,19 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     assertEquals(
       powerOffered(0),
-      Power.ofUnusedFV(50f),
+      Power.ofFv(50f),
       "Total dynamic power should be powerDiscarded (30) + currentlyUsedDynamicPower (20)"
     )
   }
 
   test(
-    "DynamicPowerProcessor with no consumers returns state unchanged and no actions"
+    "DynamicPowerProcessor with no consumers returns state unchanged and only total action"
   ) {
     val orderer = DynamicConsumerOrdererStub(
       orderConsumersStub = (_, _) => Seq.empty
     )
 
-    val processor = DynamicPowerProcessor(orderer, Set.empty)
+    val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
 
     val state = State()
     val event = Event.Power.PowerProductionReported(
@@ -373,7 +390,12 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
     assertEquals(
       actions,
-      Set.empty,
+      Set[Action](
+        Action.SetUIItemValue(
+          processorConfig.dynamicFVPowerUsedItem,
+          "0.0"
+        )
+      ),
       "No actions should be emitted when there are no consumers"
     )
   }

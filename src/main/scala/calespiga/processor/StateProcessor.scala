@@ -6,7 +6,6 @@ import java.time.ZoneId
 import cats.effect.IO
 import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
-import calespiga.processor.power.PowerAvailableProcessor
 import calespiga.processor.power.PowerProcessor
 import calespiga.processor.heater.HeaterDynamicPowerConsumer
 
@@ -61,11 +60,10 @@ object StateProcessor {
         config.syncDetector
       ).toEffectful,
       PowerProcessor(
-        config.powerAvailable,
+        config.power,
         zoneId,
         Set(HeaterDynamicPowerConsumer(config.heater))
       ).toEffectful,
-      PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
 

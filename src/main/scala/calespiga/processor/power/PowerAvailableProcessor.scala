@@ -9,6 +9,7 @@ import calespiga.config.PowerAvailableProcessorConfig
 import java.time.ZoneId
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeUnit
+import calespiga.model.Event.System.StartupEvent
 
 object PowerAvailableProcessor {
 
@@ -98,6 +99,18 @@ object PowerAvailableProcessor {
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
+
+      case StartupEvent =>
+        (
+          state
+            .modify(_.powerProduction.powerAvailable)
+            .setTo(None)
+            .modify(_.powerProduction.powerProduced)
+            .setTo(None)
+            .modify(_.powerProduction.powerDiscarded)
+            .setTo(None),
+          updateUIItemActions(0f, 0f, 0f)
+        )
       case PowerProductionReported(
             powerAvailable,
             powerProduced,

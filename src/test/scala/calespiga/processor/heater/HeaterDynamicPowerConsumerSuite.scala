@@ -96,7 +96,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state)
 
-    assertEquals(result, Power.ofUnusedFV(500f))
+    assertEquals(result, Power.ofFv(500f))
   }
 
   test(
@@ -109,7 +109,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state)
 
-    assertEquals(result, Power.ofUnusedFV(1000f))
+    assertEquals(result, Power.ofFv(1000f))
   }
 
   test(
@@ -122,7 +122,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state)
 
-    assertEquals(result, Power.ofUnusedFV(2000f))
+    assertEquals(result, Power.ofFv(2000f))
   }
 
   test(
@@ -162,7 +162,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.TurnOff)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(2500f))
+    val result = consumer.usePower(state, Power.ofFv(2500f))
 
     assertEquals(result.state, state, "State should remain unchanged")
     assertEquals(result.actions, Set.empty, "No actions should be returned")
@@ -178,7 +178,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val state = stateWithHeater()
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(1500f))
+    val result = consumer.usePower(state, Power.ofFv(1500f))
 
     assertEquals(result.state, state, "State should remain unchanged")
     assertEquals(result.actions, Set.empty, "No actions should be returned")
@@ -196,7 +196,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(2500f))
+    val result = consumer.usePower(state, Power.ofFv(2500f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
@@ -205,7 +205,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
     assertEquals(
       result.powerUsed,
-      Power.ofUnusedFV(2000f),
+      Power.ofFv(2000f),
       "Power used should be 2000"
     )
 
@@ -243,7 +243,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(1500f))
+    val result = consumer.usePower(state, Power.ofFv(1500f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
@@ -252,7 +252,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
     assertEquals(
       result.powerUsed,
-      Power.ofUnusedFV(1000f),
+      Power.ofFv(1000f),
       "Power used should be 1000"
     )
 
@@ -272,7 +272,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(750f))
+    val result = consumer.usePower(state, Power.ofFv(750f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
@@ -281,7 +281,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
     assertEquals(
       result.powerUsed,
-      Power.ofUnusedFV(500f),
+      Power.ofFv(500f),
       "Power used should be 500"
     )
 
@@ -301,7 +301,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(300f))
+    val result = consumer.usePower(state, Power.ofFv(300f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
@@ -330,13 +330,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(2000f))
+    val result = consumer.usePower(state, Power.ofFv(2000f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
       Some(HeaterSignal.Power1000)
     )
-    assertEquals(result.powerUsed, Power.ofUnusedFV(1000f))
+    assertEquals(result.powerUsed, Power.ofFv(1000f))
   }
 
   test(
@@ -346,13 +346,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(1000f))
+    val result = consumer.usePower(state, Power.ofFv(1000f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
       Some(HeaterSignal.Power500)
     )
-    assertEquals(result.powerUsed, Power.ofUnusedFV(500f))
+    assertEquals(result.powerUsed, Power.ofFv(500f))
   }
 
   test(
@@ -362,7 +362,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(500f))
+    val result = consumer.usePower(state, Power.ofFv(500f))
 
     assertEquals(
       result.state.heater.lastCommandSent,
@@ -380,7 +380,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofUnusedFV(1500f))
+    val result = consumer.usePower(state, Power.ofFv(1500f))
 
     assertEquals(
       result.state.heater.status,
