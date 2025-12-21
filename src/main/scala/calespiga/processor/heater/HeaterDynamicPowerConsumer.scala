@@ -5,7 +5,7 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.model.State
 import calespiga.model.HeaterSignal.SetAutomatic
 import calespiga.model.HeaterSignal
-import calespiga.processor.power.dynamic.DynamicPowerConsumer.Power
+import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
 
@@ -17,13 +17,13 @@ class HeaterDynamicPowerConsumer(config: HeaterConfig)
   override def currentlyUsedDynamicPower(state: State): Power =
     if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
       state.heater.status match {
-        case Some(HeaterSignal.Power500)  => Power(500f)
-        case Some(HeaterSignal.Power1000) => Power(1000f)
-        case Some(HeaterSignal.Power2000) => Power(2000f)
-        case _                            => DynamicPowerConsumer.zeroPower
+        case Some(HeaterSignal.Power500)  => Power.ofUnusedFV(500f)
+        case Some(HeaterSignal.Power1000) => Power.ofUnusedFV(1000f)
+        case Some(HeaterSignal.Power2000) => Power.ofUnusedFV(2000f)
+        case _                            => Power.zero
       }
     } else {
-      DynamicPowerConsumer.zeroPower
+      Power.zero
     }
 
   override def usePower(state: State, powerToUse: Power): DynamicPowerResult =
@@ -33,12 +33,12 @@ class HeaterDynamicPowerConsumer(config: HeaterConfig)
       ) != SetAutomatic
     ) {
       // heater is not in automatic mode, do not use dynamic power
-      DynamicPowerResult(state, Set.empty, DynamicPowerConsumer.zeroPower)
+      DynamicPowerResult(state, Set.empty, Power.zero)
     } else {
       val desiredPowerLevel =
-        if (powerToUse.unusedFV >= 2000f) HeaterSignal.Power2000
-        else if (powerToUse.unusedFV >= 1000f) HeaterSignal.Power1000
-        else if (powerToUse.unusedFV >= 500f) HeaterSignal.Power500
+        if (powerToUse.unusedFV > 2000f) HeaterSignal.Power2000
+        else if (powerToUse.unusedFV > 1000f) HeaterSignal.Power1000
+        else if (powerToUse.unusedFV > 500f) HeaterSignal.Power500
         else HeaterSignal.Off
 
       val newState = state
@@ -47,10 +47,10 @@ class HeaterDynamicPowerConsumer(config: HeaterConfig)
 
       val powerUsed =
         desiredPowerLevel match {
-          case HeaterSignal.Power2000 => Power(2000f)
-          case HeaterSignal.Power1000 => Power(1000f)
-          case HeaterSignal.Power500  => Power(500f)
-          case _                      => DynamicPowerConsumer.zeroPower
+          case HeaterSignal.Power2000 => Power.ofUnusedFV(2000f)
+          case HeaterSignal.Power1000 => Power.ofUnusedFV(1000f)
+          case HeaterSignal.Power500  => Power.ofUnusedFV(500f)
+          case _                      => Power.zero
         }
 
       DynamicPowerResult(

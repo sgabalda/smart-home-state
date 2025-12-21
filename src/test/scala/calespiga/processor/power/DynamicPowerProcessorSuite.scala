@@ -9,8 +9,7 @@ import calespiga.processor.power.dynamic.{
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import java.time.Instant
 import scala.collection.mutable.ListBuffer
-import calespiga.processor.power.dynamic.DynamicPowerConsumer.zeroPower
-import calespiga.processor.power.dynamic.DynamicPowerConsumer.Power
+import calespiga.processor.power.dynamic.Power
 
 class DynamicPowerProcessorSuite extends FunSuite {
 
@@ -24,19 +23,19 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val trackingConsumer1 = DynamicPowerConsumerStub(
       usePowerStub = (state, _) => {
         callOrder += "consumer1"
-        DynamicPowerResult(state, Set.empty, zeroPower)
+        DynamicPowerResult(state, Set.empty, Power.zero)
       }
     )
     val trackingConsumer2 = DynamicPowerConsumerStub(
       usePowerStub = (state, _) => {
         callOrder += "consumer2"
-        DynamicPowerResult(state, Set.empty, zeroPower)
+        DynamicPowerResult(state, Set.empty, Power.zero)
       }
     )
     val trackingConsumer3 = DynamicPowerConsumerStub(
       usePowerStub = (state, _) => {
         callOrder += "consumer3"
-        DynamicPowerResult(state, Set.empty, zeroPower)
+        DynamicPowerResult(state, Set.empty, Power.zero)
       }
     )
 
@@ -73,24 +72,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val powerOffered = ListBuffer.empty[Power]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(10f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(10f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power(15f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(15f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(5f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(5f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power(20f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(20f))
       }
     )
     val consumer3 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power(10f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(10f))
       }
     )
 
@@ -116,7 +115,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     // Total dynamic power = powerDiscarded + currentlyUsedDynamicPower from all consumers
     // = 30 + 10 + 5 + 0 = 45
-    val totalDynamicPower = Power(45f)
+    val totalDynamicPower = Power.ofUnusedFV(45f)
 
     assertEquals(powerOffered.size, 3, "All three consumers should be called")
     assertEquals(
@@ -126,12 +125,12 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
     assertEquals(
       powerOffered(1),
-      totalDynamicPower - Power(15f),
+      totalDynamicPower - Power.ofUnusedFV(15f),
       "Second consumer gets remaining after first used 15"
     )
     assertEquals(
       powerOffered(2),
-      totalDynamicPower - Power(15f) - Power(20f),
+      totalDynamicPower - Power.ofUnusedFV(15f) - Power.ofUnusedFV(20f),
       "Third consumer gets remaining after first two"
     )
   }
@@ -142,24 +141,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val callCount = ListBuffer.empty[Int]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
         callCount += 1
-        DynamicPowerResult(state, Set.empty, Power(25f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(25f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
         callCount += 2
-        DynamicPowerResult(state, Set.empty, Power(10f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(10f))
       }
     )
     val consumer3 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
         callCount += 3
-        DynamicPowerResult(state, Set.empty, Power(5f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(5f))
       }
     )
 
@@ -194,19 +193,19 @@ class DynamicPowerProcessorSuite extends FunSuite {
     import com.softwaremill.quicklens.*
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
         val newState =
           state.modify(_.powerProduction.powerAvailable).setTo(Some(100f))
-        DynamicPowerResult(newState, Set.empty, Power(10f))
+        DynamicPowerResult(newState, Set.empty, Power.ofUnusedFV(10f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
         val newState =
           state.modify(_.powerProduction.powerProduced).setTo(Some(50f))
-        DynamicPowerResult(newState, Set.empty, Power(5f))
+        DynamicPowerResult(newState, Set.empty, Power.ofUnusedFV(5f))
       }
     )
 
@@ -247,15 +246,15 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val action3 = Action.SetUIItemValue("Item3", "value3")
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
-        DynamicPowerResult(state, Set(action1), Power(10f))
+        DynamicPowerResult(state, Set(action1), Power.ofUnusedFV(10f))
       }
     )
     val consumer2 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(0f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(0f),
       usePowerStub = (state, _) => {
-        DynamicPowerResult(state, Set(action2, action3), Power(5f))
+        DynamicPowerResult(state, Set(action2, action3), Power.ofUnusedFV(5f))
       }
     )
 
@@ -293,7 +292,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
         DynamicPowerResult(
           state,
           Set(Action.SetUIItemValue("Item", "value")),
-          Power(10f)
+          Power.ofUnusedFV(10f)
         )
       }
     )
@@ -317,10 +316,10 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val powerOffered = ListBuffer.empty[Power]
 
     val consumer1 = DynamicPowerConsumerStub(
-      currentlyUsedDynamicPowerStub = _ => Power(20f),
+      currentlyUsedDynamicPowerStub = _ => Power.ofUnusedFV(20f),
       usePowerStub = (state, power) => {
         powerOffered += power
-        DynamicPowerResult(state, Set.empty, Power(0f))
+        DynamicPowerResult(state, Set.empty, Power.ofUnusedFV(0f))
       }
     )
 
@@ -343,7 +342,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     assertEquals(
       powerOffered(0),
-      Power(50f),
+      Power.ofUnusedFV(50f),
       "Total dynamic power should be powerDiscarded (30) + currentlyUsedDynamicPower (20)"
     )
   }
