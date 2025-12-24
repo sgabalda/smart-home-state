@@ -300,17 +300,9 @@ class DynamicPowerProcessorSuite extends FunSuite {
   }
 
   test(
-    "DynamicPowerProcessor returns empty actions for non-PowerProductionReported events"
+    "DynamicPowerProcessor resets UI item for dynamic FV power used on StartupEvent"
   ) {
-    val consumer = DynamicPowerConsumerStub(
-      usePowerStub = (state, _) => {
-        DynamicPowerResult(
-          state,
-          Set(Action.SetUIItemValue("Item", "value")),
-          Power.ofFv(10f)
-        )
-      }
-    )
+    val consumer = DynamicPowerConsumerStub()
 
     val orderer = DynamicConsumerOrdererStub()
 
@@ -323,7 +315,13 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val (finalState, actions) = processor.process(state, event, now)
 
     assertEquals(finalState, state, "State should not change")
-    assertEquals(actions, Set.empty, "No actions should be emitted")
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+      ),
+      "UI item reset action should be emitted"
+    )
   }
 
   test(

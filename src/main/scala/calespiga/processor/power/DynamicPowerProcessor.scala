@@ -10,6 +10,7 @@ import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
 import calespiga.config.DynamicPowerProcessorConfig
+import calespiga.model.Event.System.StartupEvent
 
 object DynamicPowerProcessor {
 
@@ -23,6 +24,8 @@ object DynamicPowerProcessor {
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
+      case StartupEvent =>
+        (state, Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")))
       case PowerProductionReported(_, _, powerDiscarded, _) =>
         val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 

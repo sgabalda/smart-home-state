@@ -7,6 +7,7 @@ import calespiga.model.State
 import com.softwaremill.quicklens.*
 import java.time.Instant
 import calespiga.model.Event
+import calespiga.model.Event.Power.PowerProductionReported
 
 private object HeaterSyncDetector {
 
@@ -23,6 +24,7 @@ private object HeaterSyncDetector {
     case Event.Heater.HeaterPowerCommandChanged(_) => true
     case Event.Heater.HeaterPowerStatusReported(_) => true
     case Event.System.StartupEvent                 => true
+    case _: PowerProductionReported                => true
     case _                                         => false
   }
 
