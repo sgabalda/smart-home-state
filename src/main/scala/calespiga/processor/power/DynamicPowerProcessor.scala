@@ -53,7 +53,8 @@ object DynamicPowerProcessor {
             if (remainingPower <= Power.zero) {
               (currentState, currentActions, Power.zero, currentPowerUsed)
             } else {
-              val result = consumer.usePower(currentState, remainingPower)
+              val result =
+                consumer.usePower(currentState, remainingPower, timestamp)
               (
                 result.state,
                 currentActions ++ result.actions,

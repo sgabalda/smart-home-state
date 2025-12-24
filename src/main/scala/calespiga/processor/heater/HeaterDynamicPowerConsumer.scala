@@ -38,7 +38,11 @@ class HeaterDynamicPowerConsumer(
       Power.zero
     }
 
-  override def usePower(state: State, powerToUse: Power): DynamicPowerResult =
+  override def usePower(
+      state: State,
+      powerToUse: Power,
+      now: Instant
+  ): DynamicPowerResult =
     if (
       state.heater.lastCommandReceived.getOrElse(
         HeaterSignal.TurnOff
@@ -47,11 +51,18 @@ class HeaterDynamicPowerConsumer(
       // heater is not in automatic mode, do not use dynamic power
       DynamicPowerResult(state, Set.empty, Power.zero)
     } else {
-      val desiredPowerLevel =
-        if (powerToUse.fv > 2000f) HeaterSignal.Power2000
-        else if (powerToUse.fv > 1000f) HeaterSignal.Power1000
-        else if (powerToUse.fv > 500f) HeaterSignal.Power500
-        else HeaterSignal.Off
+      val desiredPowerLevel = heaterSyncDetector.checkIfInSync(state) match {
+        case SyncDetector.NotInSync(since)
+            if now.isAfter(
+              since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+            ) =>
+          HeaterSignal.Off
+        case _ =>
+          if (powerToUse.fv > 2000f) HeaterSignal.Power2000
+          else if (powerToUse.fv > 1000f) HeaterSignal.Power1000
+          else if (powerToUse.fv > 500f) HeaterSignal.Power500
+          else HeaterSignal.Off
+      }
 
       val newState = state
         .modify(_.heater.lastCommandSent)

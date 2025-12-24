@@ -8,7 +8,11 @@ import java.time.Instant
 
 trait DynamicPowerConsumer {
   def currentlyUsedDynamicPower(state: State, now: Instant): Power
-  def usePower(state: State, powerToUse: Power): DynamicPowerResult
+  def usePower(
+      state: State,
+      powerToUse: Power,
+      now: Instant
+  ): DynamicPowerResult
 }
 
 object DynamicPowerConsumer {
