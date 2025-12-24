@@ -7,6 +7,8 @@ import calespiga.config.HeaterConfig
 import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
 import scala.concurrent.duration.DurationInt
+import calespiga.processor.utils.SyncDetectorStub
+import java.time.Instant
 
 class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
@@ -20,10 +22,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     id = "heater-test",
     onlineStatusItem = "heater/online",
     syncStatusItem = "heater/sync",
-    lastCommandItem = "heater/lastCommand"
+    lastCommandItem = "heater/lastCommand",
+    syncTimeoutForDynamicPower = 50.seconds
   )
 
-  private val consumer = new HeaterDynamicPowerConsumer(dummyConfig)
+  private val now = Instant.parse("2023-08-17T10:00:00Z")
+  private val consumer =
+    new HeaterDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
 
   private def stateWithHeater(
       status: Option[HeaterSignal.ControllerState] = None,
@@ -56,7 +61,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.TurnOff)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.zero)
   }
@@ -69,7 +74,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetPower500)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.zero)
   }
@@ -81,7 +86,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       status = Some(HeaterSignal.Power1000)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.zero)
   }
@@ -94,7 +99,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.ofFv(500f))
   }
@@ -107,7 +112,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.ofFv(1000f))
   }
@@ -120,7 +125,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.ofFv(2000f))
   }
@@ -133,7 +138,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.zero)
   }
@@ -146,7 +151,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
     )
 
-    val result = consumer.currentlyUsedDynamicPower(state)
+    val result = consumer.currentlyUsedDynamicPower(state, now)
 
     assertEquals(result, Power.zero)
   }

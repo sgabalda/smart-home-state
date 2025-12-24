@@ -1,7 +1,6 @@
 package calespiga.processor.heater
 
-import calespiga.processor.SingleProcessor
-import calespiga.processor.SyncDetector
+import calespiga.processor.utils.SyncDetector
 import calespiga.config.SyncDetectorConfig
 import calespiga.model.State
 import com.softwaremill.quicklens.*
@@ -32,7 +31,7 @@ private object HeaterSyncDetector {
       syncConfig: SyncDetectorConfig,
       id: String,
       statusItem: String
-  ): SingleProcessor =
+  ): SyncDetector =
     SyncDetector(
       syncConfig,
       id,

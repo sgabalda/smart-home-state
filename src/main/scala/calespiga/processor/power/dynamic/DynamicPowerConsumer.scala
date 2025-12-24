@@ -4,9 +4,10 @@ import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.model.Action
 import calespiga.processor.power.dynamic.Power
+import java.time.Instant
 
 trait DynamicPowerConsumer {
-  def currentlyUsedDynamicPower(state: State): Power
+  def currentlyUsedDynamicPower(state: State, now: Instant): Power
   def usePower(state: State, powerToUse: Power): DynamicPowerResult
 }
 

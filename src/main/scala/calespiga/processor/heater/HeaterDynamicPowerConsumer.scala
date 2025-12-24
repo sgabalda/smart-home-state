@@ -8,20 +8,32 @@ import calespiga.model.HeaterSignal
 import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
+import calespiga.processor.utils.SyncDetector
+import java.time.Instant
 
-class HeaterDynamicPowerConsumer(config: HeaterConfig)
-    extends DynamicPowerConsumer {
+class HeaterDynamicPowerConsumer(
+    config: HeaterConfig,
+    heaterSyncDetector: SyncDetector
+) extends DynamicPowerConsumer {
 
   private val actions = Actions(config)
 
-  override def currentlyUsedDynamicPower(state: State): Power =
+  override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
+
     if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
-      state.heater.status match {
-        case Some(HeaterSignal.Power500)  => Power.ofFv(500f)
-        case Some(HeaterSignal.Power1000) => Power.ofFv(1000f)
-        case Some(HeaterSignal.Power2000) => Power.ofFv(2000f)
-        case _                            => Power.zero
-      }
+      heaterSyncDetector.checkIfInSync(state) match
+        case SyncDetector.NotInSync(since)
+            if now.isAfter(
+              since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+            ) =>
+          Power.zero
+        case _ =>
+          state.heater.status match {
+            case Some(HeaterSignal.Power500)  => Power.ofFv(500f)
+            case Some(HeaterSignal.Power1000) => Power.ofFv(1000f)
+            case Some(HeaterSignal.Power2000) => Power.ofFv(2000f)
+            case _                            => Power.zero
+          }
     } else {
       Power.zero
     }

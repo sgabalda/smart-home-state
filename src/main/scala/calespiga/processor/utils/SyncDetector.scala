@@ -1,12 +1,25 @@
-package calespiga.processor
+package calespiga.processor.utils
 
 import calespiga.model.{Action, Event, State}
 import calespiga.config.SyncDetectorConfig
 import java.time.Instant
+import SyncDetector.CheckSyncResult
+import calespiga.processor.SingleProcessor
+
+trait SyncDetector extends SingleProcessor {
+
+  def checkIfInSync(state: State): CheckSyncResult
+
+}
 
 object SyncDetector {
 
   val ID_SUFFIX = "-sync-detector"
+
+  sealed trait CheckSyncResult
+  case object InSync extends CheckSyncResult
+  case object NotInSyncNow extends CheckSyncResult
+  final case class NotInSync(since: Instant) extends CheckSyncResult
 
   def apply[T](
       config: SyncDetectorConfig,
@@ -17,7 +30,7 @@ object SyncDetector {
       setLastSyncing: (State, Option[Instant]) => State,
       statusItem: String,
       isEventRelevant: Event.EventData => Boolean
-  ): SingleProcessor =
+  ): SyncDetector =
     Impl(
       config,
       id + ID_SUFFIX,
@@ -38,45 +51,50 @@ object SyncDetector {
       setLastSyncing: (State, Option[Instant]) => State,
       statusItem: String,
       isEventRelevant: Event.EventData => Boolean
-  ) extends SingleProcessor {
+  ) extends SyncDetector {
+
+    override def checkIfInSync(state: State): CheckSyncResult =
+      if (field1ToCheck(state) == field2ToCheck(state))
+        InSync
+      else
+        getLastSyncing(state) match
+          case Some(value) =>
+            NotInSync(value)
+          case None =>
+            NotInSyncNow
 
     def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = if (isEventRelevant(eventData)) {
-      val inSync = field1ToCheck(state) == field2ToCheck(state)
 
-      if (inSync) {
-        getLastSyncing(state) match
-          case Some(value) =>
-            val actions = Set(
-              Action.SetUIItemValue(statusItem, config.syncText),
-              Action.Cancel(
-                id
+      checkIfInSync(state) match
+        case InSync =>
+          getLastSyncing(state) match
+            case Some(value) =>
+              val actions = Set(
+                Action.SetUIItemValue(statusItem, config.syncText),
+                Action.Cancel(id)
               )
-            )
-            (setLastSyncing(state, None), actions)
-          case None =>
-            // do nothing as the actions were already set
-            (state, Set.empty)
+              (setLastSyncing(state, None), actions)
+            case None =>
+              // do nothing as the actions were already set
+              (state, Set.empty)
 
-      } else {
-        getLastSyncing(state) match
-          case Some(value) =>
-            // do nothing as the actions were already set
-            (state, Set.empty)
-          case None =>
-            val actions = Set(
-              Action.SetUIItemValue(statusItem, config.syncingText),
-              Action.Delayed(
-                id,
-                Action.SetUIItemValue(statusItem, config.nonSyncText),
-                config.timeoutDuration
-              )
+        case NotInSync(since) =>
+          (state, Set.empty)
+
+        case NotInSyncNow =>
+          val actions = Set(
+            Action.SetUIItemValue(statusItem, config.syncingText),
+            Action.Delayed(
+              id,
+              Action.SetUIItemValue(statusItem, config.nonSyncText),
+              config.timeoutDuration
             )
-            (setLastSyncing(state, Some(timestamp)), actions)
-      }
+          )
+          (setLastSyncing(state, Some(timestamp)), actions)
 
     } else {
       (state, Set.empty)

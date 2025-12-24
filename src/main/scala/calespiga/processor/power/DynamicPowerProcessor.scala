@@ -32,7 +32,7 @@ object DynamicPowerProcessor {
         val initialPower = Power.ofFv(powerDiscarded)
 
         val totalDynamicPower = initialPower + orderedConsumers
-          .map(_.currentlyUsedDynamicPower(state))
+          .map(_.currentlyUsedDynamicPower(state, timestamp))
           .fold(Power.zero)(_ + _)
 
         // we can in the future save the power assiged to each consumer and at the end
