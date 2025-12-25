@@ -20,31 +20,13 @@ import java.time.format.DateTimeFormatter
 
 private object HeaterPowerProcessor {
 
-  val COMMAND_ACTION_SUFFIX = "-command"
   val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
-  private final case class Impl(config: HeaterConfig, zone: ZoneId)
-      extends SingleProcessor {
-
-    private object Actions {
-      private def commandAction(command: HeaterSignal.ControllerState) =
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          command.power.toString
-        )
-      private def periodicCommandAction(
-          command: HeaterSignal.ControllerState
-      ) = {
-        Action.Periodic(
-          config.id + COMMAND_ACTION_SUFFIX,
-          commandAction(command),
-          config.resendInterval
-        )
-      }
-      def commandActionWithResend(command: HeaterSignal.ControllerState) = {
-        Set(commandAction(command), periodicCommandAction(command))
-      }
-    }
+  private final case class Impl(
+      config: HeaterConfig,
+      zone: ZoneId,
+      actions: Actions
+  ) extends SingleProcessor {
 
     private def getDefaultCommandToSend(
         status: HeaterSignal.UserCommand
@@ -106,7 +88,7 @@ private object HeaterPowerProcessor {
               .modify(_.heater.lastCommandSent)
               .setTo(Some(commandToSend))
 
-            (newState, Actions.commandActionWithResend(commandToSend))
+            (newState, actions.commandActionWithResend(commandToSend))
 
           case HeaterIsHotReported(status) =>
             if (status != state.heater.isHot) {
@@ -123,7 +105,7 @@ private object HeaterPowerProcessor {
 
                   (
                     newState,
-                    Actions.commandActionWithResend(commandToSend) + Action
+                    actions.commandActionWithResend(commandToSend) + Action
                       .SetUIItemValue(
                         config.lastTimeHotItem,
                         timestamp.atZone(zone).toLocalDateTime.format(formatter)
@@ -146,7 +128,7 @@ private object HeaterPowerProcessor {
 
                   (
                     newState,
-                    Actions.commandActionWithResend(commandToSend) + Action
+                    actions.commandActionWithResend(commandToSend) + Action
                       .SetUIItemValue(
                         config.lastTimeHotItem,
                         timestamp.atZone(zone).toLocalDateTime.format(formatter)
@@ -172,7 +154,7 @@ private object HeaterPowerProcessor {
 
         (
           newState,
-          Actions.commandActionWithResend(commandToSend) +
+          actions.commandActionWithResend(commandToSend) +
             Action.SetUIItemValue(
               config.lastCommandItem,
               HeaterSignal.userCommandToString(
@@ -192,6 +174,7 @@ private object HeaterPowerProcessor {
       zone: ZoneId
   ): SingleProcessor = Impl(
     config,
-    zone
+    zone,
+    Actions(config)
   )
 }

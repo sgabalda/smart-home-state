@@ -5,6 +5,7 @@ import calespiga.model.{State, Action, Event}
 import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
+import calespiga.processor.utils.OfflineDetector
 
 class TemperaturesOfflineDetectorSuite extends FunSuite {
   val config = OfflineDetectorConfig(
@@ -25,7 +26,7 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
@@ -41,7 +42,7 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
@@ -56,7 +57,7 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )

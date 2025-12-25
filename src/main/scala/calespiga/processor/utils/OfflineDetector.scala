@@ -1,8 +1,9 @@
-package calespiga.processor
+package calespiga.processor.utils
 
 import calespiga.model.{Action, Event, State}
 import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
+import calespiga.processor.SingleProcessor
 
 object OfflineDetector {
 

@@ -1,12 +1,12 @@
 package calespiga.processor.heater
 
-import calespiga.processor.SingleProcessor
-import calespiga.processor.SyncDetector
+import calespiga.processor.utils.SyncDetector
 import calespiga.config.SyncDetectorConfig
 import calespiga.model.State
 import com.softwaremill.quicklens.*
 import java.time.Instant
 import calespiga.model.Event
+import calespiga.model.Event.Power.PowerProductionReported
 
 private object HeaterSyncDetector {
 
@@ -23,6 +23,7 @@ private object HeaterSyncDetector {
     case Event.Heater.HeaterPowerCommandChanged(_) => true
     case Event.Heater.HeaterPowerStatusReported(_) => true
     case Event.System.StartupEvent                 => true
+    case _: PowerProductionReported                => true
     case _                                         => false
   }
 
@@ -30,7 +31,7 @@ private object HeaterSyncDetector {
       syncConfig: SyncDetectorConfig,
       id: String,
       statusItem: String
-  ): SingleProcessor =
+  ): SyncDetector =
     SyncDetector(
       syncConfig,
       id,

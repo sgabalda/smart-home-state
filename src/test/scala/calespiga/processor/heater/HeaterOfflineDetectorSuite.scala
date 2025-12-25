@@ -6,6 +6,7 @@ import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
 import calespiga.model.HeaterSignal
+import calespiga.processor.utils.OfflineDetector
 
 class HeaterOfflineDetectorSuite extends FunSuite {
   val config = OfflineDetectorConfig(
@@ -26,7 +27,7 @@ class HeaterOfflineDetectorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
@@ -44,7 +45,7 @@ class HeaterOfflineDetectorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )
@@ -59,7 +60,7 @@ class HeaterOfflineDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
-        id + calespiga.processor.OfflineDetector.ID_SUFFIX,
+        id + OfflineDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.offlineText),
         config.timeoutDuration
       )

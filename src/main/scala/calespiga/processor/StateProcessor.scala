@@ -6,7 +6,7 @@ import java.time.ZoneId
 import cats.effect.IO
 import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
-import calespiga.processor.power.PowerAvailableProcessor
+import calespiga.processor.power.PowerProcessor
 
 trait StateProcessor {
   def process(
@@ -45,8 +45,8 @@ object StateProcessor {
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
-  ): StateProcessor =
-    this.apply(
+  ): StateProcessor = {
+    val allButPower = List(
       TemperaturesProcessor(
         config.temperatureFans,
         config.offlineDetector,
@@ -58,8 +58,19 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
+
+    val power = PowerProcessor(
+      config.power,
+      zoneId,
+      allButPower.flatMap(_.dynamicPowerConsumer).toSet
+    )
+
+    this.apply(
+      (allButPower :+ power.toEffectful)*
+    )
+
+  }
 
 }

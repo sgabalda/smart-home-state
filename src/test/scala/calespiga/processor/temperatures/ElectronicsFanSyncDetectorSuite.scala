@@ -5,6 +5,7 @@ import calespiga.model.{State, Action, Event}
 import calespiga.config.SyncDetectorConfig
 import java.time.Instant
 import scala.concurrent.duration._
+import calespiga.processor.utils.SyncDetector
 
 class ElectronicsFanSyncDetectorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
@@ -45,7 +46,7 @@ class ElectronicsFanSyncDetectorSuite extends FunSuite {
     assertEquals(newState.fans.fanElectronicsLastSyncing, None)
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.syncText),
-      Action.Cancel(id + calespiga.processor.SyncDetector.ID_SUFFIX)
+      Action.Cancel(id + SyncDetector.ID_SUFFIX)
     )
     assertEquals(actions, expectedActions)
   }
@@ -86,7 +87,7 @@ class ElectronicsFanSyncDetectorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.syncingText),
       Action.Delayed(
-        id + calespiga.processor.SyncDetector.ID_SUFFIX,
+        id + SyncDetector.ID_SUFFIX,
         Action.SetUIItemValue(statusItem, config.nonSyncText),
         config.timeoutDuration
       )

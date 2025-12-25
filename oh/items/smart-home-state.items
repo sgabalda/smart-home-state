@@ -40,9 +40,10 @@ String CalentadorSincronitzacioSHS "Estat sincronització calentador"
 
 String PotenciaTitle "Potència"
 
-String PotenciaDisponibleSHS "Potència disponible"
-String PotenciaGeneradaSHS "Potència generada"
-String PotenciaRebutjadaSHS "Potència rebutjada"
+Number PotenciaDisponibleSHS "Potència disponible"
+Number PotenciaGeneradaSHS "Potència generada"
+Number PotenciaRebutjadaSHS "Potència rebutjada"
+Number PotenciaDinamicaFVSHS "Potència dinàmica FV"
 
 /*
 ----------------------
@@ -58,6 +59,8 @@ String SystemTitle "Estat"
 String TemperaturesMicroControladorEstat "Estat microcontrolador temperatures"
 String CalentadorMicroControladorEstatSHS "Estat microcontrolador calentador"
 
+
 /* feature flags */
+String VentiladorsHabilitatsSHS "Habilitar ventiladors per SHS"
 String CalentadorHabilitatsSHS "Habilitar calentador per SHS"
 

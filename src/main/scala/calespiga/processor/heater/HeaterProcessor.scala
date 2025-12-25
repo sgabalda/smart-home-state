@@ -13,7 +13,14 @@ object HeaterProcessor {
       zone: ZoneId,
       offlineConfig: OfflineDetectorConfig,
       syncConfig: SyncDetectorConfig
-  ): SingleProcessor =
+  ): SingleProcessor = {
+    val syncDetector =
+      HeaterSyncDetector(
+        syncConfig,
+        heaterConfig.id,
+        heaterConfig.syncStatusItem
+      )
+
     HeaterPowerProcessor(config = heaterConfig, zone = zone)
       .andThen(
         HeaterOfflineDetector(
@@ -23,10 +30,11 @@ object HeaterProcessor {
         )
       )
       .andThen(
-        HeaterSyncDetector(
-          syncConfig,
-          heaterConfig.id,
-          heaterConfig.syncStatusItem
-        )
+        syncDetector
       )
+      .withDynamicConsumer(
+        HeaterDynamicPowerConsumer(heaterConfig, syncDetector)
+      )
+  }
+
 }

@@ -1,6 +1,6 @@
 package calespiga.processor.utils
 
-import calespiga.processor.OfflineDetector
+import calespiga.processor.utils.OfflineDetector
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}

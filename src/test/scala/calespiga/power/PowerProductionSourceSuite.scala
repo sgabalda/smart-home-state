@@ -22,7 +22,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
   }
 
   val testConfig = PowerProductionSourceConfig(
-    pollingInterval = 100.millis,
+    pollingInterval = 15.seconds,
     fvStartingHour = 6,
     fvEndingHour = 21
   )

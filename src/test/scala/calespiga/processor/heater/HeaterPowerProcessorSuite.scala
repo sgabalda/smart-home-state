@@ -9,6 +9,8 @@ import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
 import java.time.ZoneId
 import calespiga.model.State.Heater
+import scala.concurrent.duration.*
+import scala.language.postfixOps
 
 class HeaterPowerProcessorSuite extends FunSuite {
 
@@ -23,11 +25,12 @@ class HeaterPowerProcessorSuite extends FunSuite {
     energyTodayItem = "dummy/energyToday",
     statusItem = "dummyStatusItem",
     isHotItem = "dummyIsHotItem",
-    resendInterval = scala.concurrent.duration.DurationInt(20).seconds,
+    resendInterval = 20 seconds,
     id = "heater-processor",
     onlineStatusItem = "dummyOnlineStatusItem",
     syncStatusItem = "dummySyncStatusItem",
-    lastCommandItem = "dummyLastCommandItem"
+    lastCommandItem = "dummyLastCommandItem",
+    syncTimeoutForDynamicPower = 10 seconds
   )
 
   private def stateWithHeater(
@@ -140,7 +143,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
       Action.Periodic(
-        dummyConfig.id + HeaterPowerProcessor.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
         dummyConfig.resendInterval

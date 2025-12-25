@@ -1,7 +1,7 @@
 package calespiga.processor.temperatures
 
 import calespiga.processor.SingleProcessor
-import calespiga.processor.SyncDetector
+import calespiga.processor.utils.SyncDetector
 import calespiga.config.SyncDetectorConfig
 import calespiga.model.State
 import com.softwaremill.quicklens.*
