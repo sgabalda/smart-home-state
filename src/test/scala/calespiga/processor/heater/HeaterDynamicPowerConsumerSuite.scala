@@ -105,7 +105,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "currentlyUsedDynamicPower: returnsPower.ofUnusedFV(1000) when automatic and status is Power1000"
+    "currentlyUsedDynamicPower: returns Power.ofFv(1000) when automatic and status is Power1000"
   ) {
     val state = stateWithHeater(
       status = Some(HeaterSignal.Power1000),
@@ -118,7 +118,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "currentlyUsedDynamicPower: returnsPower.ofUnusedFV(2000) when automatic and status is Power2000"
+    "currentlyUsedDynamicPower: returns Power.ofFv(2000) when automatic and status is Power2000"
   ) {
     val state = stateWithHeater(
       status = Some(HeaterSignal.Power2000),
@@ -274,7 +274,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power2000 when automatic and power >= 2000"
+    "usePower: sets Power2000 when automatic and power > 2000"
   ) {
     val state = stateWithHeater(
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
@@ -321,7 +321,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power1000 when automatic and 1000 <= power < 2000"
+    "usePower: sets Power1000 when automatic and 1000 < power <= 2000"
   ) {
     val state = stateWithHeater(
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)
@@ -350,7 +350,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power500 when automatic and 500 <= power < 1000"
+    "usePower: sets Power500 when automatic and 500 < power <= 1000"
   ) {
     val state = stateWithHeater(
       lastCommandReceived = Some(HeaterSignal.SetAutomatic)

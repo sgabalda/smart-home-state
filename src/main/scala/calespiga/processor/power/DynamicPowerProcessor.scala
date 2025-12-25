@@ -35,7 +35,7 @@ object DynamicPowerProcessor {
           .map(_.currentlyUsedDynamicPower(state, timestamp))
           .fold(Power.zero)(_ + _)
 
-        // we can in the future save the power assiged to each consumer and at the end
+        // we can in the future save the power assigned to each consumer and at the end
         // display it in an UI item or similar
 
         orderedConsumers.foldLeft(

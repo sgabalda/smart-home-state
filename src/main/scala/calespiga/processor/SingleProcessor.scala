@@ -34,8 +34,9 @@ trait SingleProcessor { self =>
     */
   def dynamicPowerConsumer: Set[DynamicPowerConsumer] = Set.empty
 
-  /** Chains this processor with another one, so that the output state and
-    * actions of this processor
+  /** Chains this processor with another one, so that the output state of this 
+    * processor is passed as input to the one provided, and
+    * actions of this processor ar added to the ones of the next processor.
     *
     * @param next
     * @return
