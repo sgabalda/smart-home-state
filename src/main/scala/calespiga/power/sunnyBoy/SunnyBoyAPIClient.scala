@@ -9,6 +9,8 @@ import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.{Response, UriContext, WebSocketBackend, basicRequest}
 import cats.effect.kernel.Ref
 import calespiga.power.PowerProductionData
+import java.net.{CookieManager, CookiePolicy}
+import java.net.http.HttpClient
 
 object SunnyBoyAPIClient {
 
@@ -96,11 +98,25 @@ object SunnyBoyAPIClient {
         }
   }
 
+  private val defaultBackendResource = {
+    val cookieManager = new CookieManager()
+    cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+
+    val httpClient =
+      HttpClient
+        .newBuilder()
+        .cookieHandler(cookieManager)
+        .build()
+
+    HttpClientCatsBackend
+      .resourceUsingClient[IO](httpClient)
+  }
+
   def apply(
       config: SunnyBoyConfig,
       decoder: SunnyBoyDecoder,
       backendResource: Resource[IO, WebSocketBackend[IO]] =
-        HttpClientCatsBackend.resource[IO]()
+        defaultBackendResource
   ): Resource[IO, PowerProductionOnRequestProvider] =
     for {
       backend <- backendResource
