@@ -177,21 +177,25 @@ class SunnyBoyAPIClientSuite extends CatsEffectSuite {
         }
       }
 
-    SunnyBoyAPIClient(config, decoder, Resource.pure(backend)).use {
-      apiClient =>
-        for {
-          result <- apiClient.getCurrentPowerData
-          dataCalls <- dataCallCounter.get
-          loginCalls <- loginCallCounter.get
-        } yield {
-          assertEquals(result, expectedData)
-          assertEquals(dataCalls, 2, "Data endpoint should be called twice")
-          assertEquals(
-            loginCalls,
-            2,
-            "Login should be called twice (initial + retry)"
-          )
-        }
+    SunnyBoyAPIClient(
+      config,
+      decoder,
+      Resource.pure(backend),
+      initialToken = Some("TOKEN123")
+    ).use { apiClient =>
+      for {
+        result <- apiClient.getCurrentPowerData
+        dataCalls <- dataCallCounter.get
+        loginCalls <- loginCallCounter.get
+      } yield {
+        assertEquals(result, expectedData)
+        assertEquals(dataCalls, 2, "Data endpoint should be called twice")
+        assertEquals(
+          loginCalls,
+          1,
+          "Login should be called once (initial token used, then retry after error)"
+        )
+      }
     }
   }
 
@@ -217,6 +221,119 @@ class SunnyBoyAPIClientSuite extends CatsEffectSuite {
         } yield {
           assert(result.isLeft, "Should fail when login returns error status")
         }
+    }
+  }
+
+  test("updateToken: when failed, retries after session restart") {
+    val decoder = StubDecoder(
+      tokenResult = Right("TOKEN123"),
+      dataResult = Right(
+        SunnyBoyDecoder.DataResponse(1000.0f, 50.0f, List(1000.0f))
+      ),
+      powerProductionResult =
+        Right(PowerProductionData(1000.0f, 1000.0f, 0.0f, List(1000.0f)))
+    )
+
+    val loginCallCounter = Ref.unsafe[IO, Int](0)
+    val sessionRestartCounter = Ref.unsafe[IO, Int](0)
+
+    val backend = HttpClientCatsBackend
+      .stub[IO]
+      .whenRequestMatches(_.uri.path.endsWith(List("login")))
+      .thenRespondF { _ =>
+        loginCallCounter.getAndUpdate(_ + 1).flatMap { count =>
+          if (count == 0)
+            IO.pure(
+              ResponseStub(Adjust("error"), StatusCode.Unauthorized)
+            ) // First call fails
+          else
+            IO.pure(
+              ResponseStub.ok(Adjust(successTokenJson))
+            ) // Second call succeeds
+        }
+      }
+      .whenRequestMatches(_.uri.path.endsWith(List("data")))
+      .thenRespond(ResponseStub.ok(Adjust(successDataJson)))
+
+    SunnyBoyAPIClient(
+      config,
+      decoder,
+      Resource.pure(backend),
+      sessionRestartEffect = sessionRestartCounter.update(_ + 1).void
+    ).use { apiClient =>
+      for {
+        result <- apiClient.getCurrentPowerData.attempt
+        loginCalls <- loginCallCounter.get
+        sessionRestarts <- sessionRestartCounter.get
+      } yield {
+        assert(
+          result.isRight,
+          "Should succeed when login returns error status but succeeds after"
+        )
+        assertEquals(
+          loginCalls,
+          2,
+          "Login should be called twice due to retry after failure"
+        )
+        assertEquals(
+          sessionRestarts,
+          1,
+          "Session restart effect should be invoked once after first failure"
+        )
+      }
+    }
+  }
+
+  test("updateToken: when faileds after session restart, fail with error") {
+    val decoder = StubDecoder(
+      tokenResult = Right("TOKEN123"),
+      dataResult = Right(
+        SunnyBoyDecoder.DataResponse(1000.0f, 50.0f, List(1000.0f))
+      ),
+      powerProductionResult =
+        Right(PowerProductionData(1000.0f, 1000.0f, 0.0f, List(1000.0f)))
+    )
+
+    val loginCallCounter = Ref.unsafe[IO, Int](0)
+    val sessionRestartCounter = Ref.unsafe[IO, Int](0)
+
+    val backend = HttpClientCatsBackend
+      .stub[IO]
+      .whenRequestMatches(_.uri.path.endsWith(List("login")))
+      .thenRespondF { _ =>
+        loginCallCounter.getAndUpdate(_ + 1).flatMap { _ =>
+          IO.pure(
+            ResponseStub(Adjust("error"), StatusCode.Unauthorized)
+          ) // all calls fail
+        }
+      }
+
+    SunnyBoyAPIClient(
+      config,
+      decoder,
+      Resource.pure(backend),
+      sessionRestartEffect = sessionRestartCounter.update(_ + 1).void
+    ).use { apiClient =>
+      for {
+        result <- apiClient.getCurrentPowerData.attempt
+        loginCalls <- loginCallCounter.get
+        sessionRestarts <- sessionRestartCounter.get
+      } yield {
+        assert(
+          result.isLeft,
+          "Should fail when login returns error status even after session restart"
+        )
+        assertEquals(
+          loginCalls,
+          2,
+          "Login should be called twice due to retry after failure"
+        )
+        assertEquals(
+          sessionRestarts,
+          1,
+          "Session restart effect should be invoked once after first failure"
+        )
+      }
     }
   }
 
