@@ -388,4 +388,47 @@ class PowerAvailableProcessorSuite extends FunSuite {
       "Should emit notification and status update actions"
     )
   }
+
+  test(
+    "PowerProductionReported after previous error clears lastError and sets status to OK"
+  ) {
+    val errorTimestamp = Instant.parse("2023-08-17T09:30:00Z")
+    val state = State()
+      .modify(_.powerProduction.lastError)
+      .setTo(Some(errorTimestamp))
+
+    val powerAvailable = 100.5f
+    val powerProduced = 75.3f
+    val powerDiscarded = 25.2f
+    val linesPower = List.empty[Float]
+    val event = Event.Power.PowerProductionReported(
+      powerAvailable,
+      powerProduced,
+      powerDiscarded,
+      linesPower
+    )
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerProduction.lastError,
+      None,
+      "lastError should be cleared after successful reading"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerAvailable,
+      Some(powerAvailable),
+      "powerAvailable should be updated"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_OK
+        )
+      ),
+      "Should set readingsStatusItem to OK to indicate recovery from error"
+    )
+  }
 }

@@ -107,7 +107,7 @@ object PowerAvailableProcessor {
               )
             )
           case Some(value) =>
-            // error already recorded, but not ehough time to send a new notification
+            // error already recorded, but not enough time to send a new notification
             (state, Set.empty)
           case None =>
             val newState = state
@@ -136,6 +136,8 @@ object PowerAvailableProcessor {
           .setTo(Some(powerDiscarded))
           .modify(_.powerProduction.linesPower)
           .setTo(linesPower)
+          .modify(_.powerProduction.lastError)
+          .setTo(None)
           .modify(_.powerProduction.lastUpdate)
           .setTo(Some(timestamp))
           .modify(_.powerProduction.lastProducedPower)
