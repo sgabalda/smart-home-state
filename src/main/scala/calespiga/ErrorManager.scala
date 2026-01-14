@@ -5,6 +5,7 @@ import cats.effect.{IO, Resource, ResourceIO}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import cats.implicits.toFoldableOps
+import calespiga.model.Event
 
 trait ErrorManager {
 
@@ -20,6 +21,9 @@ object ErrorManager {
   private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   sealed trait Error
+
+  case class ErrorWithEvent(event: Event.EventData, error: Error) extends Error
+
   object Error {
     case class MqttInputError(throwable: Throwable, topic: String) extends Error
     case class OpenHabInputError(throwable: Throwable) extends Error
@@ -68,6 +72,8 @@ object ErrorManager {
         logger.error(error)(
           s"Error getting power produced data: ${error.getMessage}"
         )
+      case calespiga.ErrorManager.ErrorWithEvent(_, error) =>
+        manageError(error)
     }
   }
 
