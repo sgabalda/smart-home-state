@@ -20,25 +20,24 @@ object SunnyBoyAPIClient {
       config: SunnyBoyConfig,
       backend: WebSocketBackend[IO],
       tokenHolder: Ref[IO, Option[String]],
-      decoder: SunnyBoyDecoder
+      decoder: SunnyBoyDecoder,
+      sessionRestartEffect: IO[Unit]
   ) extends PowerProductionOnRequestProvider {
 
     override def getCurrentPowerData: IO[PowerProductionData] =
-      for {
-        maybeToken <- tokenHolder.get
-        token <- maybeToken match {
-          case Some(token) =>
-            logger.debug("Using existing SunnyBoy API token.").as(token)
-          case None =>
-            updateToken <* logger.debug("Obtained new SunnyBoy API token.")
-        }
-        data <- getData(token).orElse {
-          logger.info(
-            "SunnyBoy API token might be expired, updating token and retrying..."
-          ) *>
-            updateToken.flatMap(getData)
-        }
-      } yield data
+      tokenHolder.get.flatMap {
+        case Some(token) =>
+          logger.debug("Using existing SunnyBoy API token.") *> getData(token)
+            .orElse {
+              logger.info(
+                "SunnyBoy API token might be expired, updating token and retrying..."
+              ) *>
+                updateToken.flatMap(getData)
+            }
+        case None =>
+          (updateToken <* logger.debug("Obtained new SunnyBoy API token."))
+            .flatMap(getData)
+      }
 
     private val tokenUrl = uri"${config.loginUrl}"
     private val tokenBody =
@@ -73,6 +72,13 @@ object SunnyBoyAPIClient {
         }
 
     private def updateToken: IO[String] =
+      requestToken.orElse(
+        logger.info("Retrying token request after clearing cookies...") *>
+          sessionRestartEffect *>
+          requestToken
+      )
+
+    private def requestToken: IO[String] =
       basicRequest
         .post(tokenUrl)
         .body(tokenBody)
@@ -98,7 +104,7 @@ object SunnyBoyAPIClient {
         }
   }
 
-  private val defaultBackendResource = {
+  private val (defaultBackendResource, cookieManager) = {
     val cookieManager = new CookieManager()
     cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL)
 
@@ -108,18 +114,25 @@ object SunnyBoyAPIClient {
         .cookieHandler(cookieManager)
         .build()
 
-    HttpClientCatsBackend
-      .resourceUsingClient[IO](httpClient)
+    (
+      HttpClientCatsBackend
+        .resourceUsingClient[IO](httpClient),
+      cookieManager
+    )
   }
 
   def apply(
       config: SunnyBoyConfig,
       decoder: SunnyBoyDecoder,
       backendResource: Resource[IO, WebSocketBackend[IO]] =
-        defaultBackendResource
+        defaultBackendResource,
+      sessionRestartEffect: IO[Unit] = IO(
+        cookieManager.getCookieStore.removeAll()
+      ).void,
+      initialToken: Option[String] = None
   ): Resource[IO, PowerProductionOnRequestProvider] =
     for {
       backend <- backendResource
-      tokenHolder <- Ref.of[IO, Option[String]](None).toResource
-    } yield Impl(config, backend, tokenHolder, decoder)
+      tokenHolder <- Ref.of[IO, Option[String]](initialToken).toResource
+    } yield Impl(config, backend, tokenHolder, decoder, sessionRestartEffect)
 }
