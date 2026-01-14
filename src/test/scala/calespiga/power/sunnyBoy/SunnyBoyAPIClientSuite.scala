@@ -284,7 +284,7 @@ class SunnyBoyAPIClientSuite extends CatsEffectSuite {
     }
   }
 
-  test("updateToken: when faileds after session restart, fail with error") {
+  test("updateToken: when failed after session restart, fail with error") {
     val decoder = StubDecoder(
       tokenResult = Right("TOKEN123"),
       dataResult = Right(
