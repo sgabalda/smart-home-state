@@ -15,6 +15,16 @@ object Action {
       topic: String,
       message: String
   ) extends Direct
+
+  /** Send a notification to the user. Processors may repeat the notification on
+    * each execution blindly, and the repeatInterval indicates how often it will
+    * be resent to the user. If None, the notification is repeated using the
+    * default interval.
+    *
+    * @param id
+    * @param message
+    * @param repeatInterval
+    */
   case class SendNotification(
       id: String,
       message: String,

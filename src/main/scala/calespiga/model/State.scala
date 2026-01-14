@@ -55,7 +55,8 @@ object State {
       powerDiscarded: Option[Float] = None,
       linesPower: List[Float] = List.empty,
       lastUpdate: Option[java.time.Instant] = None,
-      lastProducedPower: Option[java.time.Instant] = None
+      lastProducedPower: Option[java.time.Instant] = None,
+      lastError: Option[java.time.Instant] = None
   )
 
   case class FeatureFlags(

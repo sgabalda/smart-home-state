@@ -14,9 +14,34 @@ import cats.implicits.catsSyntaxApplicativeByName
 
 trait UserInterfaceManager {
 
+  /** Stream of user input events coming from OpenHab
+    *
+    * @return
+    *   the stream with user input events
+    */
   def userInputEventsStream
       : Stream[IO, Either[ErrorManager.Error, Event.EventData]]
+
+  /** Update a UI item with a new value
+    *
+    * @param item
+    * @param value
+    * @return
+    */
   def updateUIItem(item: String, value: String): IO[Unit]
+
+  /** Send a notification to the user via OpenHab. It can be called repeatedly
+    * as the repeatInterval will prevent spamming. If no repeatInterval is
+    * provided, the default from the UIConfig will be used.
+    *
+    * @param id
+    * @param message
+    * @param repeatInterval
+    *   Optional repeat interval to avoid spamming the user with the same
+    *   notification. If None, the default repeat interval from the UIConfig
+    *   will be used.
+    * @return
+    */
   def sendNotification(
       id: String,
       message: String,
