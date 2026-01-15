@@ -51,7 +51,12 @@ object Main extends IOApp.Simple {
         ))
       .evalMapFilter {
         case Left(value) =>
-          errorManager.manageError(value).as(None)
+          value match
+            case ErrorManager.ErrorWithEvent(value, error) =>
+              errorManager.manageError(error) *>
+                IO.realTimeInstant.map(instant => Some(Event(instant, value)))
+            case otherError =>
+              errorManager.manageError(otherError).as(None)
         case Right(value) =>
           IO.realTimeInstant.map(instant => Some(Event(instant, value)))
       }

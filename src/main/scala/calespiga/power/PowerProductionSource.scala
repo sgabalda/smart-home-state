@@ -7,6 +7,7 @@ import calespiga.config.PowerProductionSourceConfig
 import calespiga.model.Event.Power.{PowerProductionReported, PowerData}
 import calespiga.ErrorManager
 import java.time.ZoneId
+import calespiga.model.Event.Power.PowerProductionReadingError
 
 trait PowerProductionSource {
 
@@ -47,7 +48,14 @@ object PowerProductionSource {
               powerDiscarded = powerData.powerDiscarded,
               linesPower = powerData.linesPower
             )
-          )).handleError(err => Left(ErrorManager.Error.PowerInputError(err)))
+          )).handleError(err =>
+            Left(
+              ErrorManager.ErrorWithEvent(
+                PowerProductionReadingError,
+                ErrorManager.Error.PowerInputError(err)
+              )
+            )
+          )
         }
   }
 

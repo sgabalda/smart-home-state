@@ -38,12 +38,13 @@ String CalentadorSincronitzacioSHS "Estat sincronització calentador"
 ----------------------
 */
 
-String PotenciaTitle "Potència"
+String PotenciaTitle "Potència" <solar_panel>
 
 Number PotenciaDisponibleSHS "Potència disponible"
 Number PotenciaGeneradaSHS "Potència generada"
 Number PotenciaRebutjadaSHS "Potència rebutjada"
 Number PotenciaDinamicaFVSHS "Potència dinàmica FV"
+String PotenciaEstatLecturesSHS "Estat lectures FV"
 
 /*
 ----------------------
@@ -61,6 +62,5 @@ String CalentadorMicroControladorEstatSHS "Estat microcontrolador calentador"
 
 
 /* feature flags */
-String VentiladorsHabilitatsSHS "Habilitar ventiladors per SHS"
 String CalentadorHabilitatsSHS "Habilitar calentador per SHS"
 

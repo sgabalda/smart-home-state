@@ -10,13 +10,12 @@ import scala.concurrent.duration.*
 class PowerAvailableProcessorSuite extends FunSuite {
 
   val dummyConfig = PowerAvailableProcessorConfig(
-    periodAlarmNoData = 5.minutes,
+    periodAlarmWithError = 5.minutes,
     periodAlarmNoProduction = 10.hours,
-    fvStartingHour = 7,
-    fvEndingHour = 22,
     powerAvailableItem = "PowerAvailableItem",
     powerProducedItem = "PowerProducedItem",
-    powerDiscardedItem = "PowerDiscardedItem"
+    powerDiscardedItem = "PowerDiscardedItem",
+    readingsStatusItem = "PowerReadingsStatusItem"
   )
   val processor =
     PowerAvailableProcessor(dummyConfig, java.time.ZoneId.of("UTC"))
@@ -119,102 +118,22 @@ class PowerAvailableProcessorSuite extends FunSuite {
       ),
       "Should set powerDiscardedItem"
     )
-  }
-
-  test(
-    "PowerProductionReported emits delayed action for no data notification"
-  ) {
-    val powerAvailable = 100.5f
-    val powerProduced = 75.3f
-    val powerDiscarded = 25.2f
-    val linesPower = List.empty[Float]
-    val state = State()
-    val event = Event.Power.PowerProductionReported(
-      powerAvailable,
-      powerProduced,
-      powerDiscarded,
-      linesPower
-    )
-    val (newState, actions) = processor.process(state, event, now)
-
-    val delayedAction = actions.find {
-      case Action.Delayed(id, _, delay)
-          if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
-            && delay == dummyConfig.periodAlarmNoData =>
-        true
-      case _ => false
-    }
 
     assert(
-      delayedAction.isDefined,
-      s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
-        s"and delay ${dummyConfig.periodAlarmNoData}"
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_OK
+        )
+      ),
+      "Should set readingsStatusItem to OK"
     )
-  }
-
-  test(
-    "PowerProductionReported emits delayed action when outside FV hours previous day"
-  ) {
-    val powerAvailable = 100.5f
-    val powerProduced = 75.3f
-    val powerDiscarded = 25.2f
-    val linesPower = List.empty[Float]
-    val state = State()
-    val event = Event.Power.PowerProductionReported(
-      powerAvailable,
-      powerProduced,
-      powerDiscarded,
-      linesPower
-    )
-    val now = Instant.parse("2023-08-17T23:00:00Z")
-    val (newState, actions) = processor.process(state, event, now)
-
-    val delayedAction = actions.find {
-      case Action.Delayed(id, _, delay)
-          if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
-            && delay == dummyConfig.periodAlarmNoData.plus(8.hours) =>
-        true
-      case _ => false
-    }
-
-    assert(
-      delayedAction.isDefined,
-      s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
-        s"and delay to the next day after starting hour plus ${dummyConfig.periodAlarmNoData}"
-    )
-  }
-
-  test(
-    "PowerProductionReported emits delayed action when outside FV hours same day"
-  ) {
-    val powerAvailable = 100.5f
-    val powerProduced = 75.3f
-    val powerDiscarded = 25.2f
-    val linesPower = List.empty[Float]
-    val state = State()
-    val event = Event.Power.PowerProductionReported(
-      powerAvailable,
-      powerProduced,
-      powerDiscarded,
-      linesPower
-    )
-    val now = Instant.parse("2023-08-17T03:00:00Z")
-    val (newState, actions) = processor.process(state, event, now)
-
-    val delayedAction = actions.find {
-      case Action.Delayed(id, _, delay)
-          if id == PowerAvailableProcessor.ALERT_NO_UPDATES_ID
-            && delay == dummyConfig.periodAlarmNoData.plus(
-              (dummyConfig.fvStartingHour - 3).hours
-            ) =>
-        true
-      case _ => false
-    }
-
-    assert(
-      delayedAction.isDefined,
-      s"Should contain delayed action with id ${PowerAvailableProcessor.ALERT_NO_UPDATES_ID} " +
-        s"and delay to the same day later after starting hour plus ${dummyConfig.periodAlarmNoData}"
+    assertEquals(
+      actions.count {
+        case Action.SetUIItemValue(_, _) => true; case _ => false
+      },
+      4,
+      "Should emit exactly 4 UI update actions"
     )
   }
 
@@ -290,6 +209,8 @@ class PowerAvailableProcessorSuite extends FunSuite {
       .setTo(Some(75.0f))
       .modify(_.powerProduction.powerDiscarded)
       .setTo(Some(25.0f))
+      .modify(_.powerProduction.lastError)
+      .setTo(Some(now))
 
     val event = Event.System.StartupEvent
     val (newState, actions) = processor.process(state, event, now)
@@ -310,8 +231,13 @@ class PowerAvailableProcessorSuite extends FunSuite {
       None,
       "powerDiscarded should be reset to None"
     )
+    assertEquals(
+      newState.powerProduction.lastError,
+      None,
+      "lastError should be reset to None"
+    )
 
-    // Check that UI items are updated to 0
+    // Check that UI items are updated to 0 or OK
     assert(
       actions.contains(
         Action.SetUIItemValue(dummyConfig.powerAvailableItem, "0")
@@ -333,6 +259,200 @@ class PowerAvailableProcessorSuite extends FunSuite {
       "Should set powerDiscardedItem to 0"
     )
 
-    assertEquals(actions.size, 3, "Should emit exactly 3 UI update actions")
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_OK
+        )
+      ),
+      "Should set readingsStatusItem to OK"
+    )
+
+    assertEquals(actions.size, 4, "Should emit exactly 4 UI update actions")
+  }
+
+  test(
+    "PowerProductionReadingError with no previous error sets lastError and updates UI with temporary error status"
+  ) {
+    val state = State()
+      .modify(_.powerProduction.powerAvailable)
+      .setTo(Some(100.0f))
+      .modify(_.powerProduction.powerProduced)
+      .setTo(Some(75.0f))
+      .modify(_.powerProduction.powerDiscarded)
+      .setTo(Some(25.0f))
+    val event = Event.Power.PowerProductionReadingError
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerProduction.lastError,
+      Some(now),
+      "lastError should be set to current timestamp"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerAvailable,
+      None,
+      "powerAvailable should be set to None"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerProduced,
+      None,
+      "powerProduced should be set to None"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerDiscarded,
+      None,
+      "powerDiscarded should be set to None"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerAvailableItem, "0")
+      ),
+      "Should set powerAvailableItem to 0"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerProducedItem, "0")
+      ),
+      "Should set powerProducedItem to 0"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerDiscardedItem, "0")
+      ),
+      "Should set powerDiscardedItem to 0"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_TEMPORARY_ERROR
+        )
+      ),
+      "Should set readingsStatusItem to temporary error status"
+    )
+
+    assertEquals(actions.size, 4, "Should emit exactly 4 UI update actions")
+  }
+
+  test(
+    "PowerProductionReadingError within alarm period does not send notification"
+  ) {
+    val errorTimestamp = Instant.parse("2023-08-17T09:57:00Z")
+    val state = State()
+      .modify(_.powerProduction.lastError)
+      .setTo(Some(errorTimestamp))
+
+    val event = Event.Power.PowerProductionReadingError
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerProduction.lastError,
+      Some(errorTimestamp),
+      "lastError should remain unchanged"
+    )
+
+    assertEquals(
+      actions.size,
+      0,
+      "Should not emit any actions when error is within alarm period"
+    )
+  }
+
+  test(
+    "PowerProductionReadingError after alarm period sends notification and updates status to continuous error"
+  ) {
+    val errorTimestamp = Instant.parse("2023-08-17T09:54:59Z")
+    val state = State()
+      .modify(_.powerProduction.lastError)
+      .setTo(Some(errorTimestamp))
+
+    val event = Event.Power.PowerProductionReadingError
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerProduction.lastError,
+      Some(errorTimestamp),
+      "lastError should remain unchanged"
+    )
+
+    val notificationAction = actions.find {
+      case Action.SendNotification(id, _, _)
+          if id == PowerAvailableProcessor.ALERT_READING_ERROR =>
+        true
+      case _ => false
+    }
+
+    assert(
+      notificationAction.isDefined,
+      s"Should contain notification action with id ${PowerAvailableProcessor.ALERT_READING_ERROR}"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_CONTINUOUS_ERROR
+        )
+      ),
+      "Should set readingsStatusItem to continuous error status"
+    )
+
+    assertEquals(
+      actions.size,
+      2,
+      "Should emit notification and status update actions"
+    )
+  }
+
+  test(
+    "PowerProductionReported after previous error clears lastError and sets status to OK"
+  ) {
+    val errorTimestamp = Instant.parse("2023-08-17T09:30:00Z")
+    val state = State()
+      .modify(_.powerProduction.lastError)
+      .setTo(Some(errorTimestamp))
+
+    val powerAvailable = 100.5f
+    val powerProduced = 75.3f
+    val powerDiscarded = 25.2f
+    val linesPower = List.empty[Float]
+    val event = Event.Power.PowerProductionReported(
+      powerAvailable,
+      powerProduced,
+      powerDiscarded,
+      linesPower
+    )
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerProduction.lastError,
+      None,
+      "lastError should be cleared after successful reading"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerAvailable,
+      Some(powerAvailable),
+      "powerAvailable should be updated"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          dummyConfig.readingsStatusItem,
+          PowerAvailableProcessor.STATUS_OK
+        )
+      ),
+      "Should set readingsStatusItem to OK to indicate recovery from error"
+    )
   }
 }

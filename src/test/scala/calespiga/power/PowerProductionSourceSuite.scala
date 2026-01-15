@@ -7,6 +7,7 @@ import scala.concurrent.duration._
 import calespiga.config.PowerProductionSourceConfig
 import calespiga.model.Event.Power.{PowerProductionReported}
 import calespiga.ErrorManager
+import calespiga.model.Event.Power.PowerProductionReadingError
 
 class PowerProductionSourceSuite extends CatsEffectSuite {
 
@@ -81,7 +82,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
   }
 
   test(
-    "if there is an error when calling the provider, the error event is sent"
+    "if there is an error when calling the provider, the error and event are sent"
   ) {
     val error = new RuntimeException("Test error")
 
@@ -102,7 +103,12 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
     } yield assertEquals(
       result,
-      Left(ErrorManager.Error.PowerInputError(error))
+      Left(
+        ErrorManager.ErrorWithEvent(
+          PowerProductionReadingError,
+          ErrorManager.Error.PowerInputError(error)
+        )
+      )
     )
 
     TestControl.executeEmbed(program)
@@ -132,7 +138,12 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
         .toList
 
       expected = List(
-        Left(ErrorManager.Error.PowerInputError(error)),
+        Left(
+          ErrorManager.ErrorWithEvent(
+            PowerProductionReadingError,
+            ErrorManager.Error.PowerInputError(error)
+          )
+        ),
         Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
         Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
       )
@@ -166,8 +177,18 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
         .toList
 
       expected = List(
-        Left(ErrorManager.Error.PowerInputError(error)),
-        Left(ErrorManager.Error.PowerInputError(error)),
+        Left(
+          ErrorManager.ErrorWithEvent(
+            PowerProductionReadingError,
+            ErrorManager.Error.PowerInputError(error)
+          )
+        ),
+        Left(
+          ErrorManager.ErrorWithEvent(
+            PowerProductionReadingError,
+            ErrorManager.Error.PowerInputError(error)
+          )
+        ),
         Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
         Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
       )

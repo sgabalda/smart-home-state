@@ -7,14 +7,17 @@ import calespiga.model.{State, Action, Event}
 import java.time.Instant
 import calespiga.config.PowerAvailableProcessorConfig
 import java.time.ZoneId
-import scala.concurrent.duration.FiniteDuration
-import java.util.concurrent.TimeUnit
 import calespiga.model.Event.System.StartupEvent
+import calespiga.model.Event.Power.PowerProductionReadingError
 
 object PowerAvailableProcessor {
 
-  val ALERT_NO_UPDATES_ID = "power-available-no-updates"
+  val ALERT_READING_ERROR = "power-available-reading-error"
   val ALERT_NO_PRODUCTION_IN_HOURS_ID = "power-available-no-production-hours"
+
+  val STATUS_OK = "OK"
+  val STATUS_TEMPORARY_ERROR = "Error temporal..."
+  val STATUS_CONTINUOUS_ERROR = "Error continuat"
 
   private final case class Impl(
       config: PowerAvailableProcessorConfig,
@@ -22,44 +25,9 @@ object PowerAvailableProcessor {
   ) extends SingleProcessor {
 
     def actionsBasedOnPower(
-        powerAvailable: Float,
-        now: Instant
+        powerAvailable: Float
     ): Set[Action] = {
-      val nextUpdateExpected = now.plusMillis(config.periodAlarmNoData.toMillis)
-      val nextUpdateHour = nextUpdateExpected.atZone(zoneId).getHour
-      val durationToNextUpdate =
-        if (
-          nextUpdateHour >= config.fvStartingHour && nextUpdateHour < config.fvEndingHour
-        )
-          // Next update is within FV hours, use normal period
-          config.periodAlarmNoData
-        else if (nextUpdateHour < config.fvStartingHour)
-          // Before FV hours today, wait until FV starts today
-          FiniteDuration(
-            config.fvStartingHour.toLong - nextUpdateHour.toLong,
-            TimeUnit.HOURS
-          )
-            .plus(config.periodAlarmNoData)
-        else
-          // After FV hours today, wait until FV starts tomorrow
-          FiniteDuration(
-            24L - nextUpdateHour.toLong + config.fvStartingHour.toLong,
-            TimeUnit.HOURS
-          )
-            .plus(config.periodAlarmNoData)
-
       Set(
-        Some(
-          Action.Delayed(
-            ALERT_NO_UPDATES_ID,
-            Action.SendNotification(
-              ALERT_NO_UPDATES_ID,
-              s"No s'han rebut dades de potència disponible en ${config.periodAlarmNoData}",
-              None
-            ),
-            durationToNextUpdate
-          )
-        ),
         Option.when(powerAvailable > 0) {
           Action.Delayed(
             ALERT_NO_PRODUCTION_IN_HOURS_ID,
@@ -108,9 +76,57 @@ object PowerAvailableProcessor {
             .modify(_.powerProduction.powerProduced)
             .setTo(None)
             .modify(_.powerProduction.powerDiscarded)
+            .setTo(None)
+            .modify(_.powerProduction.lastError)
             .setTo(None),
-          updateUIItemActions(0f, 0f, 0f)
+          updateUIItemActions(0f, 0f, 0f) +
+            Action.SetUIItemValue(
+              config.readingsStatusItem,
+              STATUS_OK
+            )
         )
+      case PowerProductionReadingError =>
+        state.powerProduction.lastError match
+          case Some(errorHappened)
+              if (timestamp
+                .minusMillis(config.periodAlarmWithError.toMillis)
+                .isAfter(errorHappened)) =>
+            // Send a new notification
+            (
+              state,
+              Set(
+                Action.SendNotification(
+                  ALERT_READING_ERROR,
+                  s"Hi ha error en la lectura de la potència produïda",
+                  None
+                ),
+                Action.SetUIItemValue(
+                  config.readingsStatusItem,
+                  STATUS_CONTINUOUS_ERROR
+                )
+              )
+            )
+          case Some(value) =>
+            // error already recorded, but not enough time to send a new notification
+            (state, Set.empty)
+          case None =>
+            val newState = state
+              .modify(_.powerProduction.powerAvailable)
+              .setTo(None)
+              .modify(_.powerProduction.powerProduced)
+              .setTo(None)
+              .modify(_.powerProduction.powerDiscarded)
+              .setTo(None)
+              .modify(_.powerProduction.lastError)
+              .setTo(Some(timestamp))
+            (
+              newState,
+              updateUIItemActions(0f, 0f, 0f)
+                + Action.SetUIItemValue(
+                  config.readingsStatusItem,
+                  STATUS_TEMPORARY_ERROR
+                )
+            )
       case PowerProductionReported(
             powerAvailable,
             powerProduced,
@@ -126,6 +142,8 @@ object PowerAvailableProcessor {
           .setTo(Some(powerDiscarded))
           .modify(_.powerProduction.linesPower)
           .setTo(linesPower)
+          .modify(_.powerProduction.lastError)
+          .setTo(None)
           .modify(_.powerProduction.lastUpdate)
           .setTo(Some(timestamp))
           .modify(_.powerProduction.lastProducedPower)
@@ -138,7 +156,11 @@ object PowerAvailableProcessor {
         (
           newState,
           updateUIItemActions(powerAvailable, powerProduced, powerDiscarded)
-            ++ actionsBasedOnPower(powerAvailable, timestamp)
+            ++ actionsBasedOnPower(powerAvailable) +
+            Action.SetUIItemValue(
+              config.readingsStatusItem,
+              STATUS_OK
+            )
         )
       case _ =>
         (state, Set.empty)

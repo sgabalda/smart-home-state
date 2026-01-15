@@ -60,13 +60,12 @@ final case class PowerProcessorConfig(
 ) derives ConfigReader
 
 final case class PowerAvailableProcessorConfig(
-    periodAlarmNoData: FiniteDuration,
+    periodAlarmWithError: FiniteDuration,
     periodAlarmNoProduction: FiniteDuration,
-    fvStartingHour: Int,
-    fvEndingHour: Int,
     powerAvailableItem: String,
     powerProducedItem: String,
-    powerDiscardedItem: String
+    powerDiscardedItem: String,
+    readingsStatusItem: String
 ) derives ConfigReader
 
 final case class DynamicPowerProcessorConfig(
