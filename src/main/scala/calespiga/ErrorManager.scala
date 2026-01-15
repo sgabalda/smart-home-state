@@ -45,7 +45,7 @@ object ErrorManager {
 
   private final case class Impl() extends ErrorManager {
 
-    private def manageSpecifiEcError(error: Error.SpecificError): IO[Unit] =
+    private def manageSpecificError(error: Error.SpecificError): IO[Unit] =
       error match {
         case Error.MqttInputError(throwable, topic) =>
           logger.error(throwable)(
@@ -81,9 +81,9 @@ object ErrorManager {
 
     override def manageError(error: Error): IO[Unit] = error match {
       case calespiga.ErrorManager.ErrorWithEvent(_, specificError) =>
-        manageSpecifiEcError(specificError)
+        manageSpecificError(specificError)
       case other: Error.SpecificError =>
-        manageSpecifiEcError(other)
+        manageSpecificError(other)
     }
   }
 
