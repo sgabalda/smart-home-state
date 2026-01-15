@@ -111,6 +111,12 @@ object PowerAvailableProcessor {
             (state, Set.empty)
           case None =>
             val newState = state
+              .modify(_.powerProduction.powerAvailable)
+              .setTo(None)
+              .modify(_.powerProduction.powerProduced)
+              .setTo(None)
+              .modify(_.powerProduction.powerDiscarded)
+              .setTo(None)
               .modify(_.powerProduction.lastError)
               .setTo(Some(timestamp))
             (

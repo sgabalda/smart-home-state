@@ -276,6 +276,12 @@ class PowerAvailableProcessorSuite extends FunSuite {
     "PowerProductionReadingError with no previous error sets lastError and updates UI with temporary error status"
   ) {
     val state = State()
+      .modify(_.powerProduction.powerAvailable)
+      .setTo(Some(100.0f))
+      .modify(_.powerProduction.powerProduced)
+      .setTo(Some(75.0f))
+      .modify(_.powerProduction.powerDiscarded)
+      .setTo(Some(25.0f))
     val event = Event.Power.PowerProductionReadingError
     val (newState, actions) = processor.process(state, event, now)
 
@@ -283,6 +289,24 @@ class PowerAvailableProcessorSuite extends FunSuite {
       newState.powerProduction.lastError,
       Some(now),
       "lastError should be set to current timestamp"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerAvailable,
+      None,
+      "powerAvailable should be set to None"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerProduced,
+      None,
+      "powerProduced should be set to None"
+    )
+
+    assertEquals(
+      newState.powerProduction.powerDiscarded,
+      None,
+      "powerDiscarded should be set to None"
     )
 
     assert(

@@ -82,7 +82,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
   }
 
   test(
-    "if there is an error when calling the provider, the error and event is sent"
+    "if there is an error when calling the provider, the error and event are sent"
   ) {
     val error = new RuntimeException("Test error")
 
