@@ -7,5 +7,7 @@ lazy val root = (project in file("."))
     name := "smart-home-state",
     libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing,
     Global / semanticdbEnabled := true,
-    Compile / run / fork := true
+    Compile / run / fork := true,
+    scalacOptions := scalacOptions.value
+      .filterNot(_ == "-Xfatal-warnings") :+ "-Werror"
   )
