@@ -1,5 +1,5 @@
 ThisBuild / organization := "calespiga"
-ThisBuild / scalaVersion := "3.7.4"
+ThisBuild / scalaVersion := "3.8.1"
 
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
@@ -7,5 +7,7 @@ lazy val root = (project in file("."))
     name := "smart-home-state",
     libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing,
     Global / semanticdbEnabled := true,
-    Compile / run / fork := true
+    Compile / run / fork := true,
+    scalacOptions := scalacOptions.value
+      .filterNot(_ == "-Xfatal-warnings") :+ "-Werror"
   )
