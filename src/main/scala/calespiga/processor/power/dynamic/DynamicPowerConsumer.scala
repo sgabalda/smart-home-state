@@ -5,9 +5,35 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.model.Action
 import calespiga.processor.power.dynamic.Power
 import java.time.Instant
+import java.util.UUID
 
 trait DynamicPowerConsumer {
+  /**
+    * A unique code to identify this consumer among all the others
+    *
+    * @return
+    */
+  final def uniqueCode: String = UUID.nameUUIDFromBytes(
+    this.getClass.getName.getBytes()
+  ).toString
+  /**
+    * Returns the amount of dynamic power currently used by this consumer
+    *
+    * @param state  the current state
+    * @param now    the current timestamp
+    * @return the   amount of dynamic power currently used
+    */
   def currentlyUsedDynamicPower(state: State, now: Instant): Power
+
+  /**
+    * Applies the given amount of dynamic power for this consumer
+    *
+    * @param state        the current state
+    * @param powerToUse   the amount of power to use
+    * @param now          the current timestamp
+    * @return             the result of the operation, including the new state,
+    *                     actions to perform, and the actual power used
+    */
   def usePower(
       state: State,
       powerToUse: Power,

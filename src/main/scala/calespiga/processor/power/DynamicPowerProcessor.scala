@@ -11,6 +11,7 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
 import calespiga.config.DynamicPowerProcessorConfig
 import calespiga.model.Event.System.StartupEvent
+import com.softwaremill.quicklens.*
 
 object DynamicPowerProcessor {
 
@@ -19,13 +20,29 @@ object DynamicPowerProcessor {
       consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig
   ) extends SingleProcessor {
+
+    //Add the missing consumers to the ordered list of priority in the state
+    private def addMissingConsumersToState(
+        state: State
+    ): State = {
+      val newConsumers = consumers.filterNot { consumer =>
+        state.powerManagement.dynamic.consumersOrder.contains(
+          consumer.uniqueCode
+        )
+      }
+      state.modify(_.powerManagement.dynamic.consumersOrder).using { currentOrder =>
+        currentOrder ++ newConsumers.map(_.uniqueCode)
+      }
+    }
+
     override def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
       case StartupEvent =>
-        (state, Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")))
+        (addMissingConsumersToState(state), Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")))
+        
       case PowerProductionReported(_, _, powerDiscarded, _) =>
         val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 

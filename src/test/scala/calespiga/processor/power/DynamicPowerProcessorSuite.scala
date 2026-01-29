@@ -203,7 +203,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       currentlyUsedDynamicPowerStub = (_, _) => Power.ofFv(0f),
       usePowerStub = (state, _, _) => {
         val newState =
-          state.modify(_.powerProduction.powerAvailable).setTo(Some(100f))
+          state.modify(_.powerManagement.production.powerAvailable).setTo(Some(100f))
         DynamicPowerResult(newState, Set.empty, Power.ofFv(10f))
       }
     )
@@ -211,7 +211,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       currentlyUsedDynamicPowerStub = (_, _) => Power.ofFv(0f),
       usePowerStub = (state, _, _) => {
         val newState =
-          state.modify(_.powerProduction.powerProduced).setTo(Some(50f))
+          state.modify(_.powerManagement.production.powerProduced).setTo(Some(50f))
         DynamicPowerResult(newState, Set.empty, Power.ofFv(5f))
       }
     )
@@ -237,12 +237,12 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val (finalState, _) = processor.process(state, event, now)
 
     assertEquals(
-      finalState.powerProduction.powerAvailable,
+      finalState.powerManagement.production.powerAvailable,
       Some(100f),
       "State changes from consumer1 should be preserved"
     )
     assertEquals(
-      finalState.powerProduction.powerProduced,
+      finalState.powerManagement.production.powerProduced,
       Some(50f),
       "State changes from consumer2 should be applied on top of consumer1's changes"
     )

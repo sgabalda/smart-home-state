@@ -71,13 +71,13 @@ object PowerAvailableProcessor {
       case StartupEvent =>
         (
           state
-            .modify(_.powerProduction.powerAvailable)
+            .modify(_.powerManagement.production.powerAvailable)
             .setTo(None)
-            .modify(_.powerProduction.powerProduced)
+            .modify(_.powerManagement.production.powerProduced)
             .setTo(None)
-            .modify(_.powerProduction.powerDiscarded)
+            .modify(_.powerManagement.production.powerDiscarded)
             .setTo(None)
-            .modify(_.powerProduction.lastError)
+            .modify(_.powerManagement.production.lastError)
             .setTo(None),
           updateUIItemActions(0f, 0f, 0f) +
             Action.SetUIItemValue(
@@ -86,7 +86,7 @@ object PowerAvailableProcessor {
             )
         )
       case PowerProductionReadingError =>
-        state.powerProduction.lastError match
+        state.powerManagement.production.lastError match
           case Some(errorHappened)
               if (timestamp
                 .minusMillis(config.periodAlarmWithError.toMillis)
@@ -111,13 +111,13 @@ object PowerAvailableProcessor {
             (state, Set.empty)
           case None =>
             val newState = state
-              .modify(_.powerProduction.powerAvailable)
+              .modify(_.powerManagement.production.powerAvailable)
               .setTo(None)
-              .modify(_.powerProduction.powerProduced)
+              .modify(_.powerManagement.production.powerProduced)
               .setTo(None)
-              .modify(_.powerProduction.powerDiscarded)
+              .modify(_.powerManagement.production.powerDiscarded)
               .setTo(None)
-              .modify(_.powerProduction.lastError)
+              .modify(_.powerManagement.production.lastError)
               .setTo(Some(timestamp))
             (
               newState,
@@ -134,19 +134,19 @@ object PowerAvailableProcessor {
             linesPower
           ) =>
         val newState = state
-          .modify(_.powerProduction.powerAvailable)
+          .modify(_.powerManagement.production.powerAvailable)
           .setTo(Some(powerAvailable))
-          .modify(_.powerProduction.powerProduced)
+          .modify(_.powerManagement.production.powerProduced)
           .setTo(Some(powerProduced))
-          .modify(_.powerProduction.powerDiscarded)
+          .modify(_.powerManagement.production.powerDiscarded)
           .setTo(Some(powerDiscarded))
-          .modify(_.powerProduction.linesPower)
+          .modify(_.powerManagement.production.linesPower)
           .setTo(linesPower)
-          .modify(_.powerProduction.lastError)
+          .modify(_.powerManagement.production.lastError)
           .setTo(None)
-          .modify(_.powerProduction.lastUpdate)
+          .modify(_.powerManagement.production.lastUpdate)
           .setTo(Some(timestamp))
-          .modify(_.powerProduction.lastProducedPower)
+          .modify(_.powerManagement.production.lastProducedPower)
           .using(current =>
             if (powerProduced > 0)
               Some(timestamp)
