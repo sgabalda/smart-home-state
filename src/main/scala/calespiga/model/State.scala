@@ -14,7 +14,6 @@ case class State(
     fans: Fans = Fans(),
     heater: Heater = Heater(),
     powerManagement: PowerManagement = PowerManagement()
-
 )
 
 object State {
@@ -52,7 +51,7 @@ object State {
 
   case class PowerManagement(
       production: PowerProduction = PowerProduction(),
-      dynamic : DynamicPower = DynamicPower()
+      dynamic: DynamicPower = DynamicPower()
   )
 
   case class PowerProduction(

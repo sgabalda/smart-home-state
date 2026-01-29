@@ -37,12 +37,24 @@ class PowerAvailableProcessorSuite extends FunSuite {
     )
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.powerManagement.production.powerAvailable, Some(powerAvailable))
-    assertEquals(newState.powerManagement.production.powerProduced, Some(powerProduced))
-    assertEquals(newState.powerManagement.production.powerDiscarded, Some(powerDiscarded))
+    assertEquals(
+      newState.powerManagement.production.powerAvailable,
+      Some(powerAvailable)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerProduced,
+      Some(powerProduced)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerDiscarded,
+      Some(powerDiscarded)
+    )
     assertEquals(newState.powerManagement.production.linesPower, linesPower)
     assertEquals(newState.powerManagement.production.lastUpdate, Some(now))
-    assertEquals(newState.powerManagement.production.lastProducedPower, Some(now))
+    assertEquals(
+      newState.powerManagement.production.lastProducedPower,
+      Some(now)
+    )
   }
 
   test(
@@ -65,8 +77,14 @@ class PowerAvailableProcessorSuite extends FunSuite {
     )
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.powerManagement.production.powerAvailable, Some(powerAvailable))
-    assertEquals(newState.powerManagement.production.powerProduced, Some(powerProduced))
+    assertEquals(
+      newState.powerManagement.production.powerAvailable,
+      Some(powerAvailable)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerProduced,
+      Some(powerProduced)
+    )
     assertEquals(newState.powerManagement.production.lastUpdate, Some(now))
     assertEquals(
       newState.powerManagement.production.lastProducedPower,

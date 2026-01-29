@@ -203,7 +203,9 @@ class DynamicPowerProcessorSuite extends FunSuite {
       currentlyUsedDynamicPowerStub = (_, _) => Power.ofFv(0f),
       usePowerStub = (state, _, _) => {
         val newState =
-          state.modify(_.powerManagement.production.powerAvailable).setTo(Some(100f))
+          state
+            .modify(_.powerManagement.production.powerAvailable)
+            .setTo(Some(100f))
         DynamicPowerResult(newState, Set.empty, Power.ofFv(10f))
       }
     )
@@ -211,7 +213,9 @@ class DynamicPowerProcessorSuite extends FunSuite {
       currentlyUsedDynamicPowerStub = (_, _) => Power.ofFv(0f),
       usePowerStub = (state, _, _) => {
         val newState =
-          state.modify(_.powerManagement.production.powerProduced).setTo(Some(50f))
+          state
+            .modify(_.powerManagement.production.powerProduced)
+            .setTo(Some(50f))
         DynamicPowerResult(newState, Set.empty, Power.ofFv(5f))
       }
     )
@@ -395,6 +399,56 @@ class DynamicPowerProcessorSuite extends FunSuite {
         )
       ),
       "No actions should be emitted when there are no consumers"
+    )
+  }
+
+  test(
+    "DynamicPowerProcessor calls addMissingConsumersToState on StartupEvent and returns the result"
+  ) {
+    import com.softwaremill.quicklens.*
+
+    val consumer = DynamicPowerConsumerStub()
+
+    val expectedState = State()
+      .modify(_.powerManagement.production.powerAvailable)
+      .setTo(Some(999f))
+
+    var addMissingConsumersCalled = false
+    val orderer = DynamicConsumerOrdererStub(
+      addMissingConsumersToStateStub = (_, consumers) => {
+        addMissingConsumersCalled = true
+        assertEquals(
+          consumers,
+          Set(consumer),
+          "addMissingConsumersToState should receive the correct consumers"
+        )
+        expectedState
+      }
+    )
+
+    val processor =
+      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+
+    val state = State()
+    val event = Event.System.StartupEvent
+
+    val (finalState, actions) = processor.process(state, event, now)
+
+    assert(
+      addMissingConsumersCalled,
+      "addMissingConsumersToState should be called on StartupEvent"
+    )
+    assertEquals(
+      finalState,
+      expectedState,
+      "State should be the one returned by addMissingConsumersToState"
+    )
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+      ),
+      "UI item reset action should be emitted"
     )
   }
 }
