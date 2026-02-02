@@ -18,7 +18,7 @@ object Dependencies {
 
     val log4cats = "2.7.1"
 
-    val logback = "1.5.26"
+    val logback = "1.5.27"
 
     val munit = "2.1.0"
 
