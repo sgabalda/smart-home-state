@@ -13,6 +13,9 @@ object DynamicPowerConsumerStub {
       usePowerStub: (State, Power, Instant) => DynamicPowerResult =
         (state, _, _) => DynamicPowerResult(state, Set.empty, Power.zero)
   ): DynamicPowerConsumer = new DynamicPowerConsumer {
+
+    override def uniqueCode: String = "DynamicPowerConsumerStub"
+
     override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
       currentlyUsedDynamicPowerStub(state, now)
 

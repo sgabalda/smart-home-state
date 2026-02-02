@@ -13,7 +13,7 @@ trait DynamicPowerConsumer {
     *
     * @return
     */
-  def uniqueCode: String = this.getClass.getName()
+  def uniqueCode: String
 
   /** Returns the amount of dynamic power currently used by this consumer
     *

@@ -119,5 +119,15 @@ object Event {
     ) extends PowerData
 
     case object PowerProductionReadingError extends PowerData
+
+    // all implementations of the DynamicPowerData must be defined inside this object
+    object DynamicPower {
+      sealed trait DynamicPowerData extends PowerData
+
+      @InputEventOHItem("Calentador_Priority")
+      case class HeaterPowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerData
+    }
   }
 }

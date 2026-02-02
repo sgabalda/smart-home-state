@@ -5,6 +5,7 @@ import calespiga.config.PowerProcessorConfig
 import java.time.ZoneId
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
+import calespiga.processor.power.dynamic.DynamicPowerPriorityProcessor
 
 object PowerProcessor {
 
@@ -18,6 +19,6 @@ object PowerProcessor {
         DynamicConsumerOrderer(),
         dynamicConsumers,
         config.dynamicPower
-      )
+      ).andThen(DynamicPowerPriorityProcessor())
     )
 }
