@@ -39,7 +39,9 @@ object DynamicConsumerOrderer {
       }
       state.modify(_.powerManagement.dynamic.consumersOrder).using {
         currentOrder =>
-          currentOrder ++ newConsumers.map(_.uniqueCode)
+          currentOrder.filter { code =>
+            consumers.exists(_.uniqueCode == code)
+          } ++ newConsumers.map(_.uniqueCode)
       }
     }
 

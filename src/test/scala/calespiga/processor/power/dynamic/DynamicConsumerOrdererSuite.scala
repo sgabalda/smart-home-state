@@ -120,7 +120,7 @@ class DynamicConsumerOrdererSuite extends FunSuite {
   }
 
   test(
-    "addMissingConsumersToState does not modify state when consumers set is empty"
+    "addMissingConsumersToState removes all consumers when consumers set is empty"
   ) {
     val orderer = DynamicConsumerOrderer()
 
@@ -132,8 +132,39 @@ class DynamicConsumerOrdererSuite extends FunSuite {
 
     assertEquals(
       result.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", "consumer2"),
-      "Consumer order should remain unchanged when consumers set is empty"
+      Seq.empty,
+      "All consumers should be removed when consumers set is empty"
+    )
+  }
+
+  test(
+    "addMissingConsumersToState removes consumers from state that are not in the provided consumers set"
+  ) {
+    val orderer = DynamicConsumerOrderer()
+
+    val consumer1 = createConsumerWithCode("consumer1")
+    val consumer3 = createConsumerWithCode("consumer3")
+
+    val state = State()
+      .modify(_.powerManagement.dynamic.consumersOrder)
+      .setTo(Seq("consumer1", "consumer2", "consumer3", "consumer4"))
+
+    val consumers = Set(consumer1, consumer3)
+
+    val result = orderer.addMissingConsumersToState(state, consumers)
+
+    assertEquals(
+      result.powerManagement.dynamic.consumersOrder,
+      Seq("consumer1", "consumer3"),
+      "Only consumers present in the provided set should remain in the order"
+    )
+    assert(
+      !result.powerManagement.dynamic.consumersOrder.contains("consumer2"),
+      "consumer2 should be removed as it's not in the provided consumers set"
+    )
+    assert(
+      !result.powerManagement.dynamic.consumersOrder.contains("consumer4"),
+      "consumer4 should be removed as it's not in the provided consumers set"
     )
   }
 
