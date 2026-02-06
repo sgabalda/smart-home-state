@@ -5,7 +5,6 @@ import calespiga.model.State
 import calespiga.model.Event
 import java.time.Instant
 import calespiga.model.Action
-import calespiga.processor.heater.HeaterDynamicPowerConsumer
 import com.softwaremill.quicklens.*
 
 object DynamicPowerPriorityProcessor {
@@ -17,44 +16,49 @@ object DynamicPowerPriorityProcessor {
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
-      case e: Event.Power.DynamicPower.DynamicPowerData =>
-        e match {
-          case Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority) =>
-            val currentPriority = state.powerManagement.dynamic.consumersOrder
-            val currentIndex = currentPriority.indexWhere {
-              case consumer
-                  if consumer == HeaterDynamicPowerConsumer.consumerUniqueCode =>
-                true
-              case _ => false
-            }
-            // Priority is 1-based, convert to 0-based index
-            val targetIndex = priority - 1
-
-            val resultingPriority =
-              if (
-                currentIndex == -1 ||
-                targetIndex < 0 ||
-                targetIndex >= currentPriority.size
-              ) {
-                // consumer not found or invalid priority index, do nothing
-                currentPriority
-              } else {
-                val itemToReplace = currentPriority(targetIndex)
-                currentPriority.toVector
-                  .updated(
-                    targetIndex,
-                    HeaterDynamicPowerConsumer.consumerUniqueCode
-                  )
-                  .updated(currentIndex, itemToReplace)
-              }
-
-            (
-              state
-                .modify(_.powerManagement.dynamic.consumersOrder)
-                .setTo(resultingPriority),
-              Set.empty
-            )
+      case e: Event.Power.DynamicPower.DynamicPowerConsumerPriorityChanged =>
+        val changedConsumerCode = e.consumerUniqueCode
+        val currentPriority = state.powerManagement.dynamic.consumersOrder
+        val currentIndex = currentPriority.indexWhere {
+          case consumer if consumer == changedConsumerCode => true
+          case _                                           => false
         }
+        // Priority is 1-based, convert to 0-based index
+        val targetIndex = e.priority - 1
+
+        if (
+          currentIndex == -1 ||
+          targetIndex < 0 ||
+          targetIndex >= currentPriority.size
+        ) {
+          // consumer not found or invalid priority index, do nothing
+          (state, Set.empty)
+        } else if (targetIndex == currentIndex) {
+          // same index, do nothing
+          (state, Set.empty)
+        } else {
+          val itemToReplace = currentPriority(targetIndex)
+          val resultingPriority = currentPriority.toVector
+            .updated(
+              targetIndex,
+              changedConsumerCode
+            )
+            .updated(currentIndex, itemToReplace)
+
+          (
+            state
+              .modify(_.powerManagement.dynamic.consumersOrder)
+              .setTo(resultingPriority),
+            // update the items showing current priority for each consumer
+            Set(
+              Action.SetUIItemValue(
+                item = itemToReplace,
+                value = (currentIndex + 1).toString
+              )
+            )
+          )
+        }
+
       case _ =>
         (state, Set.empty)
   }

@@ -23,7 +23,8 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     onlineStatusItem = "heater/online",
     syncStatusItem = "heater/sync",
     lastCommandItem = "heater/lastCommand",
-    syncTimeoutForDynamicPower = 50.seconds
+    syncTimeoutForDynamicPower = 50.seconds,
+    dynamicConsumerCode = "heater-consumer-code"
   )
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")

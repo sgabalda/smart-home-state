@@ -2,16 +2,17 @@ package calespiga.processor.power.dynamic
 
 import munit.FunSuite
 import calespiga.model.{State, Event}
-import calespiga.processor.heater.HeaterDynamicPowerConsumer
 import java.time.Instant
 import com.softwaremill.quicklens.*
+import calespiga.model.Action
 
 class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val processor = DynamicPowerPriorityProcessor()
 
-  private val heaterCode = HeaterDynamicPowerConsumer.consumerUniqueCode
+  private val consumerCode =
+    Event.Power.DynamicPower.HeaterPowerPriorityChanged(1).consumerUniqueCode
 
   private def stateWithConsumers(consumers: Seq[String]): State =
     State()
@@ -22,7 +23,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
     "HeaterPowerPriorityChanged: swaps heater with element at target position"
   ) {
     val initialConsumers =
-      Seq("consumer1", heaterCode, "consumer3", "consumer4")
+      Seq("consumer1", consumerCode, "consumer3", "consumer4")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 1)
@@ -31,17 +32,21 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq(heaterCode, "consumer1", "consumer3", "consumer4"),
+      Seq(consumerCode, "consumer1", "consumer3", "consumer4"),
       "Heater should be swapped to position 0"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer1", value = "2")),
+      "Should send action to move replaced item in 1"
+    )
   }
 
   test(
     "HeaterPowerPriorityChanged: swaps heater from first to last position"
   ) {
     val initialConsumers =
-      Seq(heaterCode, "consumer2", "consumer3", "consumer4")
+      Seq(consumerCode, "consumer2", "consumer3", "consumer4")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 4)
@@ -50,17 +55,22 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer4", "consumer2", "consumer3", heaterCode),
+      Seq("consumer4", "consumer2", "consumer3", consumerCode),
       "Heater should be swapped to last position"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer4", value = "1")),
+      "Should send action to move replaced item in 4"
+    )
+
   }
 
   test(
     "HeaterPowerPriorityChanged: swaps heater from middle to middle position"
   ) {
     val initialConsumers =
-      Seq("consumer1", "consumer2", heaterCode, "consumer4", "consumer5")
+      Seq("consumer1", "consumer2", consumerCode, "consumer4", "consumer5")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 2)
@@ -69,16 +79,21 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", heaterCode, "consumer2", "consumer4", "consumer5"),
+      Seq("consumer1", consumerCode, "consumer2", "consumer4", "consumer5"),
       "Heater should be swapped with consumer at position 1"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer2", value = "3")),
+      "Should send action to move replaced item in 2"
+    )
+
   }
 
   test(
     "HeaterPowerPriorityChanged: does nothing when heater already at target position"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 2)
@@ -87,7 +102,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", heaterCode, "consumer3"),
+      Seq("consumer1", consumerCode, "consumer3"),
       "Order should remain unchanged when swapping with itself"
     )
     assertEquals(actions, Set.empty, "No actions should be generated")
@@ -131,7 +146,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles single element list with heater"
   ) {
-    val initialConsumers = Seq(heaterCode)
+    val initialConsumers = Seq(consumerCode)
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 1)
@@ -140,7 +155,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq(heaterCode),
+      Seq(consumerCode),
       "Single element list should remain unchanged"
     )
     assertEquals(actions, Set.empty, "No actions should be generated")
@@ -149,7 +164,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles two element list"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode)
+    val initialConsumers = Seq("consumer1", consumerCode)
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 1)
@@ -158,17 +173,21 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq(heaterCode, "consumer1"),
+      Seq(consumerCode, "consumer1"),
       "Elements should be swapped in two-element list"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer1", value = "2")),
+      "Should send action to move replaced item in 1"
+    )
   }
 
   test(
     "HeaterPowerPriorityChanged: swaps correctly when heater at last position"
   ) {
     val initialConsumers =
-      Seq("consumer1", "consumer2", "consumer3", heaterCode)
+      Seq("consumer1", "consumer2", "consumer3", consumerCode)
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 2)
@@ -177,54 +196,20 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", heaterCode, "consumer3", "consumer2"),
+      Seq("consumer1", consumerCode, "consumer3", "consumer2"),
       "Heater from last position should swap correctly with middle position"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
-  }
-
-  test(
-    "HeaterPowerPriorityChanged: swaps with adjacent element forward"
-  ) {
-    val initialConsumers =
-      Seq("consumer1", heaterCode, "consumer3", "consumer4")
-    val state = stateWithConsumers(initialConsumers)
-    val event =
-      Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 3)
-
-    val (newState, actions) = processor.process(state, event, now)
-
     assertEquals(
-      newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", "consumer3", heaterCode, "consumer4"),
-      "Heater should swap with adjacent element forward"
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer2", value = "4")),
+      "Should send action to move replaced item in 2"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
-  }
-
-  test(
-    "HeaterPowerPriorityChanged: swaps with adjacent element backward"
-  ) {
-    val initialConsumers =
-      Seq("consumer1", "consumer2", heaterCode, "consumer4")
-    val state = stateWithConsumers(initialConsumers)
-    val event =
-      Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 2)
-
-    val (newState, actions) = processor.process(state, event, now)
-
-    assertEquals(
-      newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", heaterCode, "consumer2", "consumer4"),
-      "Heater should swap with adjacent element backward"
-    )
-    assertEquals(actions, Set.empty, "No actions should be generated")
   }
 
   test(
     "Non-DynamicPower event: returns state unchanged"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event = Event.Power.PowerProductionReported(
       powerAvailable = 100f,
@@ -246,7 +231,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "StartupEvent: returns state unchanged"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event = Event.System.StartupEvent
 
@@ -263,7 +248,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles invalid priority index (negative)"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 0)
@@ -281,7 +266,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles invalid priority index (too large)"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 10)
@@ -299,7 +284,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles priority equal to list size"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 3)
@@ -308,16 +293,20 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
     assertEquals(
       newState.powerManagement.dynamic.consumersOrder,
-      Seq("consumer1", "consumer3", heaterCode),
+      Seq("consumer1", "consumer3", consumerCode),
       "Heater should be swapped to third position (last in the list)"
     )
-    assertEquals(actions, Set.empty, "No actions should be generated")
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer3", value = "2")),
+      "Should send action to move replaced item in 3"
+    )
   }
 
   test(
     "HeaterPowerPriorityChanged: handles priority greater than list size"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 4)
@@ -334,7 +323,7 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   test(
     "HeaterPowerPriorityChanged: handles priority greater than list size"
   ) {
-    val initialConsumers = Seq("consumer1", heaterCode, "consumer3")
+    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
     val event =
       Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 4)

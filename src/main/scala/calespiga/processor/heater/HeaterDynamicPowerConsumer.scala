@@ -13,8 +13,6 @@ import java.time.Instant
 
 object HeaterDynamicPowerConsumer {
 
-  val consumerUniqueCode: String = this.getClass().getName()
-
   private case class Impl(
       config: HeaterConfig,
       heaterSyncDetector: SyncDetector
@@ -22,7 +20,7 @@ object HeaterDynamicPowerConsumer {
 
     private val actions = Actions(config)
 
-    override def uniqueCode: String = consumerUniqueCode
+    override def uniqueCode: String = config.dynamicConsumerCode
 
     override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
 

@@ -26,9 +26,20 @@ object DynamicPowerProcessor {
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
       case StartupEvent =>
+        val stateWithConsumers = consumerOrderer.addMissingConsumersToState(
+          state,
+          consumers
+        )
         (
-          consumerOrderer.addMissingConsumersToState(state, consumers),
-          Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0"))
+          stateWithConsumers,
+          Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")) ++
+            stateWithConsumers.powerManagement.dynamic.consumersOrder.zipWithIndex
+              .map { case (consumerCode, index) =>
+                Action.SetUIItemValue(
+                  item = consumerCode,
+                  value = (index + 1).toString
+                )
+              }
         )
 
       case PowerProductionReported(_, _, powerDiscarded, _) =>

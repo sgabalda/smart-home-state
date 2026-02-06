@@ -138,7 +138,8 @@ final case class HeaterConfig(
     onlineStatusItem: String,
     syncStatusItem: String,
     lastCommandItem: String,
-    syncTimeoutForDynamicPower: FiniteDuration
+    syncTimeoutForDynamicPower: FiniteDuration,
+    dynamicConsumerCode: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(

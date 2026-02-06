@@ -451,4 +451,106 @@ class DynamicPowerProcessorSuite extends FunSuite {
       "UI item reset action should be emitted"
     )
   }
+
+  test(
+    "StartupEvent with empty consumers list should generate only the reset action"
+  ) {
+    import com.softwaremill.quicklens.*
+
+    val orderer = DynamicConsumerOrdererStub(
+      addMissingConsumersToStateStub = (state, _) =>
+        state.modify(_.powerManagement.dynamic.consumersOrder).setTo(Seq.empty)
+    )
+
+    val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
+
+    val state = State()
+    val event = Event.System.StartupEvent
+
+    val (_, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+      ),
+      "Only reset action should be generated for empty consumer list"
+    )
+  }
+
+  test(
+    "StartupEvent with one consumer should generate priority action with value 1"
+  ) {
+    import com.softwaremill.quicklens.*
+
+    val consumerCode = "TestConsumer1"
+    val consumer = DynamicPowerConsumerStub(code = consumerCode)
+
+    val orderer = DynamicConsumerOrdererStub(
+      addMissingConsumersToStateStub = (state, _) =>
+        state
+          .modify(_.powerManagement.dynamic.consumersOrder)
+          .setTo(Seq(consumerCode))
+    )
+
+    val processor =
+      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+
+    val state = State()
+    val event = Event.System.StartupEvent
+
+    val (_, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
+        Action.SetUIItemValue(consumerCode, "1")
+      ),
+      "Should generate reset action and priority action with value 1"
+    )
+  }
+
+  test(
+    "StartupEvent with multiple consumers should generate priority actions with values equal to position + 1"
+  ) {
+    import com.softwaremill.quicklens.*
+
+    val consumerCode1 = "TestConsumer1"
+    val consumerCode2 = "TestConsumer2"
+    val consumerCode3 = "TestConsumer3"
+
+    val consumer1 = DynamicPowerConsumerStub(code = consumerCode1)
+    val consumer2 = DynamicPowerConsumerStub(code = consumerCode2)
+    val consumer3 = DynamicPowerConsumerStub(code = consumerCode3)
+
+    val orderer = DynamicConsumerOrdererStub(
+      addMissingConsumersToStateStub = (state, _) =>
+        state
+          .modify(_.powerManagement.dynamic.consumersOrder)
+          .setTo(Seq(consumerCode1, consumerCode2, consumerCode3))
+    )
+
+    val processor = DynamicPowerProcessor(
+      orderer,
+      Set(consumer1, consumer2, consumer3),
+      processorConfig
+    )
+
+    val state = State()
+    val event = Event.System.StartupEvent
+
+    val (_, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
+        Action.SetUIItemValue(consumerCode1, "1"),
+        Action.SetUIItemValue(consumerCode2, "2"),
+        Action.SetUIItemValue(consumerCode3, "3")
+      ),
+      "Should generate reset action and priority actions with values 1, 2, and 3"
+    )
+  }
 }
