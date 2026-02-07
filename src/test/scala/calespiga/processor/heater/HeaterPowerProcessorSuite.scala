@@ -30,7 +30,8 @@ class HeaterPowerProcessorSuite extends FunSuite {
     onlineStatusItem = "dummyOnlineStatusItem",
     syncStatusItem = "dummySyncStatusItem",
     lastCommandItem = "dummyLastCommandItem",
-    syncTimeoutForDynamicPower = 10 seconds
+    syncTimeoutForDynamicPower = 10 seconds,
+    dynamicConsumerCode = "heater-consumer-code"
   )
 
   private def stateWithHeater(

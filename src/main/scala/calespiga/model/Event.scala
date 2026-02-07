@@ -119,5 +119,25 @@ object Event {
     ) extends PowerData
 
     case object PowerProductionReadingError extends PowerData
+
+    // all implementations of the DynamicPowerData must be defined inside this object
+    object DynamicPower {
+      sealed trait DynamicPowerConsumerPriorityChanged extends PowerData {
+        def consumerUniqueCode: String
+        def priority: Int
+      }
+
+      // each event should have as a consumer code the OH item, and should be the same in all 3 places:
+      // - the annotation
+      // - the consumerUniqueCode value
+      // - the property in the application.conf that is used in the DynamicPowerConsumer implementation.
+      // this limitation will be overcome when getting rid of OH and having a custom UI.
+      @InputEventOHItem("CalentadorPrioritatConsumSHS")
+      case class HeaterPowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerConsumerPriorityChanged {
+        override val consumerUniqueCode: String = "CalentadorPrioritatConsumSHS"
+      }
+    }
   }
 }

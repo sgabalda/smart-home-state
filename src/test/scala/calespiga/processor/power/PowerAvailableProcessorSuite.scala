@@ -37,12 +37,24 @@ class PowerAvailableProcessorSuite extends FunSuite {
     )
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.powerProduction.powerAvailable, Some(powerAvailable))
-    assertEquals(newState.powerProduction.powerProduced, Some(powerProduced))
-    assertEquals(newState.powerProduction.powerDiscarded, Some(powerDiscarded))
-    assertEquals(newState.powerProduction.linesPower, linesPower)
-    assertEquals(newState.powerProduction.lastUpdate, Some(now))
-    assertEquals(newState.powerProduction.lastProducedPower, Some(now))
+    assertEquals(
+      newState.powerManagement.production.powerAvailable,
+      Some(powerAvailable)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerProduced,
+      Some(powerProduced)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerDiscarded,
+      Some(powerDiscarded)
+    )
+    assertEquals(newState.powerManagement.production.linesPower, linesPower)
+    assertEquals(newState.powerManagement.production.lastUpdate, Some(now))
+    assertEquals(
+      newState.powerManagement.production.lastProducedPower,
+      Some(now)
+    )
   }
 
   test(
@@ -54,7 +66,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val linesPower = List.empty[Float]
     val previousTimestamp = Instant.parse("2023-08-17T09:00:00Z")
     val state = State()
-      .modify(_.powerProduction.lastProducedPower)
+      .modify(_.powerManagement.production.lastProducedPower)
       .setTo(Some(previousTimestamp))
 
     val event = Event.Power.PowerProductionReported(
@@ -65,11 +77,17 @@ class PowerAvailableProcessorSuite extends FunSuite {
     )
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.powerProduction.powerAvailable, Some(powerAvailable))
-    assertEquals(newState.powerProduction.powerProduced, Some(powerProduced))
-    assertEquals(newState.powerProduction.lastUpdate, Some(now))
     assertEquals(
-      newState.powerProduction.lastProducedPower,
+      newState.powerManagement.production.powerAvailable,
+      Some(powerAvailable)
+    )
+    assertEquals(
+      newState.powerManagement.production.powerProduced,
+      Some(powerProduced)
+    )
+    assertEquals(newState.powerManagement.production.lastUpdate, Some(now))
+    assertEquals(
+      newState.powerManagement.production.lastProducedPower,
       Some(previousTimestamp),
       "lastProducedPower should not be updated when power is 0"
     )
@@ -203,13 +221,13 @@ class PowerAvailableProcessorSuite extends FunSuite {
   ) {
     // Start with a state that has power values
     val state = State()
-      .modify(_.powerProduction.powerAvailable)
+      .modify(_.powerManagement.production.powerAvailable)
       .setTo(Some(100.0f))
-      .modify(_.powerProduction.powerProduced)
+      .modify(_.powerManagement.production.powerProduced)
       .setTo(Some(75.0f))
-      .modify(_.powerProduction.powerDiscarded)
+      .modify(_.powerManagement.production.powerDiscarded)
       .setTo(Some(25.0f))
-      .modify(_.powerProduction.lastError)
+      .modify(_.powerManagement.production.lastError)
       .setTo(Some(now))
 
     val event = Event.System.StartupEvent
@@ -217,22 +235,22 @@ class PowerAvailableProcessorSuite extends FunSuite {
 
     // Check that power fields are reset to None
     assertEquals(
-      newState.powerProduction.powerAvailable,
+      newState.powerManagement.production.powerAvailable,
       None,
       "powerAvailable should be reset to None"
     )
     assertEquals(
-      newState.powerProduction.powerProduced,
+      newState.powerManagement.production.powerProduced,
       None,
       "powerProduced should be reset to None"
     )
     assertEquals(
-      newState.powerProduction.powerDiscarded,
+      newState.powerManagement.production.powerDiscarded,
       None,
       "powerDiscarded should be reset to None"
     )
     assertEquals(
-      newState.powerProduction.lastError,
+      newState.powerManagement.production.lastError,
       None,
       "lastError should be reset to None"
     )
@@ -276,35 +294,35 @@ class PowerAvailableProcessorSuite extends FunSuite {
     "PowerProductionReadingError with no previous error sets lastError and updates UI with temporary error status"
   ) {
     val state = State()
-      .modify(_.powerProduction.powerAvailable)
+      .modify(_.powerManagement.production.powerAvailable)
       .setTo(Some(100.0f))
-      .modify(_.powerProduction.powerProduced)
+      .modify(_.powerManagement.production.powerProduced)
       .setTo(Some(75.0f))
-      .modify(_.powerProduction.powerDiscarded)
+      .modify(_.powerManagement.production.powerDiscarded)
       .setTo(Some(25.0f))
     val event = Event.Power.PowerProductionReadingError
     val (newState, actions) = processor.process(state, event, now)
 
     assertEquals(
-      newState.powerProduction.lastError,
+      newState.powerManagement.production.lastError,
       Some(now),
       "lastError should be set to current timestamp"
     )
 
     assertEquals(
-      newState.powerProduction.powerAvailable,
+      newState.powerManagement.production.powerAvailable,
       None,
       "powerAvailable should be set to None"
     )
 
     assertEquals(
-      newState.powerProduction.powerProduced,
+      newState.powerManagement.production.powerProduced,
       None,
       "powerProduced should be set to None"
     )
 
     assertEquals(
-      newState.powerProduction.powerDiscarded,
+      newState.powerManagement.production.powerDiscarded,
       None,
       "powerDiscarded should be set to None"
     )
@@ -348,14 +366,14 @@ class PowerAvailableProcessorSuite extends FunSuite {
   ) {
     val errorTimestamp = Instant.parse("2023-08-17T09:57:00Z")
     val state = State()
-      .modify(_.powerProduction.lastError)
+      .modify(_.powerManagement.production.lastError)
       .setTo(Some(errorTimestamp))
 
     val event = Event.Power.PowerProductionReadingError
     val (newState, actions) = processor.process(state, event, now)
 
     assertEquals(
-      newState.powerProduction.lastError,
+      newState.powerManagement.production.lastError,
       Some(errorTimestamp),
       "lastError should remain unchanged"
     )
@@ -372,14 +390,14 @@ class PowerAvailableProcessorSuite extends FunSuite {
   ) {
     val errorTimestamp = Instant.parse("2023-08-17T09:54:59Z")
     val state = State()
-      .modify(_.powerProduction.lastError)
+      .modify(_.powerManagement.production.lastError)
       .setTo(Some(errorTimestamp))
 
     val event = Event.Power.PowerProductionReadingError
     val (newState, actions) = processor.process(state, event, now)
 
     assertEquals(
-      newState.powerProduction.lastError,
+      newState.powerManagement.production.lastError,
       Some(errorTimestamp),
       "lastError should remain unchanged"
     )
@@ -418,7 +436,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
   ) {
     val errorTimestamp = Instant.parse("2023-08-17T09:30:00Z")
     val state = State()
-      .modify(_.powerProduction.lastError)
+      .modify(_.powerManagement.production.lastError)
       .setTo(Some(errorTimestamp))
 
     val powerAvailable = 100.5f
@@ -434,13 +452,13 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val (newState, actions) = processor.process(state, event, now)
 
     assertEquals(
-      newState.powerProduction.lastError,
+      newState.powerManagement.production.lastError,
       None,
       "lastError should be cleared after successful reading"
     )
 
     assertEquals(
-      newState.powerProduction.powerAvailable,
+      newState.powerManagement.production.powerAvailable,
       Some(powerAvailable),
       "powerAvailable should be updated"
     )

@@ -20,55 +20,64 @@ object StateProcessor {
   private final case class Impl(
       processors: List[EffectfulProcessor]
   ) extends StateProcessor {
+
+    private val compiledProcessors = processors match
+      case head :: next =>
+        Some(next.foldLeft(head) { (acc, processor) =>
+          acc.andThen(processor)
+        })
+      case Nil => None
+
     override def process(
         state: State,
         event: Event
-    ): IO[(State, Set[Action])] = {
-      processors.foldLeft(IO((state, Set.empty[Action]))) {
-        case (acc, processor) =>
-          acc.flatMap { case (currentState, currentActions) =>
-            processor.process(currentState, event.data, event.timestamp).map {
-              case (newState, newActions) =>
-                (newState, currentActions ++ newActions)
-            }
-          }
-
-      }
-    }
+    ): IO[(State, Set[Action])] = compiledProcessors match
+      case Some(processor) =>
+        processor.process(state, event.data, event.timestamp)
+      case None => IO.pure((state, Set.empty))
   }
 
-  def apply(
+  // private to package to ease testing but ensure the list of processors is configured here
+  private[processor] def apply(
       processors: EffectfulProcessor*
   ): StateProcessor = Impl(processors.toList)
+
+  // private to package to ease testing but ensure there are no duplicates in the dynamic consumer codes
+  private[processor] def allButPower(
+      config: calespiga.config.ProcessorConfig,
+      mqttBlacklist: Ref[IO, Set[String]],
+      zoneId: ZoneId
+  ): List[EffectfulProcessor] = List(
+    TemperaturesProcessor(
+      config.temperatureFans,
+      config.offlineDetector,
+      config.syncDetector
+    ).toEffectful,
+    HeaterProcessor(
+      config.heater,
+      zoneId,
+      config.offlineDetector,
+      config.syncDetector
+    ).toEffectful,
+    FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
+  )
 
   def apply(
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
   ): StateProcessor = {
-    val allButPower = List(
-      TemperaturesProcessor(
-        config.temperatureFans,
-        config.offlineDetector,
-        config.syncDetector
-      ).toEffectful,
-      HeaterProcessor(
-        config.heater,
-        zoneId,
-        config.offlineDetector,
-        config.syncDetector
-      ).toEffectful,
-      FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
-    )
+
+    val allButPowerProcessors = allButPower(config, mqttBlacklist, zoneId)
 
     val power = PowerProcessor(
       config.power,
       zoneId,
-      allButPower.flatMap(_.dynamicPowerConsumer).toSet
+      allButPowerProcessors.flatMap(_.dynamicPowerConsumer).toSet
     )
 
     this.apply(
-      (allButPower :+ power.toEffectful)*
+      (allButPowerProcessors :+ power.toEffectful)*
     )
 
   }

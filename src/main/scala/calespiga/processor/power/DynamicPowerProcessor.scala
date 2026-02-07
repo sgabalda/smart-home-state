@@ -19,13 +19,29 @@ object DynamicPowerProcessor {
       consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig
   ) extends SingleProcessor {
+
     override def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
     ): (State, Set[Action]) = eventData match
       case StartupEvent =>
-        (state, Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")))
+        val stateWithConsumers = consumerOrderer.addMissingConsumersToState(
+          state,
+          consumers
+        )
+        (
+          stateWithConsumers,
+          Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")) ++
+            stateWithConsumers.powerManagement.dynamic.consumersOrder.zipWithIndex
+              .map { case (consumerCode, index) =>
+                Action.SetUIItemValue(
+                  item = consumerCode,
+                  value = (index + 1).toString
+                )
+              }
+        )
+
       case PowerProductionReported(_, _, powerDiscarded, _) =>
         val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 

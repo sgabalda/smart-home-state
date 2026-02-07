@@ -23,12 +23,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     onlineStatusItem = "heater/online",
     syncStatusItem = "heater/sync",
     lastCommandItem = "heater/lastCommand",
-    syncTimeoutForDynamicPower = 50.seconds
+    syncTimeoutForDynamicPower = 50.seconds,
+    dynamicConsumerCode = "heater-consumer-code"
   )
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val consumer =
-    new HeaterDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
+    HeaterDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
 
   private def stateWithHeater(
       status: Option[HeaterSignal.ControllerState] = None,
@@ -161,7 +162,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(60) // 60 seconds ago, beyond the 50 second timeout
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -186,7 +187,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "currentlyUsedDynamicPower: returns normal power when NotInSyncNow"
   ) {
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -213,7 +214,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(30) // 30 seconds ago, within the 50 second timeout
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -488,7 +489,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(60) // 60 seconds ago, beyond the 50 second timeout
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -525,7 +526,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "usePower: works normally when NotInSyncNow"
   ) {
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -562,7 +563,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(30) // 30 seconds ago, within the 50 second timeout
-    val consumerWithSyncDetector = new HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
