@@ -8,10 +8,12 @@ import java.time.Instant
 
 trait DynamicPowerConsumer {
 
-  /** A unique code to identify this consumer among all the others. NOT meant to
-    * be overriden by subclasses.
+  /** A unique code to identify this consumer among all the others. Has to be
+    * different for each implementation. The current implementation uses the OH
+    * item associated to the priority as specified in the configuration.
     *
     * @return
+    *   the unique code for this consumer
     */
   def uniqueCode: String
 

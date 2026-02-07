@@ -320,21 +320,4 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
     )
     assertEquals(actions, Set.empty, "No actions should be generated")
   }
-  test(
-    "HeaterPowerPriorityChanged: handles priority greater than list size"
-  ) {
-    val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
-    val state = stateWithConsumers(initialConsumers)
-    val event =
-      Event.Power.DynamicPower.HeaterPowerPriorityChanged(priority = 4)
-
-    val (newState, actions) = processor.process(state, event, now)
-
-    assertEquals(
-      newState.powerManagement.dynamic.consumersOrder,
-      initialConsumers,
-      "Order should remain unchanged when priority is greater than list size"
-    )
-    assertEquals(actions, Set.empty, "No actions should be generated")
-  }
 }

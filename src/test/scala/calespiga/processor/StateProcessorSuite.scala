@@ -103,8 +103,7 @@ class StateProcessorSuite extends CatsEffectSuite {
                     "electronicsFan/inconsistency",
                   electronicsFanCommandItem = "electronicsFan/command",
                   electronicsFanMqttTopic = "electronicsFan/mqttTopic",
-                  electronicsFanId =
-                    "shared-consumer-code", // duplicate on purpose for the test
+                  electronicsFanId = "shared-consumer-code",
                   resendInterval = 30.seconds
                 )
               )

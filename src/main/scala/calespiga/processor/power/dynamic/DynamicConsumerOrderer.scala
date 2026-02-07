@@ -32,17 +32,23 @@ object DynamicConsumerOrderer {
         state: State,
         consumers: Set[DynamicPowerConsumer]
     ): State = {
-      val newConsumers = consumers.filterNot { consumer =>
-        state.powerManagement.dynamic.consumersOrder.contains(
-          consumer.uniqueCode
+      val codesInState = state.powerManagement.dynamic.consumersOrder.toSet
+      val codesOfConsumers = consumers.map(_.uniqueCode)
+
+      val consumersToAdd = codesOfConsumers.filterNot(codesInState.contains)
+      val consumersToRemove = codesInState.filterNot(codesOfConsumers.contains)
+
+      state
+        .modify(_.powerManagement.dynamic.consumersOrder)
+        .setTo(
+          state.powerManagement.dynamic.consumersOrder.filterNot { code =>
+            consumersToRemove.contains(code)
+          }.distinct ++ // distinct to avoid duplicates in case of corrupt state loaded
+            consumersToAdd.toSeq
+              .sortBy(
+                identity
+              ) // sort to have a deterministic order for the new consumers
         )
-      }
-      state.modify(_.powerManagement.dynamic.consumersOrder).using {
-        currentOrder =>
-          currentOrder.filter { code =>
-            consumers.exists(_.uniqueCode == code)
-          } ++ newConsumers.map(_.uniqueCode)
-      }
     }
 
     override def orderConsumers(
