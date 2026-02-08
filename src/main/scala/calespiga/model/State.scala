@@ -5,7 +5,8 @@ import calespiga.model.State.{
   Temperatures,
   FeatureFlags,
   Heater,
-  PowerManagement
+  PowerManagement,
+  InfraredStove
 }
 
 case class State(
@@ -13,6 +14,7 @@ case class State(
     temperatures: Temperatures = Temperatures(),
     fans: Fans = Fans(),
     heater: Heater = Heater(),
+    infraredStove: InfraredStove = InfraredStove(),
     powerManagement: PowerManagement = PowerManagement()
 )
 
@@ -46,6 +48,18 @@ object State {
       isHot: HeaterSignal.HeaterTermostateState = HeaterSignal.Cold,
       lastTimeHot: Option[java.time.Instant] = None,
       energyToday: Float = 0.0f,
+      lastSyncing: Option[java.time.Instant] = None
+  )
+
+  case class InfraredStove(
+      status: Option[InfraredStoveSignal.ControllerState] = None,
+      lastCommandSent: Option[InfraredStoveSignal.ControllerState] = None,
+      lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
+      manualMaxTimeMinutes: Option[Int] = None,
+      lastSetManual: Option[java.time.Instant] = None,
+      lastTimeConnected: Option[java.time.Instant] = None,
+      energyToday: Float = 0.0f,
+      lastOnline: Option[java.time.Instant] = None,
       lastSyncing: Option[java.time.Instant] = None
   )
 

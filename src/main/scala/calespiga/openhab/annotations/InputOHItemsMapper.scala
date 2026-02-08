@@ -107,6 +107,16 @@ object InputOHItemsMapper {
               }
               getNewExpr(convertedValueExpr)
 
+            case tpe
+                if tpe =:= TypeRepr
+                  .of[calespiga.model.InfraredStoveSignal.UserCommand] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.InfraredStoveSignal
+                  .userCommandFromString(valueStr)
+                  .getOrElse(calespiga.model.InfraredStoveSignal.TurnOff)
+              }
+              getNewExpr(convertedValueExpr)
+
             case _ =>
               report.errorAndAbort(
                 s"Unsupported parameter type: ${paramType.show}"

@@ -108,6 +108,21 @@ object Event {
     ) extends HeaterData
   }
 
+  object InfraredStove {
+    sealed trait InfraredStoveData extends EventData
+
+    @InputEventMqtt("estufa1/status")
+    case class InfraredStovePowerStatusReported(
+        status: InfraredStoveSignal.ControllerState
+    ) extends InfraredStoveData
+
+    @InputEventOHItem("EstufaInfrarrojosSetSHS")
+    case class InfraredStovePowerCommandChanged(
+        status: InfraredStoveSignal.UserCommand
+    ) extends InfraredStoveData
+
+  }
+
   object Power {
     sealed trait PowerData extends EventData
 
