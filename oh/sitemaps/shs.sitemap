@@ -46,6 +46,24 @@ sitemap shs label="Ca l'espiga SHS" {
         //TODO migrate the grafana panel
     }
 
+    Text item=EstufaInfrarrojosTitle label="Estufa infrarrojos" icon="radiator"
+    {
+        Frame label="Estufa infrarrojos" {
+            
+            Selection item=EstufaInfrarrojosSetSHS icon="remote_control" mappings=["off"="Off", "600"="600W", "1200"="1200W", "automatic"="Automàtic"]
+            Text item=EstufaInfrarrojosStatusSHS icon="thermostat_heater" label="Estat: [%s W]" 
+
+            Text item=EstufaInfrarrojosUltimaConnexioSHS icon="time" label="Ultima connexió: [%s]" 
+            Selection item=EstufaInfrarrojosSetTempsManualSHS icon="stopwatch" mappings=["10"="10 min", "20"="20 min", "30"="30 min", "60"="60 min"]
+            
+            Text item=EstufaInfrarrojosEnergiaAvuiSHS icon="energy" label="Energia avui: [%,d kWh]" 
+            Text item=EstufaInfrarrojosSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
+            Text item=EstufaInfrarrojosMicroControladorEstatSHS icon="receiver" label="Estat micro est. [%s]"
+        }
+
+        //TODO migrate the grafana panel
+    }
+
     Text item=PotenciaTitle label="Potència" icon="solar_panel"
     {
         Frame label="Potència" {
