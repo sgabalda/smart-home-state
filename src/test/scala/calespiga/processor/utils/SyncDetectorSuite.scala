@@ -2,23 +2,17 @@ package calespiga.processor.utils
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.SyncDetectorConfig
 import java.time.Instant
-import scala.concurrent.duration._
 import calespiga.model.HeaterSignal
 import calespiga.processor.utils.SyncDetector
+import calespiga.processor.ProcessorConfigHelper
 
 class SyncDetectorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
   val id = "test-sync"
   val statusItem = "TestSyncStatusItem"
 
-  val config = SyncDetectorConfig(
-    timeoutDuration = 30.seconds,
-    syncText = "SYNC",
-    syncingText = "SYNCING",
-    nonSyncText = "NON_SYNC"
-  )
+  val config = ProcessorConfigHelper.syncDetectorConfig
 
   // Use real State fields: heater.status and heater.lastCommandSent, and heater.lastSyncing
   def field1ToCheck(

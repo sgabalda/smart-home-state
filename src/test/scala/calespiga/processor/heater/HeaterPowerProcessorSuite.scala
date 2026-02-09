@@ -6,11 +6,9 @@ import calespiga.model.Event.Heater.*
 import calespiga.model.HeaterSignal
 import java.time.Instant
 import com.softwaremill.quicklens.*
-import calespiga.config.HeaterConfig
 import java.time.ZoneId
 import calespiga.model.State.Heater
-import scala.concurrent.duration.*
-import scala.language.postfixOps
+import calespiga.processor.ProcessorConfigHelper
 
 class HeaterPowerProcessorSuite extends FunSuite {
 
@@ -18,21 +16,8 @@ class HeaterPowerProcessorSuite extends FunSuite {
 
   private val zone: ZoneId = ZoneId.systemDefault()
 
-  // Dummy HeaterConfig for processor instantiation
-  private val dummyConfig = HeaterConfig(
-    mqttTopicForCommand = "dummy/topic",
-    lastTimeHotItem = "dummy/lastTimeHot",
-    energyTodayItem = "dummy/energyToday",
-    statusItem = "dummyStatusItem",
-    isHotItem = "dummyIsHotItem",
-    resendInterval = 20 seconds,
-    id = "heater-processor",
-    onlineStatusItem = "dummyOnlineStatusItem",
-    syncStatusItem = "dummySyncStatusItem",
-    lastCommandItem = "dummyLastCommandItem",
-    syncTimeoutForDynamicPower = 10 seconds,
-    dynamicConsumerCode = "heater-consumer-code"
-  )
+  // Use HeaterConfig from helper
+  private val dummyConfig = ProcessorConfigHelper.heaterConfig
 
   private def stateWithHeater(
       status: Option[HeaterSignal.ControllerState] = Some(HeaterSignal.Off),

@@ -6,17 +6,13 @@ import cats.effect.Ref
 import calespiga.model.{State, Event}
 import java.time.Instant
 import com.softwaremill.quicklens.*
-import calespiga.config.FeatureFlagsConfig
 import calespiga.model.Action
 
 class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
   val startupEvent = Event.System.StartupEvent
 
-  val dummyConfig = FeatureFlagsConfig(
-    heaterMqttTopic = Set("heater/topic1", "heater/topic2"),
-    setHeaterManagementItem = "SetHeaterManagementSHS"
-  )
+  val dummyConfig = ProcessorConfigHelper.featureFlagsConfig
 
   test(
     "StartupEvent with feature flags false adds blacklist items and sets items"
@@ -30,8 +26,9 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
-      assert(blacklist.contains("heater/topic1"))
-      assert(blacklist.contains("heater/topic2"))
+      dummyConfig.heaterMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
       assertEquals(
         actions,
         Set[Action](
@@ -81,8 +78,9 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       )
       blacklist <- blacklistRef.get
     } yield {
-      assert(blacklist.contains("heater/topic1"))
-      assert(blacklist.contains("heater/topic2"))
+      dummyConfig.heaterMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
       assertEquals(newState.featureFlags.heaterManagementEnabled, false)
     }
   }
@@ -92,7 +90,7 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](
-        Set("heater/topic1", "heater/topic2")
+        dummyConfig.heaterMqttTopic
       )
       processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
       state = State()
@@ -105,8 +103,9 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       )
       blacklist <- blacklistRef.get
     } yield {
-      assert(!blacklist.contains("heater/topic1"))
-      assert(!blacklist.contains("heater/topic2"))
+      dummyConfig.heaterMqttTopic.foreach { topic =>
+        assert(!blacklist.contains(topic))
+      }
       assertEquals(newState.featureFlags.heaterManagementEnabled, true)
     }
   }

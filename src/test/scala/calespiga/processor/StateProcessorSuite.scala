@@ -3,8 +3,6 @@ package calespiga.processor
 import munit.CatsEffectSuite
 import cats.effect.IO
 import com.softwaremill.quicklens.*
-import scala.concurrent.duration.DurationInt
-import calespiga.config.*
 import java.time.ZoneId
 import cats.effect.Ref
 
@@ -70,97 +68,7 @@ class StateProcessorSuite extends CatsEffectSuite {
     Ref.of[IO, Set[String]](Set.empty[String]).map { mqttBlacklist =>
       val allDynConsumers = StateProcessor
         .allButPower(
-          config = calespiga.config.ProcessorConfig(
-            temperatureFans = TemperatureFansConfig(
-              id = "temperature-fans-processor",
-              onlineStatusItem = "temperature-fans/onlineStatus",
-              temperaturesItems = TemperaturesItemsConfig(
-                batteryTemperatureItem =
-                  "temperature-fans/batteriesTemperature",
-                batteryClosetTemperatureItem =
-                  "temperature-fans/batteryClosetTemperature",
-                electronicsTemperatureItem =
-                  "temperature-fans/electronicsTemperature",
-                externalTemperatureItem =
-                  "temperature-fans/externalTemperature",
-                goalTemperatureItem = "temperature-fans/goalTemperature",
-                highTemperatureThreshold = 30d,
-                lowTemperatureThreshold = 15d,
-                thresholdNotificationPeriod = 10.minutes
-              ),
-              fans = FansConfig(
-                batteryFan = BatteryFanConfig(
-                  batteryFanStatusItem = "batteryFan/status",
-                  batteryFanInconsistencyItem = "batteryFan/inconsistency",
-                  batteryFanCommandItem = "batteryFan/command",
-                  batteryFanMqttTopic = "batteryFan/mqttTopic",
-                  batteryFanId = "battery-fan-consumer-code",
-                  resendInterval = 30.seconds
-                ),
-                electronicsFan = ElectronicsFanConfig(
-                  electronicsFanStatusItem = "electronicsFan/status",
-                  electronicsFanInconsistencyItem =
-                    "electronicsFan/inconsistency",
-                  electronicsFanCommandItem = "electronicsFan/command",
-                  electronicsFanMqttTopic = "electronicsFan/mqttTopic",
-                  electronicsFanId = "shared-consumer-code",
-                  resendInterval = 30.seconds
-                )
-              )
-            ),
-            offlineDetector = calespiga.config.OfflineDetectorConfig(
-              timeoutDuration = 15.minutes,
-              onlineText = "Online",
-              offlineText = "Offline"
-            ),
-            syncDetector = calespiga.config.SyncDetectorConfig(
-              timeoutDuration = 5.minutes,
-              syncText = "In Sync",
-              syncingText = "Syncing",
-              nonSyncText = "No Sync"
-            ),
-            heater = calespiga.config.HeaterConfig(
-              mqttTopicForCommand = "heater/command",
-              lastTimeHotItem = "heater/lastTimeHot",
-              energyTodayItem = "heater/energyToday",
-              statusItem = "heater/status",
-              isHotItem = "heater/isHot",
-              resendInterval = 20.seconds,
-              id = "heater-processor",
-              onlineStatusItem = "heater/onlineStatus",
-              syncStatusItem = "heater/syncStatus",
-              lastCommandItem = "heater/lastCommand",
-              syncTimeoutForDynamicPower = 10.seconds,
-              dynamicConsumerCode = "shared-consumer-code"
-            ),
-            infraredStove = calespiga.config.InfraredStoveConfig(
-              mqttTopicForCommand = "infraredStove/command",
-              statusItem = "infraredStove/status",
-              energyTodayItem = "infraredStove/energyToday",
-              resendInterval = 20.seconds,
-              id = "infrared-stove-processor",
-              onlineStatusItem = "infraredStove/onlineStatus",
-              syncStatusItem = "infraredStove/syncStatus",
-              lastCommandItem = "infraredStove/lastCommand"
-            ),
-            featureFlags = calespiga.config.FeatureFlagsConfig(
-              heaterMqttTopic = Set.empty,
-              setHeaterManagementItem = "featureFlags/setHeaterManagement"
-            ),
-            power = calespiga.config.PowerProcessorConfig(
-              powerAvailable = PowerAvailableProcessorConfig(
-                periodAlarmWithError = 10.minutes,
-                periodAlarmNoProduction = 15.minutes,
-                powerAvailableItem = "power/powerAvailable",
-                powerProducedItem = "power/powerProduced",
-                powerDiscardedItem = "power/powerDiscarded",
-                readingsStatusItem = "power/readingsStatus"
-              ),
-              dynamicPower = DynamicPowerProcessorConfig(
-                dynamicFVPowerUsedItem = "dynamicFVPowerUsed"
-              )
-            )
-          ),
+          config = ProcessorConfigHelper.processorConfig,
           mqttBlacklist = mqttBlacklist,
           zoneId = ZoneId.systemDefault()
         )

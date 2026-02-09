@@ -3,29 +3,15 @@ package calespiga.processor.heater
 import munit.FunSuite
 import calespiga.model.{State, Action}
 import calespiga.model.HeaterSignal
-import calespiga.config.HeaterConfig
 import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
-import scala.concurrent.duration.DurationInt
 import calespiga.processor.utils.SyncDetectorStub
 import java.time.Instant
+import calespiga.processor.ProcessorConfigHelper
 
 class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
-  private val dummyConfig = HeaterConfig(
-    mqttTopicForCommand = "heater/command",
-    lastTimeHotItem = "heater/lastTimeHot",
-    energyTodayItem = "heater/energyToday",
-    statusItem = "heater/status",
-    isHotItem = "heater/isHot",
-    resendInterval = 30.seconds,
-    id = "heater-test",
-    onlineStatusItem = "heater/online",
-    syncStatusItem = "heater/sync",
-    lastCommandItem = "heater/lastCommand",
-    syncTimeoutForDynamicPower = 50.seconds,
-    dynamicConsumerCode = "heater-consumer-code"
-  )
+  private val dummyConfig = ProcessorConfigHelper.heaterConfig
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val consumer =
@@ -316,7 +302,8 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     val periodicAction = periodicActions.head
     assertEquals(
       periodicAction.id,
-      dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX
+      dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+      "Periodic action ID should match"
     )
     assertEquals(periodicAction.period, dummyConfig.resendInterval)
   }

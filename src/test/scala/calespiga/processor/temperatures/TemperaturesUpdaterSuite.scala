@@ -2,23 +2,14 @@ package calespiga.processor.temperatures
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.TemperaturesItemsConfig
 import java.time.Instant
 import com.softwaremill.quicklens.*
 import scala.concurrent.duration.*
+import calespiga.processor.ProcessorConfigHelper
 
 class TemperaturesUpdaterSuite extends FunSuite {
 
-  val dummyConfig = TemperaturesItemsConfig(
-    batteryTemperatureItem = "BatteryTempItem",
-    batteryClosetTemperatureItem = "BatteryClosetTempItem",
-    electronicsTemperatureItem = "ElectronicsTempItem",
-    externalTemperatureItem = "ExternalTempItem",
-    goalTemperatureItem = "DummyGoalTempItem",
-    lowTemperatureThreshold = 5.0,
-    highTemperatureThreshold = 30.0,
-    thresholdNotificationPeriod = 2.hours
-  )
+  val dummyConfig = ProcessorConfigHelper.temperaturesItemsConfig
   val updater = TemperaturesUpdater(dummyConfig)
   val now = Instant.parse("2023-08-17T10:00:00Z")
 

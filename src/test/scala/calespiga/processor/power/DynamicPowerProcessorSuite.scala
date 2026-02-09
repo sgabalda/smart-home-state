@@ -10,14 +10,13 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import java.time.Instant
 import scala.collection.mutable.ListBuffer
 import calespiga.processor.power.dynamic.Power
+import calespiga.processor.ProcessorConfigHelper
 
 class DynamicPowerProcessorSuite extends FunSuite {
 
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
-  val processorConfig = calespiga.config.DynamicPowerProcessorConfig(
-    dynamicFVPowerUsedItem = "DynamicFVPowerUsed"
-  )
+  val processorConfig = ProcessorConfigHelper.dynamicPowerProcessorConfig
 
   test(
     "DynamicPowerProcessor respects consumer ordering from DynamicConsumerOrderer"

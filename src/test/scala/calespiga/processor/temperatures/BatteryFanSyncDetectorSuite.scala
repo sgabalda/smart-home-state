@@ -2,22 +2,16 @@ package calespiga.processor.temperatures
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.SyncDetectorConfig
 import java.time.Instant
-import scala.concurrent.duration._
 import calespiga.processor.utils.SyncDetector
+import calespiga.processor.ProcessorConfigHelper
 
 class BatteryFanSyncDetectorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
   val id = "battery-fan-sync"
   val statusItem = "BatteryFanSyncStatusItem"
 
-  val config = SyncDetectorConfig(
-    timeoutDuration = 30.seconds,
-    syncText = "SYNC",
-    syncingText = "SYNCING",
-    nonSyncText = "NON_SYNC"
-  )
+  val config = ProcessorConfigHelper.syncDetectorConfig
 
   val detector = BatteryFanSyncDetector(config, id, statusItem)
   val dummyEvent =
