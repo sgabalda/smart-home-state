@@ -133,6 +133,16 @@ class StateProcessorSuite extends CatsEffectSuite {
               syncTimeoutForDynamicPower = 10.seconds,
               dynamicConsumerCode = "shared-consumer-code"
             ),
+            infraredStove = calespiga.config.InfraredStoveConfig(
+              mqttTopicForCommand = "infraredStove/command",
+              statusItem = "infraredStove/status",
+              energyTodayItem = "infraredStove/energyToday",
+              resendInterval = 20.seconds,
+              id = "infrared-stove-processor",
+              onlineStatusItem = "infraredStove/onlineStatus",
+              syncStatusItem = "infraredStove/syncStatus",
+              lastCommandItem = "infraredStove/lastCommand"
+            ),
             featureFlags = calespiga.config.FeatureFlagsConfig(
               heaterMqttTopic = Set.empty,
               setHeaterManagementItem = "featureFlags/setHeaterManagement"

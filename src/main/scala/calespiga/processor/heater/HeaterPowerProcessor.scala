@@ -81,7 +81,7 @@ private object HeaterPowerProcessor {
 
           case HeaterPowerCommandChanged(status) =>
             val commandToSend = getDefaultCommandToSend(status)
-            // TODO in next iterations, if command is automatic, decide based on available power
+
             val newState = state
               .modify(_.heater.lastCommandReceived)
               .setTo(Some(status))

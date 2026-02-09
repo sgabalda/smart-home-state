@@ -54,7 +54,8 @@ object State {
   case class InfraredStove(
       status: Option[InfraredStoveSignal.ControllerState] = None,
       lastCommandSent: Option[InfraredStoveSignal.ControllerState] = None,
-      lastCommandReceived: Option[HeaterSignal.UserCommand] = None,
+      lastCommandReceived: Option[InfraredStoveSignal.UserCommand] = None,
+      lastChange: Option[java.time.Instant] = None,
       manualMaxTimeMinutes: Option[Int] = None,
       lastSetManual: Option[java.time.Instant] = None,
       lastTimeConnected: Option[java.time.Instant] = None,
