@@ -15,6 +15,7 @@ import calespiga.model.Event.InfraredStove
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
 import java.time.format.DateTimeFormatter
+import calespiga.processor.utils.EnergyCalculator
 
 private object InfraredStovePowerProcessor {
 
@@ -23,7 +24,8 @@ private object InfraredStovePowerProcessor {
   private final case class Impl(
       config: InfraredStoveConfig,
       zone: ZoneId,
-      actions: Actions
+      actions: Actions,
+      energyCalculator: EnergyCalculator
   ) extends SingleProcessor {
 
     private def getDefaultCommandToSend(
@@ -45,20 +47,13 @@ private object InfraredStovePowerProcessor {
       case isd: Event.InfraredStove.InfraredStoveData =>
         isd match
           case InfraredStovePowerStatusReported(status) =>
-            val lastEnergyUpdate =
-              state.infraredStove.lastChange.getOrElse(timestamp)
-            val sameDay = lastEnergyUpdate.atZone(zone).toLocalDate == timestamp
-              .atZone(zone)
-              .toLocalDate
-            val energyLastPeriod =
-              lastEnergyUpdate
-                .until(timestamp)
-                .toMillis * state.infraredStove.status
-                .map(_.power)
-                .getOrElse(0) / 1000f / 3600f
-            val newEnergyToday =
-              if (sameDay) state.infraredStove.energyToday + energyLastPeriod
-              else energyLastPeriod
+            val newEnergyToday = energyCalculator.calculateEnergyToday(
+              state.infraredStove.lastChange,
+              timestamp,
+              state.infraredStove.status.map(_.power).getOrElse(0),
+              state.infraredStove.energyToday,
+              zone
+            )
             val newState = state
               .modify(_.infraredStove.status)
               .setTo(Some(status))
@@ -124,6 +119,19 @@ private object InfraredStovePowerProcessor {
   ): SingleProcessor = Impl(
     config,
     zone,
-    Actions(config)
+    Actions(config),
+    EnergyCalculator()
+  )
+
+  // Overloaded apply for testing with injected dependencies
+  private[infraredStove] def apply(
+      config: InfraredStoveConfig,
+      zone: ZoneId,
+      energyCalculator: EnergyCalculator
+  ): SingleProcessor = Impl(
+    config,
+    zone,
+    Actions(config),
+    energyCalculator
   )
 }

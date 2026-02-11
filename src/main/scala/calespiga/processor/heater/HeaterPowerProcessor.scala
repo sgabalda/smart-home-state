@@ -17,6 +17,7 @@ import calespiga.model.Event.Heater
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
 import java.time.format.DateTimeFormatter
+import calespiga.processor.utils.EnergyCalculator
 
 private object HeaterPowerProcessor {
 
@@ -25,7 +26,8 @@ private object HeaterPowerProcessor {
   private final case class Impl(
       config: HeaterConfig,
       zone: ZoneId,
-      actions: Actions
+      actions: Actions,
+      energyCalculator: EnergyCalculator
   ) extends SingleProcessor {
 
     private def getDefaultCommandToSend(
@@ -47,17 +49,13 @@ private object HeaterPowerProcessor {
       case hd: Event.Heater.HeaterData =>
         hd match
           case HeaterPowerStatusReported(status) =>
-            val lastEnergyUpdate = state.heater.lastChange.getOrElse(timestamp)
-            val sameDay = lastEnergyUpdate.atZone(zone).toLocalDate == timestamp
-              .atZone(zone)
-              .toLocalDate
-            val energyLastPeriod =
-              lastEnergyUpdate.until(timestamp).toMillis * state.heater.status
-                .map(_.power)
-                .getOrElse(0) / 1000f / 3600f
-            val newEnergyToday =
-              if (sameDay) state.heater.energyToday + energyLastPeriod
-              else energyLastPeriod
+            val newEnergyToday = energyCalculator.calculateEnergyToday(
+              state.heater.lastChange,
+              timestamp,
+              state.heater.status.map(_.power).getOrElse(0),
+              state.heater.energyToday,
+              zone
+            )
             val newState = state
               .modify(_.heater.status)
               .setTo(Some(status))
@@ -175,6 +173,19 @@ private object HeaterPowerProcessor {
   ): SingleProcessor = Impl(
     config,
     zone,
-    Actions(config)
+    Actions(config),
+    EnergyCalculator()
+  )
+
+  // Overloaded apply for testing with injected dependencies
+  private[heater] def apply(
+      config: HeaterConfig,
+      zone: ZoneId,
+      energyCalculator: EnergyCalculator
+  ): SingleProcessor = Impl(
+    config,
+    zone,
+    Actions(config),
+    energyCalculator
   )
 }
