@@ -16,6 +16,7 @@ import java.time.ZoneId
 import calespiga.processor.SingleProcessor
 import java.time.format.DateTimeFormatter
 import calespiga.processor.utils.EnergyCalculator
+import calespiga.processor.utils.CommandActions
 
 private object InfraredStovePowerProcessor {
 
@@ -24,7 +25,7 @@ private object InfraredStovePowerProcessor {
   private final case class Impl(
       config: InfraredStoveConfig,
       zone: ZoneId,
-      actions: Actions,
+      actions: CommandActions[InfraredStoveSignal.ControllerState],
       energyCalculator: EnergyCalculator
   ) extends SingleProcessor {
 

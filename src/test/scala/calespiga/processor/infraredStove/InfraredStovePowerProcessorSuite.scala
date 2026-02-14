@@ -11,6 +11,7 @@ import calespiga.model.State.InfraredStove
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.EnergyCalculatorStub
 import scala.collection.mutable
+import calespiga.processor.utils.CommandActions
 
 class InfraredStovePowerProcessorSuite extends FunSuite {
 
@@ -194,7 +195,7 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1200"),
       Action.Periodic(
-        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1200"),
         dummyConfig.resendInterval
@@ -222,7 +223,7 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
     val expectedActions = Set(
       Action.SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "600"),
       Action.Periodic(
-        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "600"),
         dummyConfig.resendInterval

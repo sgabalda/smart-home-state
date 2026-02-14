@@ -11,6 +11,7 @@ import calespiga.model.State.Heater
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.EnergyCalculatorStub
 import scala.collection.mutable
+import calespiga.processor.utils.CommandActions
 
 class HeaterPowerProcessorSuite extends FunSuite {
 
@@ -178,7 +179,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
       Action.Periodic(
-        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
         dummyConfig.resendInterval

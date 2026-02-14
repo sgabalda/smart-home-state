@@ -18,6 +18,7 @@ import java.time.ZoneId
 import calespiga.processor.SingleProcessor
 import java.time.format.DateTimeFormatter
 import calespiga.processor.utils.EnergyCalculator
+import calespiga.processor.utils.CommandActions
 
 private object HeaterPowerProcessor {
 
@@ -26,7 +27,7 @@ private object HeaterPowerProcessor {
   private final case class Impl(
       config: HeaterConfig,
       zone: ZoneId,
-      actions: Actions,
+      actions: CommandActions[HeaterSignal.ControllerState],
       energyCalculator: EnergyCalculator
   ) extends SingleProcessor {
 

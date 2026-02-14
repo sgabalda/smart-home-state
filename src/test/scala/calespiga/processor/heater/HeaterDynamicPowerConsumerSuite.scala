@@ -8,6 +8,7 @@ import com.softwaremill.quicklens.*
 import calespiga.processor.utils.SyncDetectorStub
 import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.utils.CommandActions
 
 class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
@@ -302,7 +303,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     val periodicAction = periodicActions.head
     assertEquals(
       periodicAction.id,
-      dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+      dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
       "Periodic action ID should match"
     )
     assertEquals(periodicAction.period, dummyConfig.resendInterval)
