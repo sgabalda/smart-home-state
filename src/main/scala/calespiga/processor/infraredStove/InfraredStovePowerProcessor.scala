@@ -62,6 +62,8 @@ private object InfraredStovePowerProcessor {
               .setTo(Some(timestamp))
               .modify(_.infraredStove.energyToday)
               .setTo(newEnergyToday)
+              .modify(_.infraredStove.lastTimeConnected)
+              .setTo(Some(timestamp))
 
             val actions: Set[Action] = Set(
               Action.SetUIItemValue(
@@ -71,6 +73,10 @@ private object InfraredStovePowerProcessor {
               Action.SetUIItemValue(
                 config.statusItem,
                 status.power.toString
+              ),
+              Action.SetUIItemValue(
+                config.lastChangeItem,
+                timestamp.atZone(zone).format(formatter)
               )
             )
 

@@ -61,6 +61,7 @@ Number PotenciaDinamicaFVSHS "Potència dinàmica FV"
 String PotenciaEstatLecturesSHS "Estat lectures FV"
 
 Number CalentadorPrioritatConsumSHS "Calentador"
+Number EstufaInfrarrojosPrioritatConsumSHS "Est. Infrarrojos"
 
 /*
 ----------------------
@@ -79,4 +80,5 @@ String EstufaInfrarrojosMicroControladorEstatSHS "Estat microcontrolador estufa"
 
 /* feature flags */
 String CalentadorHabilitatsSHS "Habilitar calentador per SHS"
+String EstufaInfrarrojosEnabledSHS "Habilitar estufa infrarrojos per SHS"
 

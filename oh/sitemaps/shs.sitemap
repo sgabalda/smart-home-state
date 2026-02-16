@@ -71,7 +71,8 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=PotenciaDinamicaFVSHS icon="power" label="Potència dinàmica FV: [%.0f W]"
         }
         Frame label="Dispositius" {
-            Setpoint item=CalentadorPrioritatConsumSHS icon="heater_display" label="Prioritat calentador [%d]" minValue=1 maxValue=1 step=1
+            Setpoint item=CalentadorPrioritatConsumSHS icon="heater_display" label="Prioritat calentador [%d]" minValue=1 maxValue=2 step=1
+            Setpoint item=EstufaInfrarrojosPrioritatConsumSHS icon="heater_display" label="Prioritat estufa infrarrojos [%d]" minValue=1 maxValue=2 step=1
         }
 
     }
@@ -84,6 +85,7 @@ sitemap shs label="Ca l'espiga SHS" {
         }
         Frame label="Controls" {
             Selection item=CalentadorHabilitatsSHS icon="network" label="Control calent. [%s]" mappings=["true"="SHS", "false"="OH"]
+            Selection item=EstufaInfrarrojosEnabledSHS icon="network" label="Control estufa infrarrojos [%s]" mappings=["true"="SHS", "false"="OH"]
         }
     }
 }

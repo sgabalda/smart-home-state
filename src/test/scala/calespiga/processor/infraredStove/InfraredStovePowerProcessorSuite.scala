@@ -105,6 +105,10 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
       Action.SetUIItemValue(
         dummyConfig.statusItem,
         InfraredStoveSignal.Power1200.power.toString
+      ),
+      Action.SetUIItemValue(
+        dummyConfig.lastChangeItem,
+        now.atZone(zone).format(InfraredStovePowerProcessor.formatter)
       )
     )
     assertEquals(actions, expectedActions)
@@ -170,6 +174,10 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
       Action.SetUIItemValue(
         dummyConfig.statusItem,
         InfraredStoveSignal.Power1200.power.toString
+      ),
+      Action.SetUIItemValue(
+        dummyConfig.lastChangeItem,
+        today.atZone(zone).format(InfraredStovePowerProcessor.formatter)
       )
     )
     assertEquals(actions2, expectedActions)

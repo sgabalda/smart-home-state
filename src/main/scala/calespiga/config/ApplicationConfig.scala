@@ -152,13 +152,16 @@ final case class InfraredStoveConfig(
     onlineStatusItem: String,
     syncStatusItem: String,
     lastCommandItem: String,
+    lastChangeItem: String,
     syncTimeoutForDynamicPower: FiniteDuration,
     dynamicConsumerCode: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(
     heaterMqttTopic: Set[String],
-    setHeaterManagementItem: String
+    setHeaterManagementItem: String,
+    infraredStoveMqttTopic: Set[String],
+    setInfraredStoveEnabledItem: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

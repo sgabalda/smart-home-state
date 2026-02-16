@@ -23,6 +23,8 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       state = State()
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(false)
+        .modify(_.featureFlags.infraredStoveEnabled)
+        .setTo(false)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
@@ -34,6 +36,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         Set[Action](
           Action.SetUIItemValue(
             dummyConfig.setHeaterManagementItem,
+            "false"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setInfraredStoveEnabledItem,
             "false"
           )
         )
@@ -48,6 +54,8 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       state = State()
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(true)
+        .modify(_.featureFlags.infraredStoveEnabled)
+        .setTo(true)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
@@ -57,6 +65,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         Set[Action](
           Action.SetUIItemValue(
             dummyConfig.setHeaterManagementItem,
+            "true"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setInfraredStoveEnabledItem,
             "true"
           )
         )

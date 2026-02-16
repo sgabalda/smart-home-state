@@ -34,6 +34,9 @@ object Event {
 
     @InputEventOHItem("CalentadorHabilitatsSHS")
     case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("EstufaInfrarrojosEnabledSHS")
+    case class SetInfraredStoveEnabled(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -152,6 +155,13 @@ object Event {
           priority: Int
       ) extends DynamicPowerConsumerPriorityChanged {
         override val consumerUniqueCode: String = "CalentadorPrioritatConsumSHS"
+      }
+      @InputEventOHItem("EstufaInfrarrojosPrioritatConsumSHS")
+      case class InfraredStovePowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerConsumerPriorityChanged {
+        override val consumerUniqueCode: String =
+          "EstufaInfrarrojosPrioritatConsumSHS"
       }
     }
   }

@@ -85,6 +85,7 @@ object State {
 
   case class FeatureFlags(
       // to be removed when heater is controlled by SHS
-      heaterManagementEnabled: Boolean = false
+      heaterManagementEnabled: Boolean = false,
+      infraredStoveEnabled: Boolean = true
   )
 }

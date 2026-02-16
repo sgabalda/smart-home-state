@@ -84,13 +84,17 @@ object ProcessorConfigHelper {
     onlineStatusItem = "infraredStove/onlineStatus",
     syncStatusItem = "infraredStove/syncStatus",
     lastCommandItem = "infraredStove/lastCommand",
+    lastChangeItem = "infraredStove/lastChange",
     syncTimeoutForDynamicPower = 50.seconds,
     dynamicConsumerCode = "infrared-stove-consumer-code"
   )
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
     heaterMqttTopic = Set("heater/topic1", "heater/topic2"),
-    setHeaterManagementItem = "featureFlags/setHeaterManagement"
+    setHeaterManagementItem = "featureFlags/setHeaterManagement",
+    infraredStoveMqttTopic =
+      Set("infraredStove/topic1", "infraredStove/topic2"),
+    setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
