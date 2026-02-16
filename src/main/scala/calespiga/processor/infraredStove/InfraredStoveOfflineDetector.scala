@@ -1,4 +1,4 @@
-package calespiga.processor.heater
+package calespiga.processor.infraredStove
 
 import calespiga.model.Event.EventData
 import calespiga.model.Event

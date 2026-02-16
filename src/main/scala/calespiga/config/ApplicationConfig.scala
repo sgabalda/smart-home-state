@@ -151,7 +151,9 @@ final case class InfraredStoveConfig(
     id: String,
     onlineStatusItem: String,
     syncStatusItem: String,
-    lastCommandItem: String
+    lastCommandItem: String,
+    syncTimeoutForDynamicPower: FiniteDuration,
+    dynamicConsumerCode: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(

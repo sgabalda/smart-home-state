@@ -83,7 +83,9 @@ object ProcessorConfigHelper {
     id = "infrared-stove-processor",
     onlineStatusItem = "infraredStove/onlineStatus",
     syncStatusItem = "infraredStove/syncStatus",
-    lastCommandItem = "infraredStove/lastCommand"
+    lastCommandItem = "infraredStove/lastCommand",
+    syncTimeoutForDynamicPower = 50.seconds,
+    dynamicConsumerCode = "infrared-stove-consumer-code"
   )
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(

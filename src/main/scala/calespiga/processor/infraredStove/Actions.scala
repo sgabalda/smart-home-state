@@ -4,7 +4,7 @@ import calespiga.model.InfraredStoveSignal
 import calespiga.config.InfraredStoveConfig
 import calespiga.processor.utils.CommandActions
 
-object Actions {
+private object Actions {
 
   def apply(
       config: InfraredStoveConfig

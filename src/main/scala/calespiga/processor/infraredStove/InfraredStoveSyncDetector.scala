@@ -1,4 +1,4 @@
-package calespiga.processor.heater
+package calespiga.processor.infraredStove
 
 import calespiga.processor.utils.SyncDetector
 import calespiga.config.SyncDetectorConfig
