@@ -44,7 +44,7 @@ String EstufaInfrarrojosStatusSHS "Estat estufa"
 String EstufaInfrarrojosUltimaConnexioSHS "Última connexió"
 String EstufaInfrarrojosSetTempsManualSHS "Temps manual"
 Number EstufaInfrarrojosEnergiaAvuiSHS "Energia avui"
-String EstufaInfrarrojosSincronitzacioSHS "Estat sincronització calentador"
+String EstufaInfrarrojosSincronitzacioSHS "Estat sincronització estufa inf."
 
 /*
 ----------------------

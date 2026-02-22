@@ -37,7 +37,7 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=CalentadorCalentSHS icon="calentador_termostat" label="Estat termostat: [%s]" 
             Text item=CalentadorUltimaVegadaCalentSHS icon="time" label="Ultim cop calent: [%s]" 
             
-            Text item=CalentadorEnergiaAvuiSHS icon="energy" label="Energia avui: [%,d kWh]" 
+            Text item=CalentadorEnergiaAvuiSHS icon="energy" label="Energia avui: [%,d Wh]" 
 
             Text item=CalentadorSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
             Text item=CalentadorMicroControladorEstatSHS icon="receiver" label="Estat micro calent. [%s]"
@@ -56,7 +56,7 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=EstufaInfrarrojosUltimaConnexioSHS icon="time" label="Ultima connexió: [%s]" 
             Selection item=EstufaInfrarrojosSetTempsManualSHS icon="stopwatch" mappings=["10"="10 min", "20"="20 min", "30"="30 min", "60"="60 min"]
             
-            Text item=EstufaInfrarrojosEnergiaAvuiSHS icon="energy" label="Energia avui: [%,d kWh]" 
+            Text item=EstufaInfrarrojosEnergiaAvuiSHS icon="energy" label="Energia avui: [%,d Wh]" 
             Text item=EstufaInfrarrojosSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
             Text item=EstufaInfrarrojosMicroControladorEstatSHS icon="receiver" label="Estat micro est. [%s]"
         }
