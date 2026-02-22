@@ -121,4 +121,52 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       assertEquals(newState.featureFlags.heaterManagementEnabled, true)
     }
   }
+
+  test(
+    "SetInfraredStoveEnabled(false) adds infrared stove topics to blacklist and disables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.infraredStoveEnabled)
+        .setTo(true)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetInfraredStoveEnabled(false),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      dummyConfig.infraredStoveMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
+      assertEquals(newState.featureFlags.infraredStoveEnabled, false)
+    }
+  }
+  
+  test(
+    "SetInfraredStoveEnabled(true) removes infrared stove topics from blacklist and enables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](
+        dummyConfig.infraredStoveMqttTopic
+      )
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.infraredStoveEnabled)
+        .setTo(false)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetInfraredStoveEnabled(true),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      dummyConfig.infraredStoveMqttTopic.foreach { topic =>
+        assert(!blacklist.contains(topic))
+      }
+      assertEquals(newState.featureFlags.infraredStoveEnabled, true)
+    }
+  }
 }
