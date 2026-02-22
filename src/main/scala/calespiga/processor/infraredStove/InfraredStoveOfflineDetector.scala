@@ -16,8 +16,8 @@ private object InfraredStoveOfflineDetector {
 
   def apply(
       offlineConfig: OfflineDetectorConfig,
-      heaterId: String,
+      id: String,
       onlineStatusItem: String
   ): SingleProcessor =
-    OfflineDetector(offlineConfig, heaterId, eventMatcher, onlineStatusItem)
+    OfflineDetector(offlineConfig, id, eventMatcher, onlineStatusItem)
 }
