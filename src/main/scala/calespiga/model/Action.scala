@@ -51,11 +51,46 @@ object Action {
       repeatInterval: Option[FiniteDuration]
   ) extends Direct
 
+  /**
+    * Action to send an event to the system.
+    *
+    * @param event
+    */
+  case class SendFeedbackEvent(
+      event: Event.FeedbackEventData
+  ) extends Direct
+  
+
   sealed trait Scheduled extends Action
+  /**
+    * Action to execute another action after a specified delay. 
+    * The action will be executed once after the delay has passed.
+    *
+    * @param id
+    * @param action
+    * @param delay
+    */
   case class Delayed(id: String, action: Direct, delay: FiniteDuration)
       extends Scheduled
+  /**
+    * Action to execute another action periodically with a specified interval.
+    *
+    * @param id
+    * @param action
+    * @param period
+    * @param differentInitialDelay if defined, the initial delay before the first execution will be 
+    *         different from the period. If None, the first execution will occur after the same duration as the period. 
+    */
   case class Periodic(id: String, action: Direct, period: FiniteDuration, differentInitialDelay: Option[FiniteDuration] = None)
       extends Scheduled
+  
+  /**
+    * Action to cancel a scheduled action with the specified ID. This can be used to 
+    * stop a periodic action or prevent a delayed action from executing if it has not yet started. 
+    * The processor must ensure that the ID corresponds to an existing scheduled action that should be canceled.
+    *
+    * @param id
+    */
   case class Cancel(id: String) extends Scheduled
 
 }

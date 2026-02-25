@@ -8,6 +8,8 @@ import cats.implicits.catsSyntaxParallelTraverse1
 import calespiga.ui.UserInterfaceManager
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import cats.effect.std.Queue
+import calespiga.model.Event.FeedbackEventData
 
 trait DirectExecutor {
 
@@ -21,7 +23,8 @@ object DirectExecutor {
 
   final case class Impl(
       uiManager: UserInterfaceManager,
-      mqttProducer: ActionToMqttProducer
+      mqttProducer: ActionToMqttProducer,
+      feedbackQueue: Queue[IO, FeedbackEventData]
   ) extends DirectExecutor {
 
     private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
@@ -41,6 +44,9 @@ object DirectExecutor {
             s"Sending notification: $id, $message, $repeatInterval"
           ) *>
             uiManager.sendNotification(id, message, repeatInterval)
+        case Action.SendFeedbackEvent(event) =>
+          logger.debug(s"Processing feedback event: $event") *>
+            feedbackQueue.offer(event)
       }
     }
 
@@ -60,7 +66,8 @@ object DirectExecutor {
 
   def apply(
       uiManager: UserInterfaceManager,
-      mqttProducer: ActionToMqttProducer
+      mqttProducer: ActionToMqttProducer,
+      feedbackQueue: Queue[IO, FeedbackEventData]
   ): DirectExecutor =
-    Impl(uiManager, mqttProducer)
+    Impl(uiManager, mqttProducer, feedbackQueue)
 }

@@ -7,8 +7,23 @@ import calespiga.ui.UserInterfaceManagerStub
 import cats.effect.IO
 import munit.CatsEffectSuite
 import scala.concurrent.duration.*
+import cats.effect.std.Queue
+import calespiga.model.Event.FeedbackEventData
+import calespiga.ui.UserInterfaceManager
+import calespiga.mqtt.ActionToMqttProducer
+import calespiga.model.Event
+import calespiga.model.InfraredStoveSignal
 
 class DirectExecutorSuite extends CatsEffectSuite {
+
+  def createDirectExecutor(
+      uiManager: UserInterfaceManager = UserInterfaceManagerStub(),
+      actionToMqtt: ActionToMqttProducer = ActionToMqttProducerStub(),
+      queue: IO[Queue[IO, FeedbackEventData]] = Queue.unbounded[IO, FeedbackEventData]
+  ): IO[DirectExecutor] =
+    for {
+      q <- queue
+    } yield DirectExecutor(      uiManager,      actionToMqtt,      q    )
 
   test("Executor should request to the APIClient on SetOpenHabItemValue") {
 
@@ -20,7 +35,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
       uiManager = UserInterfaceManagerStub(
         updateUIItemStub = (_: String, _: String) => called.set(true)
       )
-      executor = DirectExecutor(uiManager, ActionToMqttProducerStub())
+      executor <- createDirectExecutor(uiManager = uiManager)
       _ <- executor.execute(Set(Action.SetUIItemValue(item, value)))
       calledValue <- called.get
     } yield {
@@ -36,17 +51,17 @@ class DirectExecutorSuite extends CatsEffectSuite {
     val error = new Exception("API error")
     val action = Action.SetUIItemValue(item, value)
 
-    DirectExecutor(
+    createDirectExecutor(
       UserInterfaceManagerStub(
         updateUIItemStub = (_: String, _: String) => IO.raiseError(error)
-      ),
-      ActionToMqttProducerStub()
-    ).execute(Set(action)).map {
+      )
+    ).flatMap(_.execute(Set(action)).map {
       case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
         assertEquals(throwable, error, "The throwable was not propagated")
         assertEquals(act, action, "The action was not propagated")
       case _ => fail("The error was not propagated")
-    }
+    })
+  
   }
 
   test("Executor should return no error on success of SetOpenHabItemValue") {
@@ -56,15 +71,14 @@ class DirectExecutorSuite extends CatsEffectSuite {
 
     val action = Action.SetUIItemValue(item, value)
 
-    DirectExecutor(
+    createDirectExecutor(
       UserInterfaceManagerStub(
         updateUIItemStub = (_: String, _: String) => IO.unit
-      ),
-      ActionToMqttProducerStub()
-    ).execute(Set(action)).map {
+      )
+    ).flatMap(_.execute(Set(action)).map {
       case some :: _ => fail("The error was not propagated")
       case Nil       => // No error, as expected
-    }
+    })
   }
 
   test(
@@ -81,7 +95,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
       actionToMqtt = ActionToMqttProducerStub(
         actionToMqttStub = (_: Action.SendMqttStringMessage) => called.set(true)
       )
-      executor = DirectExecutor(UserInterfaceManagerStub(), actionToMqtt)
+      executor <- createDirectExecutor(actionToMqtt = actionToMqtt)
       _ <- executor.execute(Set(action))
       calledValue <- called.get
     } yield {
@@ -97,18 +111,17 @@ class DirectExecutorSuite extends CatsEffectSuite {
       message = "TestMessage"
     )
 
-    DirectExecutor(
-      UserInterfaceManagerStub(),
-      ActionToMqttProducerStub(
+    createDirectExecutor(
+      actionToMqtt = ActionToMqttProducerStub(
         actionToMqttStub =
           (_: Action.SendMqttStringMessage) => IO.raiseError(error)
       )
-    ).execute(Set(action)).map {
+    ).flatMap(_.execute(Set(action)).map {
       case List(ErrorManager.Error.ExecutionError(throwable, act)) =>
         assertEquals(throwable, error, "The throwable was not propagated")
         assertEquals(act, action, "The action was not propagated")
       case _ => fail("The error was not propagated")
-    }
+    })
   }
 
   test("Executor should return no error on success of SendMqttStringMessage") {
@@ -118,15 +131,14 @@ class DirectExecutorSuite extends CatsEffectSuite {
       message = "TestMessage"
     )
 
-    DirectExecutor(
-      UserInterfaceManagerStub(),
-      ActionToMqttProducerStub(
+    createDirectExecutor(
+      actionToMqtt = ActionToMqttProducerStub(
         actionToMqttStub = (_: Action.SendMqttStringMessage) => IO.unit
       )
-    ).execute(Set(action)).map {
+    ).flatMap(_.execute(Set(action)).map {
       case some :: _ => fail("The error was not propagated")
       case Nil       => // No error, as expected
-    }
+    })
   }
 
   test(
@@ -142,7 +154,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
           (id: String, msg: String, repeat: Option[FiniteDuration]) =>
             called.set(Some((id, msg, repeat)))
       )
-      executor = DirectExecutor(uiManager, ActionToMqttProducerStub())
+      executor <- createDirectExecutor(uiManager = uiManager)
       _ <- executor.execute(
         Set(Action.SendNotification(notificationId, message, repeatInterval))
       )
@@ -152,6 +164,28 @@ class DirectExecutorSuite extends CatsEffectSuite {
         calledValue,
         Some((notificationId, message, repeatInterval)),
         "sendNotification was not called with the correct parameters"
+      )
+    }
+  }
+
+  test(
+    "Executor should offer the inner FeedbackEventData to the queue on SendFeedbackEvent"
+  ) {
+    val feedbackEvent = Event.InfraredStove.InfraredStoveManualTimeExpired(
+      InfraredStoveSignal.TurnOff
+    )
+    val action = Action.SendFeedbackEvent(feedbackEvent)
+
+    for {
+      queue <- Queue.unbounded[IO, FeedbackEventData]
+      executor <- createDirectExecutor(queue = IO.pure(queue))
+      _ <- executor.execute(Set(action))
+      received <- queue.tryTake
+    } yield {
+      assertEquals(
+        received,
+        Some(feedbackEvent),
+        "FeedbackEventData was not offered to the queue"
       )
     }
   }
