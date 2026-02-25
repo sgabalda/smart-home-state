@@ -354,9 +354,16 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
     TestControl.executeEmbed(program)
   }
 
-  test("ScheduledExecutor executes periodic action with different initial delay") {
+  test(
+    "ScheduledExecutor executes periodic action with different initial delay"
+  ) {
     val directAction = Action.SetUIItemValue("item1", "value1")
-    val periodicAction = Action.Periodic("periodic1", directAction, 50.millis, differentInitialDelay = Some(100.millis))
+    val periodicAction = Action.Periodic(
+      "periodic1",
+      directAction,
+      50.millis,
+      differentInitialDelay = Some(100.millis)
+    )
 
     val program = for {
       executedActions <- Ref.of[IO, List[Set[Action.Direct]]](List.empty)

@@ -12,18 +12,18 @@ import calespiga.model.Event.FeedbackEventData
 import calespiga.ui.UserInterfaceManager
 import calespiga.mqtt.ActionToMqttProducer
 import calespiga.model.Event
-import calespiga.model.InfraredStoveSignal
 
 class DirectExecutorSuite extends CatsEffectSuite {
 
   def createDirectExecutor(
       uiManager: UserInterfaceManager = UserInterfaceManagerStub(),
       actionToMqtt: ActionToMqttProducer = ActionToMqttProducerStub(),
-      queue: IO[Queue[IO, FeedbackEventData]] = Queue.unbounded[IO, FeedbackEventData]
+      queue: IO[Queue[IO, FeedbackEventData]] =
+        Queue.unbounded[IO, FeedbackEventData]
   ): IO[DirectExecutor] =
     for {
       q <- queue
-    } yield DirectExecutor(      uiManager,      actionToMqtt,      q    )
+    } yield DirectExecutor(uiManager, actionToMqtt, q)
 
   test("Executor should request to the APIClient on SetOpenHabItemValue") {
 
@@ -61,7 +61,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
         assertEquals(act, action, "The action was not propagated")
       case _ => fail("The error was not propagated")
     })
-  
+
   }
 
   test("Executor should return no error on success of SetOpenHabItemValue") {
@@ -171,9 +171,7 @@ class DirectExecutorSuite extends CatsEffectSuite {
   test(
     "Executor should offer the inner FeedbackEventData to the queue on SendFeedbackEvent"
   ) {
-    val feedbackEvent = Event.InfraredStove.InfraredStoveManualTimeExpired(
-      InfraredStoveSignal.TurnOff
-    )
+    val feedbackEvent = Event.InfraredStove.InfraredStoveManualTimeExpired
     val action = Action.SendFeedbackEvent(feedbackEvent)
 
     for {

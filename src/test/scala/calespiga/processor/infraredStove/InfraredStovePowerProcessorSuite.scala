@@ -245,4 +245,95 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
     )
     assertEquals(actions, expectedActions)
   }
+
+  test(
+    "InfraredStoveManualTimeExpired sends Off command when last command received is manual"
+  ) {
+    val initialState =
+      stateWithInfraredStove(
+        lastCommandReceived = Some(InfraredStoveSignal.SetPower600)
+      )
+    val processor = InfraredStovePowerProcessor(dummyConfig, zone)
+    val (newState, actions) =
+      processor.process(initialState, InfraredStoveManualTimeExpired, now)
+
+    assertEquals(
+      newState.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Off)
+    )
+    val expectedActions = Set(
+      Action.SendMqttStringMessage(
+        dummyConfig.mqttTopicForCommand,
+        InfraredStoveSignal.Off.power.toString
+      ),
+      Action.Periodic(
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
+        Action.SendMqttStringMessage(
+          dummyConfig.mqttTopicForCommand,
+          InfraredStoveSignal.Off.power.toString
+        ),
+        dummyConfig.resendInterval
+      )
+    )
+    assertEquals(actions, expectedActions)
+  }
+
+  test(
+    "InfraredStoveManualTimeExpired sends Off command when last command received is SetPower1200"
+  ) {
+    val initialState =
+      stateWithInfraredStove(
+        lastCommandReceived = Some(InfraredStoveSignal.SetPower1200)
+      )
+    val processor = InfraredStovePowerProcessor(dummyConfig, zone)
+    val (newState, actions) =
+      processor.process(initialState, InfraredStoveManualTimeExpired, now)
+
+    assertEquals(
+      newState.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Off)
+    )
+    val expectedActions = Set(
+      Action.SendMqttStringMessage(
+        dummyConfig.mqttTopicForCommand,
+        InfraredStoveSignal.Off.power.toString
+      ),
+      Action.Periodic(
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
+        Action.SendMqttStringMessage(
+          dummyConfig.mqttTopicForCommand,
+          InfraredStoveSignal.Off.power.toString
+        ),
+        dummyConfig.resendInterval
+      )
+    )
+    assertEquals(actions, expectedActions)
+  }
+
+  test(
+    "InfraredStoveManualTimeExpired does nothing when last command received is not manual"
+  ) {
+    val initialState =
+      stateWithInfraredStove(
+        lastCommandReceived = Some(InfraredStoveSignal.TurnOff)
+      )
+    val processor = InfraredStovePowerProcessor(dummyConfig, zone)
+    val (newState, actions) =
+      processor.process(initialState, InfraredStoveManualTimeExpired, now)
+
+    assertEquals(newState, initialState)
+    assertEquals(actions, Set.empty[Action])
+  }
+
+  test(
+    "InfraredStoveManualTimeExpired does nothing when no last command received"
+  ) {
+    val initialState = stateWithInfraredStove(lastCommandReceived = None)
+    val processor = InfraredStovePowerProcessor(dummyConfig, zone)
+    val (newState, actions) =
+      processor.process(initialState, InfraredStoveManualTimeExpired, now)
+
+    assertEquals(newState, initialState)
+    assertEquals(actions, Set.empty[Action])
+  }
 }

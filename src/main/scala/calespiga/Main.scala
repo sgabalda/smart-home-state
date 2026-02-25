@@ -51,7 +51,8 @@ object Main extends IOApp.Simple {
         )
         .merge(
           powerProductionSource.getEnergyProductionInfo
-        ).merge(
+        )
+        .merge(
           Stream
             .fromQueueUnterminated(feedbackQueue)
             .map(Right(_))

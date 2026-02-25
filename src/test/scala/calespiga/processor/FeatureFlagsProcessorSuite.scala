@@ -144,7 +144,7 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       assertEquals(newState.featureFlags.infraredStoveEnabled, false)
     }
   }
-  
+
   test(
     "SetInfraredStoveEnabled(true) removes infrared stove topics from blacklist and enables flag"
   ) {

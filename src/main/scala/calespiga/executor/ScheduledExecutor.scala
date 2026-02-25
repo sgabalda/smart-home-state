@@ -57,14 +57,15 @@ object ScheduledExecutor {
         case periodic: Action.Periodic =>
           // Define the recursive periodic execution function
           def periodicExecution: IO[Unit] =
-              directExecutor.execute(Set(periodic.action)).flatMap { errors =>
-                errorManager.manageErrors(errors) *> 
-                  IO.sleep(periodic.period) *> periodicExecution
-              }
-          
-          def initialPeriodicExecution: IO[Unit] = 
+            directExecutor.execute(Set(periodic.action)).flatMap { errors =>
+              errorManager.manageErrors(errors) *>
+                IO.sleep(periodic.period) *> periodicExecution
+            }
+
+          def initialPeriodicExecution: IO[Unit] =
             periodic.differentInitialDelay match {
-              case Some(initialDelay) => IO.sleep(initialDelay) *> periodicExecution
+              case Some(initialDelay) =>
+                IO.sleep(initialDelay) *> periodicExecution
               case None => IO.sleep(periodic.period) *> periodicExecution
             }
 
@@ -82,7 +83,7 @@ object ScheduledExecutor {
         case cancel: Action.Cancel =>
           // Cancel existing fiber with the specified ID if it exists
           cancelFiberIfExists(cancel.id)
-    
+
       }
     }
 

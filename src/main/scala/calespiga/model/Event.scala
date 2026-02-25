@@ -22,11 +22,11 @@ object Event {
 
   sealed trait EventData
 
-  /**
-    * Use this only for internal events that are not triggered by external inputs, but are needed for 
-    * feedback loops or to trigger actions based on time or other conditions. 
-    * These events should not be created directly from external inputs, but can be used internally in the 
-    * application to represent events that are not directly tied to an external input.
+  /** Use this only for internal events that are not triggered by external
+    * inputs, but are needed for feedback loops or to trigger actions based on
+    * time or other conditions. These events should not be created directly from
+    * external inputs, but can be used internally in the application to
+    * represent events that are not directly tied to an external input.
     */
   sealed trait FeedbackEventData extends EventData
 
@@ -132,8 +132,14 @@ object Event {
         status: InfraredStoveSignal.UserCommand
     ) extends InfraredStoveData
 
-    case class InfraredStoveManualTimeExpired(command: InfraredStoveSignal.UserCommand) 
-      extends FeedbackEventData
+    case object InfraredStoveManualTimeExpired
+        extends FeedbackEventData
+        with InfraredStoveData
+
+    @InputEventOHItem("EstufaInfrarrojosSetTempsManualSHS")
+    case class InfraredStoveManualTimeChanged(
+        minutes: Int
+    ) extends InfraredStoveData
 
   }
 

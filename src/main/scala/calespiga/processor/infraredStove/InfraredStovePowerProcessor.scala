@@ -93,6 +93,23 @@ private object InfraredStovePowerProcessor {
 
             (newState, actions.commandActionWithResend(commandToSend))
 
+          case Event.InfraredStove.InfraredStoveManualTimeExpired =>
+            // to prootect from a race condition where the manual expires
+            // but a command to change to a non manual mode is recieved, check
+            // if the last command received is manual before sending the off command
+            state.infraredStove.lastCommandReceived match
+              case Some(lastCmd) if Actions.isManualCommand(lastCmd) =>
+                val commandToSend = InfraredStoveSignal.Off
+                val newState = state
+                  .modify(_.infraredStove.lastCommandSent)
+                  .setTo(Some(commandToSend))
+
+                (newState, actions.commandActionWithResend(commandToSend))
+              case _ =>
+                (state, Set.empty)
+
+          case _ => (state, Set.empty)
+
       case Event.System.StartupEvent =>
         val commandToSend = getDefaultCommandToSend(
           state.infraredStove.lastCommandReceived.getOrElse(TurnOff)

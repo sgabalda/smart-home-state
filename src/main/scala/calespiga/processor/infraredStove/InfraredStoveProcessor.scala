@@ -29,9 +29,8 @@ object InfraredStoveProcessor {
           config.onlineStatusItem
         )
       )
-      .andThen(
-        syncDetector
-      )
+      .andThen(InfraredStoveManualTimeProcessor(config))
+      .andThen(syncDetector)
       .withDynamicConsumer(
         InfraredStoveDynamicPowerConsumer(config, syncDetector)
       )
