@@ -94,8 +94,8 @@ private object InfraredStovePowerProcessor {
             (newState, actions.commandActionWithResend(commandToSend))
 
           case Event.InfraredStove.InfraredStoveManualTimeExpired =>
-            // to prootect from a race condition where the manual expires
-            // but a command to change to a non manual mode is recieved, check
+            // to protect from a race condition where the manual expires
+            // but a command to change to a non manual mode is received, check
             // if the last command received is manual before sending the off command
             state.infraredStove.lastCommandReceived match
               case Some(lastCmd) if Actions.isManualCommand(lastCmd) =>
