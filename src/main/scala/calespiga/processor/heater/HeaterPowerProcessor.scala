@@ -16,13 +16,11 @@ import com.softwaremill.quicklens.*
 import calespiga.model.Event.Heater
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
-import java.time.format.DateTimeFormatter
 import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.ProcessorFormatter
 
 private object HeaterPowerProcessor {
-
-  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   private final case class Impl(
       config: HeaterConfig,
@@ -107,7 +105,7 @@ private object HeaterPowerProcessor {
                     actions.commandActionWithResend(commandToSend) + Action
                       .SetUIItemValue(
                         config.lastTimeHotItem,
-                        timestamp.atZone(zone).toLocalDateTime.format(formatter)
+                        ProcessorFormatter.format(timestamp, zone)
                       ) + Action.SetUIItemValue(
                       config.isHotItem,
                       HeaterSignal.Hot.toString
@@ -130,7 +128,7 @@ private object HeaterPowerProcessor {
                     actions.commandActionWithResend(commandToSend) + Action
                       .SetUIItemValue(
                         config.lastTimeHotItem,
-                        timestamp.atZone(zone).toLocalDateTime.format(formatter)
+                        ProcessorFormatter.format(timestamp, zone)
                       ) + Action
                       .SetUIItemValue(
                         config.isHotItem,

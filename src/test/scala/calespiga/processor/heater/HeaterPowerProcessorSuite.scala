@@ -10,6 +10,7 @@ import java.time.ZoneId
 import calespiga.model.State.Heater
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.EnergyCalculatorStub
+import calespiga.processor.utils.ProcessorFormatter
 import scala.collection.mutable
 import calespiga.processor.utils.CommandActions
 
@@ -207,7 +208,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
+        ProcessorFormatter.format(now, zone)
       ),
       Action.SetUIItemValue(
         dummyConfig.isHotItem,
@@ -238,7 +239,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
+        ProcessorFormatter.format(now, zone)
       ),
       Action.SetUIItemValue(
         dummyConfig.isHotItem,

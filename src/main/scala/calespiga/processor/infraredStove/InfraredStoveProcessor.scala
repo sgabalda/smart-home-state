@@ -21,7 +21,9 @@ object InfraredStoveProcessor {
         config.syncStatusItem
       )
 
-    InfraredStovePowerProcessor(config = config, zone = zone)
+    // first the manual, to avoid the power processor to change the lastCommandReceived before we check it in the manual time processor
+    InfraredStoveManualTimeProcessor(config.programmedOffTimeItem, zone)
+      .andThen(InfraredStovePowerProcessor(config = config, zone = zone))
       .andThen(
         InfraredStoveOfflineDetector(
           offlineConfig,
@@ -29,7 +31,6 @@ object InfraredStoveProcessor {
           config.onlineStatusItem
         )
       )
-      .andThen(InfraredStoveManualTimeProcessor(config))
       .andThen(syncDetector)
       .withDynamicConsumer(
         InfraredStoveDynamicPowerConsumer(config, syncDetector)

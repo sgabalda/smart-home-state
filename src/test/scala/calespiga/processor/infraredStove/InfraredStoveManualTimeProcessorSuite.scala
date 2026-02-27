@@ -5,22 +5,28 @@ import calespiga.model.{State, Action, Event}
 import calespiga.model.Event.InfraredStove.*
 import calespiga.model.InfraredStoveSignal
 import java.time.Instant
+import java.time.ZoneId
 import com.softwaremill.quicklens.*
-import calespiga.processor.ProcessorConfigHelper
 import scala.concurrent.duration.*
+import calespiga.processor.utils.ProcessorFormatter
 
 class InfraredStoveManualTimeProcessorSuite extends FunSuite {
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
 
-  private val dummyConfig = ProcessorConfigHelper.infraredStoveConfig
-
   private val manualMaxTimeMinutes = 60
+
+  private val programmedOffTimeItem = "EstufaInfrarrojosProgramatApagamentSHS"
+
+  private val zone = ZoneId.of("UTC")
 
   private def stateWithInfraredStove(
       lastCommandReceived: Option[InfraredStoveSignal.UserCommand] = None,
       lastSetManual: Option[Instant] = None,
-      manualMaxTimeMinutes: Option[Int]
+      manualMaxTimeMinutes: Option[Int],
+      lastCommandSent: Option[InfraredStoveSignal.ControllerState] = Some(
+        InfraredStoveSignal.Power600
+      )
   ): State =
     State()
       .modify(_.infraredStove.lastCommandReceived)
@@ -29,6 +35,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       .setTo(lastSetManual)
       .modify(_.infraredStove.manualMaxTimeMinutes)
       .setTo(manualMaxTimeMinutes)
+      .modify(_.infraredStove.lastCommandSent)
+      .setTo(lastCommandSent)
 
   private def expectedDelayedStop(delay: FiniteDuration): Action =
     Action.Delayed(
@@ -48,7 +56,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastCommandReceived = Some(InfraredStoveSignal.TurnOff),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -56,10 +65,18 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
         now
       )
 
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        now.plusSeconds(manualMaxTimeMinutes.minutes.toSeconds),
+        zone
+      )
     assertEquals(newState.infraredStove.lastSetManual, Some(now))
     assertEquals(
       actions,
-      Set(expectedDelayedStop(manualMaxTimeMinutes.minutes))
+      Set(
+        expectedDelayedStop(manualMaxTimeMinutes.minutes),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
     )
   }
 
@@ -70,7 +87,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastCommandReceived = None,
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -78,10 +96,18 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
         now
       )
 
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        now.plusSeconds(manualMaxTimeMinutes.minutes.toSeconds),
+        zone
+      )
     assertEquals(newState.infraredStove.lastSetManual, Some(now))
     assertEquals(
       actions,
-      Set(expectedDelayedStop(manualMaxTimeMinutes.minutes))
+      Set(
+        expectedDelayedStop(manualMaxTimeMinutes.minutes),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
     )
   }
 
@@ -92,7 +118,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastCommandReceived = Some(InfraredStoveSignal.TurnOff),
       manualMaxTimeMinutes = None
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -101,7 +128,10 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       )
 
     assertEquals(newState.infraredStove.lastSetManual, Some(now))
-    assertEquals(actions, Set.empty[Action])
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(programmedOffTimeItem, ""))
+    )
   }
 
   test(
@@ -112,7 +142,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(now.minusSeconds(600)),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -123,12 +154,15 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
     assertEquals(newState.infraredStove.lastSetManual, None)
     assertEquals(
       actions,
-      Set[Action](Action.Cancel(InfraredStoveManualTimeProcessor.DELAY_ID))
+      Set[Action](
+        Action.Cancel(InfraredStoveManualTimeProcessor.DELAY_ID),
+        Action.SetUIItemValue(programmedOffTimeItem, "")
+      )
     )
   }
 
   test(
-    "InfraredStovePowerCommandChanged: staying in manual mode keeps lastSetManual unchanged and produces no actions"
+    "InfraredStovePowerCommandChanged: staying in manual mode resets lastSetManual and reschedules stop"
   ) {
     val previousLastSetManual = now.minusSeconds(300)
     val initialState = stateWithInfraredStove(
@@ -136,7 +170,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(previousLastSetManual),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -144,11 +179,19 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
         now
       )
 
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        now.plusSeconds(manualMaxTimeMinutes.minutes.toSeconds),
+        zone
+      )
+    assertEquals(newState.infraredStove.lastSetManual, Some(now))
     assertEquals(
-      newState.infraredStove.lastSetManual,
-      Some(previousLastSetManual)
+      actions,
+      Set(
+        expectedDelayedStop(manualMaxTimeMinutes.minutes),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
     )
-    assertEquals(actions, Set.empty[Action])
   }
 
   test(
@@ -159,7 +202,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(now.minusSeconds(120)),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -170,7 +214,10 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
     assertEquals(newState.infraredStove.lastSetManual, None)
     assertEquals(
       actions,
-      Set[Action](Action.Cancel(InfraredStoveManualTimeProcessor.DELAY_ID))
+      Set[Action](
+        Action.Cancel(InfraredStoveManualTimeProcessor.DELAY_ID),
+        Action.SetUIItemValue(programmedOffTimeItem, "")
+      )
     )
   }
 
@@ -186,13 +233,25 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(setAt),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
     val remainingSeconds = (manualMaxTimeMinutes - elapsedMinutes) * 60L
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        setAt.plusSeconds(manualMaxTimeMinutes.minutes.toSeconds),
+        zone
+      )
     assertEquals(newState, initialState)
-    assertEquals(actions, Set(expectedDelayedStop(remainingSeconds.seconds)))
+    assertEquals(
+      actions,
+      Set(
+        expectedDelayedStop(remainingSeconds.seconds),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
+    )
   }
 
   test(
@@ -205,7 +264,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(setAt),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
@@ -215,7 +275,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       Set[Action](
         Action.SendFeedbackEvent(
           Event.InfraredStove.InfraredStoveManualTimeExpired
-        )
+        ),
+        Action.SetUIItemValue(programmedOffTimeItem, "")
       )
     )
   }
@@ -228,12 +289,16 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(now.minusSeconds(300)),
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
     assertEquals(newState.infraredStove.lastSetManual, None)
-    assertEquals(actions, Set.empty[Action])
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(programmedOffTimeItem, ""))
+    )
   }
 
   test(
@@ -244,7 +309,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = None,
       manualMaxTimeMinutes = Some(manualMaxTimeMinutes)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
@@ -258,7 +324,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
     "InfraredStoveManualTimeChanged: updates manualMaxTimeMinutes in state"
   ) {
     val initialState = stateWithInfraredStove(manualMaxTimeMinutes = None)
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, _) =
       processor.process(
         initialState,
@@ -280,7 +347,8 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(setAt),
       manualMaxTimeMinutes = Some(30)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -289,15 +357,26 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       )
 
     val remainingSeconds = (newMaxMinutes - elapsedMinutes) * 60L
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        setAt.plusSeconds(newMaxMinutes.minutes.toSeconds),
+        zone
+      )
     assertEquals(
       newState.infraredStove.manualMaxTimeMinutes,
       Some(newMaxMinutes)
     )
-    assertEquals(actions, Set(expectedDelayedStop(remainingSeconds.seconds)))
+    assertEquals(
+      actions,
+      Set(
+        expectedDelayedStop(remainingSeconds.seconds),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
+    )
   }
 
   test(
-    "InfraredStoveManualTimeChanged: stove in manual mode but new threshold already elapsed cancels stop"
+    "InfraredStoveManualTimeChanged: stove in manual mode but new threshold already elapsed emits stop immediately"
   ) {
     val elapsedMinutes = 90
     val newMaxMinutes = 30
@@ -307,7 +386,13 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = Some(setAt),
       manualMaxTimeMinutes = Some(120)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val expectedOffTime =
+      ProcessorFormatter.format(
+        setAt.plusSeconds(newMaxMinutes.minutes.toSeconds),
+        zone
+      )
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,
@@ -321,7 +406,10 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
     )
     assertEquals(
       actions,
-      Set[Action](Action.Cancel(InfraredStoveManualTimeProcessor.DELAY_ID))
+      Set(
+        expectedDelayedStop(0.seconds),
+        Action.SetUIItemValue(programmedOffTimeItem, expectedOffTime)
+      )
     )
   }
 
@@ -333,7 +421,30 @@ class InfraredStoveManualTimeProcessorSuite extends FunSuite {
       lastSetManual = None,
       manualMaxTimeMinutes = Some(30)
     )
-    val processor = InfraredStoveManualTimeProcessor(dummyConfig)
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
+    val (newState, actions) =
+      processor.process(
+        initialState,
+        InfraredStoveManualTimeChanged(60),
+        now
+      )
+
+    assertEquals(newState.infraredStove.manualMaxTimeMinutes, Some(60))
+    assertEquals(actions, Set.empty[Action])
+  }
+
+  test(
+    "InfraredStoveManualTimeChanged: stove in manual mode but already off, updates manualMaxTimeMinutes, no actions"
+  ) {
+    val initialState = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetPower600),
+      lastSetManual = Some(now.minusSeconds(60)),
+      manualMaxTimeMinutes = Some(30),
+      lastCommandSent = Some(InfraredStoveSignal.Off)
+    )
+    val processor =
+      InfraredStoveManualTimeProcessor(programmedOffTimeItem, zone)
     val (newState, actions) =
       processor.process(
         initialState,

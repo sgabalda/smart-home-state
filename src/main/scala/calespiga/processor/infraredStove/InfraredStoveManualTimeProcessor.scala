@@ -2,11 +2,12 @@ package calespiga.processor.infraredStove
 
 import calespiga.model.{State, Action, Event}
 import java.time.Instant
+import java.time.ZoneId
 import calespiga.model.Event.InfraredStove.InfraredStovePowerCommandChanged
 import calespiga.model.InfraredStoveSignal
 import com.softwaremill.quicklens.*
 import calespiga.processor.SingleProcessor
-import calespiga.config.InfraredStoveConfig
+import calespiga.processor.utils.ProcessorFormatter
 import scala.concurrent.duration._
 import java.time.{Duration => JavaDuration}
 
@@ -14,9 +15,8 @@ private object InfraredStoveManualTimeProcessor {
 
   val DELAY_ID = "infrared-stove-manual-time-processor"
 
-  private final case class Impl(
-      config: InfraredStoveConfig
-  ) extends SingleProcessor {
+  private final case class Impl(programmedOffTimeItem: String, zone: ZoneId)
+      extends SingleProcessor {
 
     private def actionsToStopStoveWithDelay(
         delay: FiniteDuration
@@ -38,6 +38,29 @@ private object InfraredStoveManualTimeProcessor {
         actionsToStopStoveWithDelay(minutes.minutes)
       )
 
+    private def offTimeString(
+        setAt: Instant,
+        maxMinutes: Int
+    ): String =
+      ProcessorFormatter.format(
+        setAt.plusSeconds(maxMinutes.minutes.toSeconds),
+        zone
+      )
+
+    private def setOffTimeAction(
+        timestamp: Instant,
+        manualMaxTimeMinutes: Option[Int]
+    ): Action =
+      Action.SetUIItemValue(
+        programmedOffTimeItem,
+        manualMaxTimeMinutes
+          .map(minutes => offTimeString(timestamp, minutes))
+          .getOrElse("")
+      )
+
+    private def clearOffTimeAction: Action =
+      Action.SetUIItemValue(programmedOffTimeItem, "")
+
     override def process(
         state: State,
         eventData: Event.EventData,
@@ -45,34 +68,23 @@ private object InfraredStoveManualTimeProcessor {
     ): (State, Set[Action]) = eventData match {
 
       case InfraredStovePowerCommandChanged(command) =>
-
-        val prevCommand = state.infraredStove.lastCommandReceived
-        val (lastSetManual, actions) = (prevCommand, command) match
-          // if previous command was not manual and new command is manual, set lastSetManual to now
-          case (Some(prev), newCmd)
-              if !Actions
-                .isManualCommand(prev) && Actions.isManualCommand(newCmd) =>
-            (
-              Some(timestamp),
-              actionsToStopStove(state.infraredStove.manualMaxTimeMinutes)
-            )
-          // if new command is manual and no previous command, also set lastSetManual to now
-          case (None, newCmd) if Actions.isManualCommand(newCmd) =>
-            (
-              Some(timestamp),
-              actionsToStopStove(state.infraredStove.manualMaxTimeMinutes)
-            )
-          // if new command is not manual, reset lastSetManual to None and cancel any off command scheduled
-          case (_, newCmd) if !Actions.isManualCommand(newCmd) =>
-            (None, Set(Action.Cancel(DELAY_ID)))
-          // otherwise, keep lastSetManual unchanged
-          case _ => (state.infraredStove.lastSetManual, Set.empty[Action])
-
-        val newState = state
-          .modify(_.infraredStove.lastSetManual)
-          .setTo(lastSetManual)
-
-        (newState, actions)
+        if Actions.isManualCommand(command) then
+          val newState = state
+            .modify(_.infraredStove.lastSetManual)
+            .setTo(Some(timestamp))
+          val actions =
+            actionsToStopStove(state.infraredStove.manualMaxTimeMinutes) +
+              setOffTimeAction(
+                timestamp,
+                state.infraredStove.manualMaxTimeMinutes
+              )
+          (newState, actions)
+        else
+          val newState = state
+            .modify(_.infraredStove.lastSetManual)
+            .setTo(None)
+          val actions = Set(Action.Cancel(DELAY_ID), clearOffTimeAction)
+          (newState, actions)
 
       case Event.System.StartupEvent =>
         (
@@ -86,22 +98,30 @@ private object InfraredStoveManualTimeProcessor {
               JavaDuration.between(setAt, timestamp).toSeconds
             val remainingSeconds = maxMinutes.minutes.toSeconds - elapsedSeconds
             if remainingSeconds > 0 then
-              (state, actionsToStopStoveWithDelay(remainingSeconds.seconds))
+              (
+                state,
+                actionsToStopStoveWithDelay(remainingSeconds.seconds) +
+                  Action.SetUIItemValue(
+                    programmedOffTimeItem,
+                    offTimeString(setAt, maxMinutes)
+                  )
+              )
             else
               (
                 state,
                 Set(
                   Action.SendFeedbackEvent(
                     Event.InfraredStove.InfraredStoveManualTimeExpired
-                  )
+                  ),
+                  clearOffTimeAction
                 )
               )
-          case (Some(setAt), _, Some(lastCommand))
+          case (Some(_), _, Some(lastCommand))
               if !Actions.isManualCommand(lastCommand) =>
             // if there is a lastSetManual but the last command is not manual, reset lastSetManual to None
             (
               state.modify(_.infraredStove.lastSetManual).setTo(None),
-              Set.empty[Action]
+              Set(clearOffTimeAction)
             )
           case _ => (state, Set.empty[Action])
 
@@ -114,13 +134,19 @@ private object InfraredStoveManualTimeProcessor {
           case Some(setAt)
               if state.infraredStove.lastCommandReceived.exists(
                 Actions.isManualCommand
+              ) && !state.infraredStove.lastCommandSent.exists(
+                _ == InfraredStoveSignal.Off
               ) =>
             val elapsedSeconds =
               JavaDuration.between(setAt, timestamp).toSeconds
-            val remainingSeconds = newMinutes.minutes.toSeconds - elapsedSeconds
-            if remainingSeconds > 0 then
-              actionsToStopStoveWithDelay(remainingSeconds.seconds)
-            else Set(Action.Cancel(DELAY_ID))
+            val remainingSeconds =
+              Math.max(newMinutes.minutes.toSeconds - elapsedSeconds, 0)
+
+            actionsToStopStoveWithDelay(remainingSeconds.seconds) +
+              Action.SetUIItemValue(
+                programmedOffTimeItem,
+                offTimeString(setAt, newMinutes)
+              )
           case _ => Set.empty[Action]
 
         (newState, actions)
@@ -131,8 +157,7 @@ private object InfraredStoveManualTimeProcessor {
 
   }
 
-  def apply(
-      config: InfraredStoveConfig
-  ): SingleProcessor = Impl(config)
+  def apply(programmedOffTimeItem: String, zone: ZoneId): SingleProcessor =
+    Impl(programmedOffTimeItem, zone)
 
 }

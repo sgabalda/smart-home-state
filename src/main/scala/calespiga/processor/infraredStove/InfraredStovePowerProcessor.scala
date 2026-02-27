@@ -14,13 +14,11 @@ import com.softwaremill.quicklens.*
 import calespiga.model.Event.InfraredStove
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
-import java.time.format.DateTimeFormatter
 import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.ProcessorFormatter
 
 private object InfraredStovePowerProcessor {
-
-  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   private final case class Impl(
       config: InfraredStoveConfig,
@@ -76,7 +74,7 @@ private object InfraredStovePowerProcessor {
               ),
               Action.SetUIItemValue(
                 config.lastChangeItem,
-                timestamp.atZone(zone).format(formatter)
+                ProcessorFormatter.format(timestamp, zone)
               )
             )
 

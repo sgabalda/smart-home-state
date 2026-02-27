@@ -10,6 +10,7 @@ import java.time.ZoneId
 import calespiga.model.State.InfraredStove
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.EnergyCalculatorStub
+import calespiga.processor.utils.ProcessorFormatter
 import scala.collection.mutable
 import calespiga.processor.utils.CommandActions
 
@@ -108,7 +109,7 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastChangeItem,
-        now.atZone(zone).format(InfraredStovePowerProcessor.formatter)
+        ProcessorFormatter.format(now, zone)
       )
     )
     assertEquals(actions, expectedActions)
@@ -177,7 +178,7 @@ class InfraredStovePowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastChangeItem,
-        today.atZone(zone).format(InfraredStovePowerProcessor.formatter)
+        ProcessorFormatter.format(today, zone)
       )
     )
     assertEquals(actions2, expectedActions)
