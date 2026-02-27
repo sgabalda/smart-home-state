@@ -6,7 +6,7 @@ import java.time.ZoneId
 
 class EnergyCalculatorSuite extends FunSuite {
 
-  private val zone: ZoneId = ZoneId.systemDefault()
+  private val zone: ZoneId = ZoneId.of("UTC")
   private val calculator = EnergyCalculator()
 
   test(
