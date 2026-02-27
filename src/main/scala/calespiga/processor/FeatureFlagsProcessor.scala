@@ -27,12 +27,17 @@ object FeatureFlagsProcessor {
       eventData match {
         case Event.System.StartupEvent =>
           mqttBlacklist
-            .update(bl =>
-              bl ++
-                (if (!state.featureFlags.heaterManagementEnabled)
-                   config.heaterMqttTopic
-                 else Set.empty)
-            )
+            .update { bl =>
+              val heaterBl =
+                if (!state.featureFlags.heaterManagementEnabled)
+                  config.heaterMqttTopic
+                else Set.empty
+              val stoveBl =
+                if (!state.featureFlags.infraredStoveEnabled)
+                  config.infraredStoveMqttTopic
+                else Set.empty
+              bl ++ heaterBl ++ stoveBl
+            }
             .as(
               (
                 state,
@@ -40,10 +45,15 @@ object FeatureFlagsProcessor {
                   Action.SetUIItemValue(
                     config.setHeaterManagementItem,
                     state.featureFlags.heaterManagementEnabled.toString
+                  ),
+                  Action.SetUIItemValue(
+                    config.setInfraredStoveEnabledItem,
+                    state.featureFlags.infraredStoveEnabled.toString
                   )
                 )
               )
             ) <* logger.info("Feature flags initialized on startup")
+
         case Event.FeatureFlagEvents.SetHeaterManagement(enable) =>
           val modifier = if (enable) { (bl: Set[String]) =>
             bl -- config.heaterMqttTopic
@@ -60,6 +70,25 @@ object FeatureFlagsProcessor {
                 Set.empty
               )
             ) <* logger.info("Heater management feature flag set to " + enable)
+
+        case Event.FeatureFlagEvents.SetInfraredStoveEnabled(enable) =>
+          val modifier = if (enable) { (bl: Set[String]) =>
+            bl -- config.infraredStoveMqttTopic
+          } else { (bl: Set[String]) =>
+            bl ++ config.infraredStoveMqttTopic
+          }
+          mqttBlacklist
+            .update(modifier)
+            .as(
+              (
+                state
+                  .modify(_.featureFlags.infraredStoveEnabled)
+                  .setTo(enable),
+                Set.empty
+              )
+            ) <* logger.info(
+            "Infrared stove MQTT feature flag set to " + enable
+          )
 
         case _ =>
           IO.pure((state, Set.empty))

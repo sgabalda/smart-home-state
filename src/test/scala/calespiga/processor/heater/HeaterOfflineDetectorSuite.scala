@@ -2,18 +2,13 @@ package calespiga.processor.heater
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
-import scala.concurrent.duration._
 import calespiga.model.HeaterSignal
 import calespiga.processor.utils.OfflineDetector
+import calespiga.processor.ProcessorConfigHelper
 
 class HeaterOfflineDetectorSuite extends FunSuite {
-  val config = OfflineDetectorConfig(
-    timeoutDuration = 30.seconds,
-    onlineText = "ONLINE",
-    offlineText = "OFFLINE"
-  )
+  val config = ProcessorConfigHelper.offlineDetectorConfig
   val id = "heater"
   val statusItem = "HeaterStatusItem"
   val now = Instant.parse("2023-08-17T10:00:00Z")

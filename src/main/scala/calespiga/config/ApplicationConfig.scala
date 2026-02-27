@@ -50,6 +50,7 @@ final case class ProcessorConfig(
     offlineDetector: OfflineDetectorConfig,
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
+    infraredStove: InfraredStoveConfig,
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig
 ) derives ConfigReader
@@ -142,9 +143,26 @@ final case class HeaterConfig(
     dynamicConsumerCode: String
 ) derives ConfigReader
 
+final case class InfraredStoveConfig(
+    mqttTopicForCommand: String,
+    statusItem: String,
+    energyTodayItem: String,
+    resendInterval: FiniteDuration,
+    id: String,
+    onlineStatusItem: String,
+    syncStatusItem: String,
+    lastCommandItem: String,
+    lastChangeItem: String,
+    syncTimeoutForDynamicPower: FiniteDuration,
+    dynamicConsumerCode: String,
+    programmedOffTimeItem: String
+) derives ConfigReader
+
 final case class FeatureFlagsConfig(
     heaterMqttTopic: Set[String],
-    setHeaterManagementItem: String
+    setHeaterManagementItem: String,
+    infraredStoveMqttTopic: Set[String],
+    setInfraredStoveEnabledItem: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

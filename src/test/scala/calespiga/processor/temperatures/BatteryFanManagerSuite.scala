@@ -2,21 +2,13 @@ package calespiga.processor.temperatures
 
 import munit.FunSuite
 import calespiga.model.{State, Action}
-import calespiga.config.BatteryFanConfig
-import scala.concurrent.duration._
 import calespiga.model.FanSignal
 import com.softwaremill.quicklens._
+import calespiga.processor.ProcessorConfigHelper
 
 class BatteryFanManagerSuite extends FunSuite {
 
-  val dummyConfig = BatteryFanConfig(
-    resendInterval = 10.seconds,
-    batteryFanStatusItem = "BatteryFanStatusItem",
-    batteryFanInconsistencyItem = "BatteryFanInconsistencyItem",
-    batteryFanCommandItem = "BatteryFanCommandItem",
-    batteryFanMqttTopic = "dummy/batteryFan",
-    batteryFanId = "batteryFanId"
-  )
+  val dummyConfig = ProcessorConfigHelper.batteryFanConfig
   val manager = BatteryFanManager(dummyConfig)
 
   def getMqttCommand(actions: Set[Action], topic: String): Option[String] =

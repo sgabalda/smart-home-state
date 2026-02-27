@@ -1,12 +1,11 @@
 package calespiga.processor.utils
 
 import calespiga.processor.utils.OfflineDetector
+import calespiga.processor.ProcessorConfigHelper
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
-import scala.concurrent.duration._
 
 class OfflineDetectorSuite extends FunSuite {
 
@@ -15,12 +14,8 @@ class OfflineDetectorSuite extends FunSuite {
   val statusItem = "TestStatusItem"
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
-  // Dummy config for testing
-  val config = OfflineDetectorConfig(
-    timeoutDuration = 30.seconds,
-    onlineText = "ONLINE",
-    offlineText = "OFFLINE"
-  )
+  // Use config from helper
+  val config = ProcessorConfigHelper.offlineDetectorConfig
 
   // Use an existing event type for matching, e.g. BatteryTemperatureMeasured
   val matchingEvent = Event.Temperature.BatteryTemperatureMeasured(42.0)

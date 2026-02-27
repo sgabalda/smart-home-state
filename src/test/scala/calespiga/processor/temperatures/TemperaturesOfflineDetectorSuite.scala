@@ -2,17 +2,12 @@ package calespiga.processor.temperatures
 
 import munit.FunSuite
 import calespiga.model.{State, Action, Event}
-import calespiga.config.OfflineDetectorConfig
 import java.time.Instant
-import scala.concurrent.duration._
 import calespiga.processor.utils.OfflineDetector
+import calespiga.processor.ProcessorConfigHelper
 
 class TemperaturesOfflineDetectorSuite extends FunSuite {
-  val config = OfflineDetectorConfig(
-    timeoutDuration = 30.seconds,
-    onlineText = "ONLINE",
-    offlineText = "OFFLINE"
-  )
+  val config = ProcessorConfigHelper.offlineDetectorConfig
   val id = "temperatures"
   val statusItem = "TemperaturesStatusItem"
   val now = Instant.parse("2023-08-17T10:00:00Z")

@@ -7,6 +7,7 @@ import cats.effect.IO
 import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
 import calespiga.processor.power.PowerProcessor
+import calespiga.processor.infraredStove.InfraredStoveProcessor
 
 trait StateProcessor {
   def process(
@@ -55,6 +56,12 @@ object StateProcessor {
     ).toEffectful,
     HeaterProcessor(
       config.heater,
+      zoneId,
+      config.offlineDetector,
+      config.syncDetector
+    ).toEffectful,
+    InfraredStoveProcessor(
+      config.infraredStove,
       zoneId,
       config.offlineDetector,
       config.syncDetector

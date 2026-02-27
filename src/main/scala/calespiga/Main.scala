@@ -22,6 +22,8 @@ import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
 import calespiga.power.PowerProductionSource
 import calespiga.config.PowerProductionConfig
 import java.time.ZoneId
+import cats.effect.std.Queue
+import calespiga.model.Event.FeedbackEventData
 
 object Main extends IOApp.Simple {
 
@@ -38,6 +40,7 @@ object Main extends IOApp.Simple {
       mqttInputProcessor: MqttToEventInputProcessor,
       userInterfaceManager: UserInterfaceManager,
       powerProductionSource: PowerProductionSource,
+      feedbackQueue: Queue[IO, FeedbackEventData],
       errorManager: ErrorManager
   ): Stream[IO, Event] = {
     // Process startup event first, then continue with regular events
@@ -48,6 +51,11 @@ object Main extends IOApp.Simple {
         )
         .merge(
           powerProductionSource.getEnergyProductionInfo
+        )
+        .merge(
+          Stream
+            .fromQueueUnterminated(feedbackQueue)
+            .map(Right(_))
         ))
       .evalMapFilter {
         case Left(value) =>
@@ -113,9 +121,11 @@ object Main extends IOApp.Simple {
         openHabApiClient,
         appConfig.uiConfig
       ).toResource
+      feedbackQueue <- Queue.unbounded[IO, FeedbackEventData].toResource
       directExecutor = DirectExecutor(
         userInterfaceManager,
-        mqttActionToProducer
+        mqttActionToProducer,
+        feedbackQueue
       )
       errorManager <- ErrorManager()
       scheduledExecutor <- ScheduledExecutor(directExecutor, errorManager)
@@ -137,6 +147,7 @@ object Main extends IOApp.Simple {
         mqttInputProcessor,
         userInterfaceManager,
         powerSource,
+        feedbackQueue,
         errorManager
       )
     } yield (

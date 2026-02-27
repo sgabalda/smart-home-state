@@ -354,6 +354,73 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
     TestControl.executeEmbed(program)
   }
 
+  test(
+    "ScheduledExecutor executes periodic action with different initial delay"
+  ) {
+    val directAction = Action.SetUIItemValue("item1", "value1")
+    val periodicAction = Action.Periodic(
+      "periodic1",
+      directAction,
+      50.millis,
+      differentInitialDelay = Some(100.millis)
+    )
+
+    val program = for {
+      executedActions <- Ref.of[IO, List[Set[Action.Direct]]](List.empty)
+
+      directExecutor = DirectExecutorStub(
+        onExecute = actions => executedActions.update(_ :+ actions)
+      )
+      errorManager = ErrorManagerStub()
+
+      result <- ScheduledExecutor(directExecutor, errorManager).use {
+        scheduledExecutor =>
+          for {
+            // Execute the periodic action
+            _ <- scheduledExecutor.execute(Set(periodicAction))
+
+            // Advance time to see multiple executions
+            _ <- IO.sleep(50.millis) // First execution
+            _ <- IO.sleep(1.millis) // Buffer for completion
+            actionsAfterFirst <- executedActions.get
+
+            _ <- IO.sleep(50.millis) // Second execution
+            _ <- IO.sleep(1.millis) // Buffer for completion
+            actionsAfterSecond <- executedActions.get
+
+            _ <- IO.sleep(50.millis) // Third execution
+            _ <- IO.sleep(1.millis) // Buffer for completion
+            actionsAfterThird <- executedActions.get
+          } yield (actionsAfterFirst, actionsAfterSecond, actionsAfterThird)
+      }
+
+      (actionsAfterFirst, actionsAfterSecond, actionsAfterThird) = result
+    } yield {
+      assertEquals(
+        actionsAfterFirst.length,
+        0,
+        "First execution should not have occurred due to initial delay"
+      )
+      assertEquals(
+        actionsAfterSecond.length,
+        1,
+        "Second execution should have occurred"
+      )
+      assertEquals(
+        actionsAfterThird.length,
+        2,
+        "Third execution should have occurred"
+      )
+
+      // All executions should be the same action
+      actionsAfterThird.foreach { actions =>
+        assertEquals(actions, Set[Action.Direct](directAction))
+      }
+    }
+
+    TestControl.executeEmbed(program)
+  }
+
   test("ScheduledExecutor cancels previous periodic action with same ID") {
     val directAction1 = Action.SetUIItemValue("item1", "value1")
     val directAction2 = Action.SetUIItemValue("item2", "value2")

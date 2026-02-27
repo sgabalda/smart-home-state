@@ -6,11 +6,13 @@ import calespiga.model.Event.Heater.*
 import calespiga.model.HeaterSignal
 import java.time.Instant
 import com.softwaremill.quicklens.*
-import calespiga.config.HeaterConfig
 import java.time.ZoneId
 import calespiga.model.State.Heater
-import scala.concurrent.duration.*
-import scala.language.postfixOps
+import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.utils.EnergyCalculatorStub
+import calespiga.processor.utils.ProcessorFormatter
+import scala.collection.mutable
+import calespiga.processor.utils.CommandActions
 
 class HeaterPowerProcessorSuite extends FunSuite {
 
@@ -18,21 +20,8 @@ class HeaterPowerProcessorSuite extends FunSuite {
 
   private val zone: ZoneId = ZoneId.systemDefault()
 
-  // Dummy HeaterConfig for processor instantiation
-  private val dummyConfig = HeaterConfig(
-    mqttTopicForCommand = "dummy/topic",
-    lastTimeHotItem = "dummy/lastTimeHot",
-    energyTodayItem = "dummy/energyToday",
-    statusItem = "dummyStatusItem",
-    isHotItem = "dummyIsHotItem",
-    resendInterval = 20 seconds,
-    id = "heater-processor",
-    onlineStatusItem = "dummyOnlineStatusItem",
-    syncStatusItem = "dummySyncStatusItem",
-    lastCommandItem = "dummyLastCommandItem",
-    syncTimeoutForDynamicPower = 10 seconds,
-    dynamicConsumerCode = "heater-consumer-code"
-  )
+  // Use HeaterConfig from helper
+  private val dummyConfig = ProcessorConfigHelper.heaterConfig
 
   private def stateWithHeater(
       status: Option[HeaterSignal.ControllerState] = Some(HeaterSignal.Off),
@@ -60,27 +49,48 @@ class HeaterPowerProcessorSuite extends FunSuite {
   test("HeaterPowerStatusReported accumulates energy if same day") {
     val secondsAgo = 3600
     val initialEnergy = 1000f
-    val addedEnergy = 500f
+    val calculatedEnergy = 1500f
     val oneHourAgo = now.minusSeconds(secondsAgo)
     val initialState = stateWithHeater(
       status = Some(HeaterSignal.Power500),
       lastChange = Some(oneHourAgo),
       energyToday = initialEnergy
     )
+
+    // Track calls to the energy calculator
+    val calculatorCalls = mutable.ListBuffer
+      .empty[(Option[Instant], Instant, Int, Float, ZoneId)]
+    val energyCalculator = EnergyCalculatorStub(
+      calculateEnergyTodayStub =
+        (lastChange, timestamp, power, energy, zone) => {
+          calculatorCalls.addOne((lastChange, timestamp, power, energy, zone))
+          calculatedEnergy
+        }
+    )
+
     val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
-    val processor = HeaterPowerProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone, energyCalculator)
     val (newState, actions) = processor.process(initialState, event, now)
+
+    // Verify EnergyCalculator was called with correct parameters
+    assertEquals(calculatorCalls.size, 1)
+    val (callLastChange, callTimestamp, callPower, callEnergy, callZone) =
+      calculatorCalls.head
+    assertEquals(callLastChange, Some(oneHourAgo))
+    assertEquals(callTimestamp, now)
+    assertEquals(callPower, HeaterSignal.Power500.power)
+    assertEquals(callEnergy, initialEnergy)
+    assertEquals(callZone, zone)
+
+    // Verify state was updated with calculator result
     assertEquals(newState.heater.status, Some(HeaterSignal.Power1000))
     assertEquals(newState.heater.lastChange, Some(now))
-    assertEqualsDouble(
-      newState.heater.energyToday,
-      initialEnergy + addedEnergy,
-      0.1f
-    )
+    assertEqualsDouble(newState.heater.energyToday, calculatedEnergy, 0.1f)
+
     val expectedActions: Set[Action] = Set(
       Action.SetUIItemValue(
         dummyConfig.energyTodayItem,
-        newState.heater.energyToday.toInt.toString
+        calculatedEnergy.toInt.toString
       ),
       Action.SetUIItemValue(
         dummyConfig.statusItem,
@@ -92,6 +102,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
 
   test("HeaterPowerStatusReported resets energy if new day") {
     val initialEnergy = 10000f
+    val calculatedEnergy = 500f
     val yesterday = now
       .atZone(zone)
       .toLocalDate
@@ -105,20 +116,45 @@ class HeaterPowerProcessorSuite extends FunSuite {
       lastChange = Some(yesterday),
       energyToday = initialEnergy
     )
+
+    // Track calls to the energy calculator
+    val calculatorCalls2 = mutable.ListBuffer
+      .empty[(Option[Instant], Instant, Int, Float, ZoneId)]
+    val energyCalculator2 = EnergyCalculatorStub(
+      calculateEnergyTodayStub =
+        (lastChange, timestamp, power, energy, zone) => {
+          calculatorCalls2.addOne((lastChange, timestamp, power, energy, zone))
+          calculatedEnergy
+        }
+    )
+
     val event = HeaterPowerStatusReported(HeaterSignal.Power1000)
-    val processor = HeaterPowerProcessor(dummyConfig, zone)
+    val processor = HeaterPowerProcessor(dummyConfig, zone, energyCalculator2)
     val (newState2, actions2) =
       processor.process(initialStateNewDay, event, today)
+
+    // Verify EnergyCalculator was called with correct parameters
+    assertEquals(calculatorCalls2.size, 1)
+    val (callLastChange2, callTimestamp2, callPower2, callEnergy2, callZone2) =
+      calculatorCalls2.head
+    assertEquals(callLastChange2, Some(yesterday))
+    assertEquals(callTimestamp2, today)
+    assertEquals(callPower2, HeaterSignal.Power500.power)
+    assertEquals(callEnergy2, initialEnergy)
+    assertEquals(callZone2, zone)
+
+    // Verify state was updated with calculator result
     assertEqualsDouble(
       newState2.heater.energyToday,
-      500f,
+      calculatedEnergy,
       0.1f,
-      "energyToday should reset for new day"
+      "energyToday should be set to calculator result"
     )
+
     val expectedActions: Set[Action] = Set(
       Action.SetUIItemValue(
         dummyConfig.energyTodayItem,
-        newState2.heater.energyToday.toInt.toString
+        calculatedEnergy.toInt.toString
       ),
       Action.SetUIItemValue(
         dummyConfig.statusItem,
@@ -144,7 +180,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action
         .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
       Action.Periodic(
-        dummyConfig.id + Actions.COMMAND_ACTION_SUFFIX,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
         Action
           .SendMqttStringMessage(dummyConfig.mqttTopicForCommand, "1000"),
         dummyConfig.resendInterval
@@ -172,7 +208,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
+        ProcessorFormatter.format(now, zone)
       ),
       Action.SetUIItemValue(
         dummyConfig.isHotItem,
@@ -203,7 +239,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
       ),
       Action.SetUIItemValue(
         dummyConfig.lastTimeHotItem,
-        now.atZone(zone).toLocalDateTime.format(HeaterPowerProcessor.formatter)
+        ProcessorFormatter.format(now, zone)
       ),
       Action.SetUIItemValue(
         dummyConfig.isHotItem,

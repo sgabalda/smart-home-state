@@ -2,21 +2,13 @@ package calespiga.processor.temperatures
 
 import munit.FunSuite
 import calespiga.model.{State, Action}
-import calespiga.config.ElectronicsFanConfig
-import scala.concurrent.duration._
 import calespiga.model.FanSignal
 import com.softwaremill.quicklens._
+import calespiga.processor.ProcessorConfigHelper
 
 class ElectronicsFanManagerSuite extends FunSuite {
 
-  val dummyConfig = ElectronicsFanConfig(
-    resendInterval = 10.seconds,
-    electronicsFanStatusItem = "ElectronicsFanStatusItem",
-    electronicsFanInconsistencyItem = "ElectronicsFanInconsistencyItem",
-    electronicsFanCommandItem = "ElectronicsFanCommandItem",
-    electronicsFanMqttTopic = "dummy/electronicsFan",
-    electronicsFanId = "electronicsFanId"
-  )
+  val dummyConfig = ProcessorConfigHelper.electronicsFanConfig
   val manager = ElectronicsFanManager(dummyConfig)
 
   def getMqttCommand(actions: Set[Action], topic: String): Option[String] =

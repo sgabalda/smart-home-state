@@ -58,7 +58,7 @@ object SunnyBoyAPIClient {
               .getData(successBody)
               .flatMap(dp => decoder.toPowerProduction(dp).map((dp, _))) match {
               case Right((dp, producedPower)) =>
-                logger.info(
+                logger.debug(
                   s"Successfully decoded data: $dp => $producedPower"
                 ) *> IO.pure(producedPower)
               case Left(decodingError) =>
@@ -73,7 +73,7 @@ object SunnyBoyAPIClient {
 
     private def updateToken: IO[String] =
       requestToken.orElse(
-        logger.info("Retrying token request after clearing cookies...") *>
+        logger.debug("Retrying token request after clearing cookies...") *>
           sessionRestartEffect *>
           requestToken
       )

@@ -21,6 +21,16 @@ object ScheduledExecutor {
       fibersRef: Ref[IO, Map[String, Fiber[IO, Throwable, Unit]]]
   ) extends ScheduledExecutor {
 
+    private def cancelFiberIfExists(id: String): IO[Unit] =
+      fibersRef.get.flatMap { fibers =>
+        fibers.get(id) match {
+          case Some(existingFiber) =>
+            existingFiber.cancel *> fibersRef.update(_ - id)
+          case None =>
+            IO.unit
+        }
+      }
+
     private def processSingleScheduledAction(
         scheduledAction: Action.Scheduled
     ): IO[Unit] = {
@@ -28,14 +38,7 @@ object ScheduledExecutor {
         case delayed: Action.Delayed =>
           for {
             // Cancel existing fiber with the same ID if it exists
-            _ <- fibersRef.get.flatMap { fibers =>
-              fibers.get(delayed.id) match {
-                case Some(existingFiber) =>
-                  existingFiber.cancel *> fibersRef.update(_ - delayed.id)
-                case None =>
-                  IO.unit
-              }
-            }
+            _ <- cancelFiberIfExists(delayed.id)
             // Create new fiber for the delayed execution
             delayedExecution =
               for {
@@ -54,24 +57,24 @@ object ScheduledExecutor {
         case periodic: Action.Periodic =>
           // Define the recursive periodic execution function
           def periodicExecution: IO[Unit] =
-            IO.sleep(periodic.period) *>
-              directExecutor.execute(Set(periodic.action)).flatMap { errors =>
-                errorManager.manageErrors(errors) *> periodicExecution
-              }
+            directExecutor.execute(Set(periodic.action)).flatMap { errors =>
+              errorManager.manageErrors(errors) *>
+                IO.sleep(periodic.period) *> periodicExecution
+            }
+
+          def initialPeriodicExecution: IO[Unit] =
+            periodic.differentInitialDelay match {
+              case Some(initialDelay) =>
+                IO.sleep(initialDelay) *> periodicExecution
+              case None => IO.sleep(periodic.period) *> periodicExecution
+            }
 
           for {
             // Cancel existing fiber with the same ID if it exists
-            _ <- fibersRef.get.flatMap { fibers =>
-              fibers.get(periodic.id) match {
-                case Some(existingFiber) =>
-                  existingFiber.cancel *> fibersRef.update(_ - periodic.id)
-                case None =>
-                  IO.unit
-              }
-            }
+            _ <- cancelFiberIfExists(periodic.id)
 
             // Start the periodic execution fiber
-            newFiber <- periodicExecution.start
+            newFiber <- initialPeriodicExecution.start
 
             // Store the new fiber in the map
             _ <- fibersRef.update(_ + (periodic.id -> newFiber))
@@ -79,14 +82,8 @@ object ScheduledExecutor {
 
         case cancel: Action.Cancel =>
           // Cancel existing fiber with the specified ID if it exists
-          fibersRef.get.flatMap { fibers =>
-            fibers.get(cancel.id) match {
-              case Some(existingFiber) =>
-                existingFiber.cancel *> fibersRef.update(_ - cancel.id)
-              case None =>
-                IO.unit
-            }
-          }
+          cancelFiberIfExists(cancel.id)
+
       }
     }
 

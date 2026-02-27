@@ -22,6 +22,14 @@ object Event {
 
   sealed trait EventData
 
+  /** Use this only for internal events that are not triggered by external
+    * inputs, but are needed for feedback loops or to trigger actions based on
+    * time or other conditions. These events should not be created directly from
+    * external inputs, but can be used internally in the application to
+    * represent events that are not directly tied to an external input.
+    */
+  sealed trait FeedbackEventData extends EventData
+
   object System {
     sealed trait SystemData extends EventData
 
@@ -34,6 +42,9 @@ object Event {
 
     @InputEventOHItem("CalentadorHabilitatsSHS")
     case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("EstufaInfrarrojosEnabledSHS")
+    case class SetInfraredStoveEnabled(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -108,6 +119,30 @@ object Event {
     ) extends HeaterData
   }
 
+  object InfraredStove {
+    sealed trait InfraredStoveData extends EventData
+
+    @InputEventMqtt("estufa1/status")
+    case class InfraredStovePowerStatusReported(
+        status: InfraredStoveSignal.ControllerState
+    ) extends InfraredStoveData
+
+    @InputEventOHItem("EstufaInfrarrojosSetSHS")
+    case class InfraredStovePowerCommandChanged(
+        status: InfraredStoveSignal.UserCommand
+    ) extends InfraredStoveData
+
+    case object InfraredStoveManualTimeExpired
+        extends FeedbackEventData
+        with InfraredStoveData
+
+    @InputEventOHItem("EstufaInfrarrojosSetTempsManualSHS")
+    case class InfraredStoveManualTimeChanged(
+        minutes: Int
+    ) extends InfraredStoveData
+
+  }
+
   object Power {
     sealed trait PowerData extends EventData
 
@@ -137,6 +172,13 @@ object Event {
           priority: Int
       ) extends DynamicPowerConsumerPriorityChanged {
         override val consumerUniqueCode: String = "CalentadorPrioritatConsumSHS"
+      }
+      @InputEventOHItem("EstufaInfrarrojosPrioritatConsumSHS")
+      case class InfraredStovePowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerConsumerPriorityChanged {
+        override val consumerUniqueCode: String =
+          "EstufaInfrarrojosPrioritatConsumSHS"
       }
     }
   }

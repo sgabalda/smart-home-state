@@ -4,6 +4,7 @@ import scala.quoted.*
 import calespiga.model.Event.EventData
 import calespiga.model.HeaterSignal
 import calespiga.model.FanSignal
+import calespiga.model.InfraredStoveSignal
 
 object InputTopicMapper {
 
@@ -114,6 +115,15 @@ object InputTopicMapper {
                 HeaterSignal
                   .heaterTermostateStateFromString(valueStr)
                   .getOrElse(HeaterSignal.Cold)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe
+                if tpe =:= TypeRepr.of[InfraredStoveSignal.ControllerState] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                InfraredStoveSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(InfraredStoveSignal.Off)
               }
               getNewExpr(convertedValueExpr)
 

@@ -1,8 +1,8 @@
-package calespiga.processor.heater
+package calespiga.processor.infraredStove
 
 import munit.FunSuite
 import calespiga.model.{State, Action}
-import calespiga.model.HeaterSignal
+import calespiga.model.InfraredStoveSignal
 import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
 import calespiga.processor.utils.SyncDetectorStub
@@ -10,29 +10,29 @@ import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
 
-class HeaterDynamicPowerConsumerSuite extends FunSuite {
+class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
-  private val dummyConfig = ProcessorConfigHelper.heaterConfig
+  private val dummyConfig = ProcessorConfigHelper.infraredStoveConfig
 
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val consumer =
-    HeaterDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
+    InfraredStoveDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
 
-  private def stateWithHeater(
-      status: Option[HeaterSignal.ControllerState] = None,
-      lastCommandSent: Option[HeaterSignal.ControllerState] = None,
-      lastCommandReceived: Option[HeaterSignal.UserCommand] = None
+  private def stateWithInfraredStove(
+      status: Option[InfraredStoveSignal.ControllerState] = None,
+      lastCommandSent: Option[InfraredStoveSignal.ControllerState] = None,
+      lastCommandReceived: Option[InfraredStoveSignal.UserCommand] = None
   ): State =
     State()
-      .modify(_.heater.status)
+      .modify(_.infraredStove.status)
       .setTo(
         status
       )
-      .modify(_.heater.lastCommandSent)
+      .modify(_.infraredStove.lastCommandSent)
       .setTo(
         lastCommandSent
       )
-      .modify(_.heater.lastCommandReceived)
+      .modify(_.infraredStove.lastCommandReceived)
       .setTo(
         lastCommandReceived
       )
@@ -44,9 +44,9 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "currentlyUsedDynamicPower: returns 0 when lastCommandReceived is OFF"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power2000),
-      lastCommandReceived = Some(HeaterSignal.TurnOff)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power1200),
+      lastCommandReceived = Some(InfraredStoveSignal.TurnOff)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -55,11 +55,11 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "currentlyUsedDynamicPower: returns 0 when lastCommandReceived is 500"
+    "currentlyUsedDynamicPower: returns 0 when lastCommandReceived is 600"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power2000),
-      lastCommandReceived = Some(HeaterSignal.SetPower500)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power1200),
+      lastCommandReceived = Some(InfraredStoveSignal.SetPower600)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -70,8 +70,8 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "currentlyUsedDynamicPower: returns 0 when lastCommandReceived is None"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power1000)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power600)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -80,50 +80,37 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "currentlyUsedDynamicPower: returnsPower.ofUnusedFV(500) when automatic and status is Power500"
+    "currentlyUsedDynamicPower: returns Power.ofFv(600) when automatic and status is Power600"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power500),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power600),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(500f))
+    assertEquals(result, Power.ofFv(600f))
   }
 
   test(
-    "currentlyUsedDynamicPower: returns Power.ofFv(1000) when automatic and status is Power1000"
+    "currentlyUsedDynamicPower: returns Power.ofFv(1200) when automatic and status is Power1200"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power1000),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power1200),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(1000f))
-  }
-
-  test(
-    "currentlyUsedDynamicPower: returns Power.ofFv(2000) when automatic and status is Power2000"
-  ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power2000),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
-    )
-
-    val result = consumer.currentlyUsedDynamicPower(state, now)
-
-    assertEquals(result, Power.ofFv(2000f))
+    assertEquals(result, Power.ofFv(1200f))
   }
 
   test(
     "currentlyUsedDynamicPower: returns 0 when automatic and status is Off"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Off),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Off),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -134,9 +121,9 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "currentlyUsedDynamicPower: returns 0 when automatic and status is None"
   ) {
-    val state = stateWithHeater(
+    val state = stateWithInfraredStove(
       status = None,
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -149,7 +136,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(60) // 60 seconds ago, beyond the 50 second timeout
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -157,9 +144,9 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power2000),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power1200),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
@@ -174,7 +161,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "currentlyUsedDynamicPower: returns normal power when NotInSyncNow"
   ) {
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -182,16 +169,16 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power2000),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power1200),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
     assertEquals(
       result,
-      Power.ofFv(2000f),
+      Power.ofFv(1200f),
       "Should return normal power when NotInSyncNow"
     )
   }
@@ -201,7 +188,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(30) // 30 seconds ago, within the 50 second timeout
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -209,16 +196,16 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power1000),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power600),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
     assertEquals(
       result,
-      Power.ofFv(1000f),
+      Power.ofFv(600f),
       "Should return normal power when not in sync within timeout"
     )
   }
@@ -230,8 +217,8 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "usePower: returns unchanged state, no actions, and zero power when not automatic"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.TurnOff)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.TurnOff)
     )
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
@@ -248,7 +235,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "usePower: returns unchanged state, no actions, and zero power when lastCommandReceived is None"
   ) {
-    val state = stateWithHeater()
+    val state = stateWithInfraredStove()
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
 
@@ -262,23 +249,23 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power2000 when automatic and power > 2000"
+    "usePower: sets Power1200 when automatic and power > 1200"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power2000),
-      "lastCommandSent should be Power2000"
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power1200),
+      "lastCommandSent should be Power1200"
     )
     assertEquals(
       result.powerUsed,
-      Power.ofFv(2000f),
-      "Power used should be 2000"
+      Power.ofFv(1200f),
+      "Power used should be 1200"
     )
 
     // Check that actions are returned
@@ -298,7 +285,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val mqttAction = mqttActions.head
     assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
-    assertEquals(mqttAction.message, "2000")
+    assertEquals(mqttAction.message, "1200")
 
     val periodicAction = periodicActions.head
     assertEquals(
@@ -310,23 +297,23 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power1000 when automatic and 1000 < power <= 2000"
+    "usePower: sets Power600 when automatic and 600 < power <= 1200"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofFv(1500f), now)
+    val result = consumer.usePower(state, Power.ofFv(800f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
-      "lastCommandSent should be Power1000"
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power600),
+      "lastCommandSent should be Power600"
     )
     assertEquals(
       result.powerUsed,
-      Power.ofFv(1000f),
-      "Power used should be 1000"
+      Power.ofFv(600f),
+      "Power used should be 600"
     )
 
     assert(result.actions.nonEmpty, "Actions should be returned")
@@ -335,50 +322,21 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     val mqttAction = result.actions.collectFirst {
       case a: Action.SendMqttStringMessage => a
     }.get
-    assertEquals(mqttAction.message, "1000")
+    assertEquals(mqttAction.message, "600")
   }
 
   test(
-    "usePower: sets Power500 when automatic and 500 < power <= 1000"
+    "usePower: sets Off when automatic and power <= 600"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
-    )
-
-    val result = consumer.usePower(state, Power.ofFv(750f), now)
-
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power500),
-      "lastCommandSent should be Power500"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(500f),
-      "Power used should be 500"
-    )
-
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "500")
-  }
-
-  test(
-    "usePower: sets Off when automatic and power < 500"
-  ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.usePower(state, Power.ofFv(300f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off),
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Off),
       "lastCommandSent should be Off"
     )
     assertEquals(
@@ -397,49 +355,33 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   }
 
   test(
-    "usePower: sets Power1000 at boundary (exactly 2000)"
+    "usePower: sets Power600 at boundary (exactly 1200)"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofFv(2000f), now)
+    val result = consumer.usePower(state, Power.ofFv(1200f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000)
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power600)
     )
-    assertEquals(result.powerUsed, Power.ofFv(1000f))
+    assertEquals(result.powerUsed, Power.ofFv(600f))
   }
 
   test(
-    "usePower: sets Power500 at boundary (exactly 1000)"
+    "usePower: sets Off at boundary (exactly 600)"
   ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
-    val result = consumer.usePower(state, Power.ofFv(1000f), now)
+    val result = consumer.usePower(state, Power.ofFv(600f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power500)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(500f))
-  }
-
-  test(
-    "usePower: sets Off at boundary (exactly 500)"
-  ) {
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
-    )
-
-    val result = consumer.usePower(state, Power.ofFv(500f), now)
-
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off)
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Off)
     )
     assertEquals(result.powerUsed, Power.zero)
   }
@@ -447,27 +389,27 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "usePower: state is modified only in lastCommandSent, other fields unchanged"
   ) {
-    val state = stateWithHeater(
-      status = Some(HeaterSignal.Power500),
-      lastCommandSent = Some(HeaterSignal.Off),
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      status = Some(InfraredStoveSignal.Power600),
+      lastCommandSent = Some(InfraredStoveSignal.Off),
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
 
     assertEquals(
-      result.state.heater.status,
-      Some(HeaterSignal.Power500),
+      result.state.infraredStove.status,
+      Some(InfraredStoveSignal.Power600),
       "Status should remain unchanged"
     )
     assertEquals(
-      result.state.heater.lastCommandReceived,
-      Some(HeaterSignal.SetAutomatic),
+      result.state.infraredStove.lastCommandReceived,
+      Some(InfraredStoveSignal.SetAutomatic),
       "lastCommandReceived should remain unchanged"
     )
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power1200),
       "Only lastCommandSent should be updated"
     )
   }
@@ -477,7 +419,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(60) // 60 seconds ago, beyond the 50 second timeout
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -485,16 +427,16 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off),
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Off),
       "Should set Off when not in sync beyond timeout"
     )
     assertEquals(
@@ -514,7 +456,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   test(
     "usePower: works normally when NotInSyncNow"
   ) {
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -522,28 +464,28 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power2000),
-      "Should set Power2000 when NotInSyncNow"
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power1200),
+      "Should set Power1200 when NotInSyncNow"
     )
     assertEquals(
       result.powerUsed,
-      Power.ofFv(2000f),
+      Power.ofFv(1200f),
       "Should use normal power when NotInSyncNow"
     )
 
     val mqttAction = result.actions.collectFirst {
       case a: Action.SendMqttStringMessage => a
     }.get
-    assertEquals(mqttAction.message, "2000")
+    assertEquals(mqttAction.message, "1200")
   }
 
   test(
@@ -551,7 +493,7 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   ) {
     val syncStartTime =
       now.minusSeconds(30) // 30 seconds ago, within the 50 second timeout
-    val consumerWithSyncDetector = HeaterDynamicPowerConsumer(
+    val consumerWithSyncDetector = InfraredStoveDynamicPowerConsumer(
       dummyConfig,
       SyncDetectorStub(
         checkIfInSyncStub =
@@ -559,27 +501,27 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
       )
     )
 
-    val state = stateWithHeater(
-      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    val state = stateWithInfraredStove(
+      lastCommandReceived = Some(InfraredStoveSignal.SetAutomatic)
     )
 
     val result =
-      consumerWithSyncDetector.usePower(state, Power.ofFv(1500f), now)
+      consumerWithSyncDetector.usePower(state, Power.ofFv(800f), now)
 
     assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
-      "Should set Power1000 when not in sync within timeout"
+      result.state.infraredStove.lastCommandSent,
+      Some(InfraredStoveSignal.Power600),
+      "Should set Power600 when not in sync within timeout"
     )
     assertEquals(
       result.powerUsed,
-      Power.ofFv(1000f),
+      Power.ofFv(600f),
       "Should use normal power when not in sync within timeout"
     )
 
     val mqttAction = result.actions.collectFirst {
       case a: Action.SendMqttStringMessage => a
     }.get
-    assertEquals(mqttAction.message, "1000")
+    assertEquals(mqttAction.message, "600")
   }
 }
