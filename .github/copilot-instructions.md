@@ -6,10 +6,22 @@
 - It aggregates multiple event sources and updates OpenHAB items via the REST API (OpenHAB is used as a frontend, not as the main state holder).
 - The goal is to reduce complexity and inconsistency from managing many OpenHAB items individually.
 
-## Architecture & Key Components
+## Tech stack
+
+- **Scala**: Main programming language for the application logic.
+- **SBT**: Build tool for compiling, testing, and running the application.
+- **HOCON/PureConfig & JSON/Circe**: HOCON (`application.conf`) with PureConfig for runtime configuration, and JSON with Circe for persisted state (e.g., `data/state.json`).
+- **Cats Effect**: For managing side effects and asynchronous processing.
+- **Quicklens**: For immutably updating nested case classes in a readable way.
+- **OpenHAB REST API**: As a frontend for displaying and controlling the smart home state.
+- **MQTT**: For event input and output.
+
+## Project structure & Key Components
 
 - **src/main/scala/calespiga/**: Main Scala source code.
   - `processor/`: Contains processors for handling and transforming events.
+    - `utils/`: Shared utilities used across processors (e.g., `ProcessorFormatter`, `EnergyCalculator`, `OfflineDetector`). Place any reusable processor logic here.
+  - `config/`: Configuration case classes mirroring `application.conf`. Every new configurable value needs a field added here **and** a corresponding entry in `src/main/resources/application.conf`.
   - `mqtt/`: Handles MQTT communication for event input/output.
   - `model/`: Defines core data models and state representations.
   - `openhab/`: Integrates with the OpenHAB REST API.
@@ -21,7 +33,7 @@
 ## Developer Workflows
 
 - **Build**: Use `sbt compile` to build the project.
-- **Test**: Run `sbt test` for all tests. Test reports are output to `test-reports/`.
+- **Test**: Run `sbt test` for all tests. Test reports are output to `target/test-reports/`.
 - **Run**: Use `sbt run` to start the application.
 - **Docker**: Use `docker-compose.yml` and `Dockerfile` for containerized deployment.
 
@@ -30,8 +42,18 @@
 - **Single State Principle**: All device/item states are managed in a single state object, not scattered across multiple OpenHAB items.
 - **Event-Driven Processing**: Processors in `processor/` react to events from MQTT, user input, or other sources, and update the state accordingly.
 - **Integration Boundaries**: Communication with OpenHAB is isolated in the `openhab/` package. MQTT logic is isolated in `mqtt/`.
+- **DRY**: Avoid duplication by centralizing common logic (e.g., time formatting in `ProcessorFormatter`).
 - **Testing**: Unit tests are in `src/test/scala/`. Test classes are named `*Suite.scala`.
 - **Logging**: Logs are written to `logs/application.log`.
+- **Processors**: Each device or logical grouping of functionality has a corresponding aggregate processor (e.g., `InfraredStoveProcessor`, `TemperaturesProcessor`...), that must be ALWAYS suffixed with the `Processor` keyword. Each aggregate processor is responsible composing the multiple internal processors for that device. All the internal processors are private to the package and should not be used outside of the aggregate processor. Name these internal processors to clearly describe their role; the `Processor` suffix is recommended for core event/state transformers, while suffixes like `Manager`, `Updater`, or `Detector` are acceptable when they better express the behavior. Separate different responsibilities into different internal processors.
+- **Processor Composition**: Processors for a device are composed via `.andThen()` inside an aggregate processor (e.g., `InfraredStoveProcessor`). When adding a new processor for an existing device, wire it in there. When adding a processor for a new device, create a new aggregate processor and register it in the `StateProcessor`, that is the main entry point for all state processing.
+- **Dynamic power**: Some devices are potentially activated or deactivated automatically based on the available power. The logic for this is in the `PowerProcessor`, and if a device is to be managed dyanimcally in some situations, it must register via the `.withDynamicConsumer` method an implementation of the `DynamicPowerConsumer` trait. As an example see the `InfraredStoveProcessor` and `HeaterProcessor`.
+- **Utilities**: Any reusable logic shared between processors (formatting, energy calculation, offline/sync detection) belongs in `processor/utils/`. Do not duplicate utility code across individual processors.
+- **State Updates**: Use Quicklens for immutably updating nested state fields in a readable way, instead of using the copy method directly.
+- **Events**: Define events in the `model/` package. Events are inputs to the program and trigger state updates and actions. There are two kinds:
+  - `EventData`: external inputs arriving from MQTT or OpenHAB (annotated with `@InputEventMqtt` or `@InputEventOHItem`).
+  - `FeedbackEventData`: internal events generated by the program itself (via `Action.SendFeedbackEvent`) to trigger further processing, e.g. `InfraredStoveManualTimeExpired`.
+- **Actions**: Define actions that the program should take in response to events (e.g., setting an OpenHAB item, sending an MQTT message). Actions are returned by processors and executed by the Executors.
 
 ## Style Guidelines
 
@@ -39,6 +61,17 @@
 - Use meaningful names for classes, methods, and variables.
 - For modifying classes from the model, do not use the copy method, instead use the quicklens dependency for better readability.
 - When adding new tests, add them at the end of the test class.
+- Avoid redundant comments; prefer clear naming and small, focused functions, but use Scaladoc for public APIs and brief rationale comments where intent or constraints are not obvious from the code alone.
+- For any new OpenHAB items, ensure they are added to the correct section in the `oh/items/smart-home-state.items` file and the corresponding section in the `oh/sitemaps/shs.sitemap` file.
+- When defining new events or state fields, ensure they are added to the appropriate case classes in the `model/` package and that they are properly handled in the relevant processors.
+- Processors that format timestamps must receive a `ZoneId` (passed from config/application wiring) and use `ProcessorFormatter.format(instant, zone)` to produce human-readable date strings consistent across the application.
+
+## Guidelines for responses generated by Copilot
+
+- Keep the response in the chat short and concise, do not provide long explanations or justifications for the code changes.
+- Do not provide a final summary of the changes you made, just provide the code changes.
+- Do not suggest code formatting executions or code formatting changes, the user will format the code themselves.
+- Don't write a message for each step of the TODO list done, just provide the list of actions when ready and then the final output.
 
 ## Openhab items
 
@@ -47,21 +80,12 @@
 - All openhab items should be in the file `oh/items/smart-home-state.items`, in the section corresponding to their function.
 - The items should also be added to the sitemap file `oh/sitemaps/shs.sitemap`, in the section corresponding to their function.
 
-## External Integrations
-
-- **OpenHAB REST API**: Used for reading/writing item states.
-- **MQTT**: Used for event input and output.
-
 ## Examples
 
-- To add a new event processor, create a class in `processor/` and register it in the main processing pipeline.
+- To add a new event processor, create a class in `processor/`, wire it in the relevant aggregate `*Processor` object via `.andThen()`, and register any new config fields in `ApplicationConfig` and `application.conf`.
 - To persist new state fields, update the model in `model/` and the persistence logic in `persistence/`.
 
 ## References
 
 - See `README.md` for high-level project motivation and goals.
 - See `docker-compose.yml` and `Dockerfile` for deployment details.
-
----
-
-If you are unsure about a workflow or pattern, check the corresponding package or ask for clarification.
