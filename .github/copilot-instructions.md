@@ -10,7 +10,7 @@
 
 - **Scala**: Main programming language for the application logic.
 - **SBT**: Build tool for compiling, testing, and running the application.
-- **JSON**: For state persistence and configuration.
+- **HOCON/PureConfig & JSON/Circe**: HOCON (`application.conf`) with PureConfig for runtime configuration, and JSON with Circe for persisted state (e.g., `data/state.json`).
 - **Cats Effect**: For managing side effects and asynchronous processing.
 - **Quicklens**: For immutably updating nested case classes in a readable way.
 - **OpenHAB REST API**: As a frontend for displaying and controlling the smart home state.
@@ -33,7 +33,7 @@
 ## Developer Workflows
 
 - **Build**: Use `sbt compile` to build the project.
-- **Test**: Run `sbt test` for all tests. Test reports are output to `test-reports/`.
+- **Test**: Run `sbt test` for all tests. Test reports are output to `target/test-reports/`.
 - **Run**: Use `sbt run` to start the application.
 - **Docker**: Use `docker-compose.yml` and `Dockerfile` for containerized deployment.
 
@@ -45,8 +45,9 @@
 - **DRY**: Avoid duplication by centralizing common logic (e.g., time formatting in `ProcessorFormatter`).
 - **Testing**: Unit tests are in `src/test/scala/`. Test classes are named `*Suite.scala`.
 - **Logging**: Logs are written to `logs/application.log`.
-- **Processors**: Each processor handles a specific aspect of the state (e.g., `InfraredStoveManualTimeProcessor` manages manual time settings for the infrared stove). Always suffix processor classes with `Processor` for clarity.
-- **Processor Composition**: Processors for a device are composed via `.andThen()` inside an aggregate object (e.g., `InfraredStoveProcessor`). When adding a new processor for an existing device, wire it in there. When adding a processor for a new device, create a new aggregate object and register it in the main application entry point.
+- **Processors**: Each device or logical grouping of functionality has a corresponding aggregate processor (e.g., `InfraredStoveProcessor`, `TemperaturesProcessor`...), that must be ALWAYS suffixed with the `Processor` keyword. Each aggregate processor is responsible composing the multiple internal processors for that device. All the internal processors are private to the package and should not be used outside of the aggregate processor. Name these internal processors to clearly describe their role; the `Processor` suffix is recommended for core event/state transformers, while suffixes like `Manager`, `Updater`, or `Detector` are acceptable when they better express the behavior. Separate different responsibilities into different internal processors.
+- **Processor Composition**: Processors for a device are composed via `.andThen()` inside an aggregate processor (e.g., `InfraredStoveProcessor`). When adding a new processor for an existing device, wire it in there. When adding a processor for a new device, create a new aggregate processor and register it in the `StateProcessor`, that is the main entry point for all state processing.
+- **Dynamic power**: Some devices are potentially activated or deactivated automatically based on the available power. The logic for this is in the `PowerProcessor`, and if a device is to be managed dyanimcally in some situations, it must register via the `.withDynamicConsumer` method an implementation of the `DynamicPowerConsumer` trait. As an example see the `InfraredStoveProcessor` and `HeaterProcessor`.
 - **Utilities**: Any reusable logic shared between processors (formatting, energy calculation, offline/sync detection) belongs in `processor/utils/`. Do not duplicate utility code across individual processors.
 - **State Updates**: Use Quicklens for immutably updating nested state fields in a readable way, instead of using the copy method directly.
 - **Events**: Define events in the `model/` package. Events are inputs to the program and trigger state updates and actions. There are two kinds:
@@ -60,7 +61,7 @@
 - Use meaningful names for classes, methods, and variables.
 - For modifying classes from the model, do not use the copy method, instead use the quicklens dependency for better readability.
 - When adding new tests, add them at the end of the test class.
-- NEVER write comments in code. Code should be self-explanatory through clear naming.
+- Avoid redundant comments; prefer clear naming and small, focused functions, but use Scaladoc for public APIs and brief rationale comments where intent or constraints are not obvious from the code alone.
 - For any new OpenHAB items, ensure they are added to the correct section in the `oh/items/smart-home-state.items` file and the corresponding section in the `oh/sitemaps/shs.sitemap` file.
 - When defining new events or state fields, ensure they are added to the appropriate case classes in the `model/` package and that they are properly handled in the relevant processors.
 - Processors that format timestamps must receive a `ZoneId` (passed from config/application wiring) and use `ProcessorFormatter.format(instant, zone)` to produce human-readable date strings consistent across the application.
