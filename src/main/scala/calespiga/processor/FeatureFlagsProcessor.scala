@@ -36,7 +36,11 @@ object FeatureFlagsProcessor {
                 if (!state.featureFlags.infraredStoveEnabled)
                   config.infraredStoveMqttTopic
                 else Set.empty
-              bl ++ heaterBl ++ stoveBl
+              val gridBl =
+                if (!state.featureFlags.gridConnectionEnabled)
+                  config.gridMqttTopic
+                else Set.empty
+              bl ++ heaterBl ++ stoveBl ++ gridBl
             }
             .as(
               (
@@ -49,6 +53,10 @@ object FeatureFlagsProcessor {
                   Action.SetUIItemValue(
                     config.setInfraredStoveEnabledItem,
                     state.featureFlags.infraredStoveEnabled.toString
+                  ),
+                  Action.SetUIItemValue(
+                    config.setGridConnectionEnabledItem,
+                    state.featureFlags.gridConnectionEnabled.toString
                   )
                 )
               )
@@ -88,6 +96,25 @@ object FeatureFlagsProcessor {
               )
             ) <* logger.info(
             "Infrared stove MQTT feature flag set to " + enable
+          )
+
+        case Event.FeatureFlagEvents.SetGridConnectionEnabled(enable) =>
+          val modifier = if (enable) { (bl: Set[String]) =>
+            bl -- config.gridMqttTopic
+          } else { (bl: Set[String]) =>
+            bl ++ config.gridMqttTopic
+          }
+          mqttBlacklist
+            .update(modifier)
+            .as(
+              (
+                state
+                  .modify(_.featureFlags.gridConnectionEnabled)
+                  .setTo(enable),
+                Set.empty
+              )
+            ) <* logger.info(
+            "Grid connection MQTT feature flag set to " + enable
           )
 
         case _ =>

@@ -52,7 +52,8 @@ final case class ProcessorConfig(
     heater: HeaterConfig,
     infraredStove: InfraredStoveConfig,
     featureFlags: FeatureFlagsConfig,
-    power: PowerProcessorConfig
+    power: PowerProcessorConfig,
+    grid: GridConfig
 ) derives ConfigReader
 
 final case class PowerProcessorConfig(
@@ -162,7 +163,19 @@ final case class FeatureFlagsConfig(
     heaterMqttTopic: Set[String],
     setHeaterManagementItem: String,
     infraredStoveMqttTopic: Set[String],
-    setInfraredStoveEnabledItem: String
+    setInfraredStoveEnabledItem: String,
+    gridMqttTopic: Set[String],
+    setGridConnectionEnabledItem: String
+) derives ConfigReader
+
+final case class GridConfig(
+    mqttTopicForCommand: String,
+    statusItem: String,
+    manualSwitchItem: String,
+    syncStatusItem: String,
+    reasonItem: String,
+    resendInterval: FiniteDuration,
+    id: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

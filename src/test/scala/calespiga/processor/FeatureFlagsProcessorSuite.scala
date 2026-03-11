@@ -25,10 +25,15 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(false)
         .modify(_.featureFlags.infraredStoveEnabled)
         .setTo(false)
+        .modify(_.featureFlags.gridConnectionEnabled)
+        .setTo(false)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
       dummyConfig.heaterMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
+      dummyConfig.gridMqttTopic.foreach { topic =>
         assert(blacklist.contains(topic))
       }
       assertEquals(
@@ -40,6 +45,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
           ),
           Action.SetUIItemValue(
             dummyConfig.setInfraredStoveEnabledItem,
+            "false"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setGridConnectionEnabledItem,
             "false"
           )
         )
@@ -56,6 +65,8 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(true)
         .modify(_.featureFlags.infraredStoveEnabled)
         .setTo(true)
+        .modify(_.featureFlags.gridConnectionEnabled)
+        .setTo(true)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
@@ -69,6 +80,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
           ),
           Action.SetUIItemValue(
             dummyConfig.setInfraredStoveEnabledItem,
+            "true"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setGridConnectionEnabledItem,
             "true"
           )
         )
@@ -167,6 +182,54 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         assert(!blacklist.contains(topic))
       }
       assertEquals(newState.featureFlags.infraredStoveEnabled, true)
+    }
+  }
+
+  test(
+    "SetGridConnectionEnabled(false) adds grid topics to blacklist and disables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.gridConnectionEnabled)
+        .setTo(true)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetGridConnectionEnabled(false),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      dummyConfig.gridMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
+      assertEquals(newState.featureFlags.gridConnectionEnabled, false)
+    }
+  }
+
+  test(
+    "SetGridConnectionEnabled(true) removes grid topics from blacklist and enables flag"
+  ) {
+    for {
+      blacklistRef <- Ref.of[IO, Set[String]](
+        dummyConfig.gridMqttTopic
+      )
+      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      state = State()
+        .modify(_.featureFlags.gridConnectionEnabled)
+        .setTo(false)
+      (newState, _) <- processor.process(
+        state,
+        Event.FeatureFlagEvents.SetGridConnectionEnabled(true),
+        now
+      )
+      blacklist <- blacklistRef.get
+    } yield {
+      dummyConfig.gridMqttTopic.foreach { topic =>
+        assert(!blacklist.contains(topic))
+      }
+      assertEquals(newState.featureFlags.gridConnectionEnabled, true)
     }
   }
 }

@@ -5,6 +5,7 @@ import calespiga.model.Event.EventData
 import calespiga.model.HeaterSignal
 import calespiga.model.FanSignal
 import calespiga.model.InfraredStoveSignal
+import calespiga.model.GridSignal
 
 object InputTopicMapper {
 
@@ -124,6 +125,14 @@ object InputTopicMapper {
                 InfraredStoveSignal
                   .controllerStateFromString(valueStr)
                   .getOrElse(InfraredStoveSignal.Off)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe if tpe =:= TypeRepr.of[GridSignal.ControllerState] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                GridSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(GridSignal.Disconnected)
               }
               getNewExpr(convertedValueExpr)
 

@@ -35,13 +35,13 @@ object CommandActions {
       mqttTopic: String,
       id: String,
       resendInterval: FiniteDuration,
-      commandToPower: Command => Int
+      commandToPower: Command => String
   ): CommandActions[Command] =
     new CommandActions[Command] {
       private def commandAction(command: Command) =
         Action.SendMqttStringMessage(
           mqttTopic,
-          commandToPower(command).toString
+          commandToPower(command)
         )
 
       private def periodicCommandAction(command: Command) =

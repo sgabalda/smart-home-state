@@ -21,7 +21,7 @@ private object Actions {
       mqttTopic = config.mqttTopicForCommand,
       id = config.id,
       resendInterval = config.resendInterval,
-      commandToPower = _.power
+      commandToPower = _.power.toString
     )
 
 }
