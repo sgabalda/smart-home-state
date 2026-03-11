@@ -24,8 +24,8 @@ object CommandActions {
     *   The processor ID used for action identification
     * @param resendInterval
     *   How often to resend the command
-    * @param commandToPower
-    *   Function to extract power value from command
+    * @param commandToMessage
+    *   Function to convert a command to a message string
     * @tparam Command
     *   The type of command (e.g., HeaterSignal.ControllerState)
     * @return
@@ -35,13 +35,13 @@ object CommandActions {
       mqttTopic: String,
       id: String,
       resendInterval: FiniteDuration,
-      commandToPower: Command => String
+      commandToMessage: Command => String
   ): CommandActions[Command] =
     new CommandActions[Command] {
       private def commandAction(command: Command) =
         Action.SendMqttStringMessage(
           mqttTopic,
-          commandToPower(command)
+          commandToMessage(command)
         )
 
       private def periodicCommandAction(command: Command) =

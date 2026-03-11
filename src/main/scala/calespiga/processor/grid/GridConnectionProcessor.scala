@@ -44,13 +44,15 @@ private object GridConnectionProcessor {
         val (newState, acts) = manager.applyConnection(state)
         val actWithUi = acts + Action.SetUIItemValue(
           config.manualSwitchItem,
-          state.grid.devicesRequestedConnection
+          newState.grid.devicesRequestedConnection
             .contains(GridSignal.Manual)
             .toString
         ) + Action.SetUIItemValue(
           config.reasonItem,
-          state.grid.devicesRequestedConnection
+          newState.grid.devicesRequestedConnection
             .map(_.toString)
+            .toSeq
+            .sorted
             .mkString(",")
         )
         (newState, actWithUi)

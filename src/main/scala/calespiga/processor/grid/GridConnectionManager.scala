@@ -62,8 +62,14 @@ object GridConnectionManager {
         newState.modify(_.grid.lastCommandSent).setTo(Some(cmd))
       (stateWithCmd, gridActions.commandActionWithResend(cmd))
     }
-    def applyConnection(state: State): (State, Set[Action]) =
-      (state, gridActions.commandActionWithResend(desiredCommand(state.grid)))
+    def applyConnection(state: State): (State, Set[Action]) = {
+      val cmd = desiredCommand(state.grid)
+      (
+        state.modify(_.grid.lastCommandSent).setTo(Some(cmd)),
+        gridActions.commandActionWithResend(cmd)
+      )
+    }
+
   }
 
   def apply(

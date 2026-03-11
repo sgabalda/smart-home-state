@@ -113,17 +113,23 @@ class GridConnectionManagerSuite extends FunSuite {
     val state = State()
       .modify(_.grid.devicesRequestedConnection)
       .setTo(Set(GridSignal.Manual))
+      .modify(_.grid.lastCommandSent)
+      .setTo(Some(GridSignal.Disconnected))
+    val expectedState =
+      state.modify(_.grid.lastCommandSent).setTo(Some(GridSignal.Connected))
     val (newState, actions) = manager.applyConnection(state)
 
-    assertEquals(newState, state)
+    assertEquals(newState, expectedState)
     assertEquals(actions, expectedActions(GridSignal.Connected))
   }
 
   test("applyConnection sends Disconnected when no actors present") {
     val state = State()
+    val expectedState =
+      state.modify(_.grid.lastCommandSent).setTo(Some(GridSignal.Disconnected))
     val (newState, actions) = manager.applyConnection(state)
 
-    assertEquals(newState, state)
+    assertEquals(newState, expectedState)
     assertEquals(actions, expectedActions(GridSignal.Disconnected))
   }
 }

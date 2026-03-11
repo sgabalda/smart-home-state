@@ -18,6 +18,6 @@ private object Actions {
       mqttTopic = config.mqttTopicForCommand,
       id = config.id,
       resendInterval = config.resendInterval,
-      commandToPower = GridSignal.toMqttCommand
+      commandToMessage = GridSignal.toMqttCommand
     )
 }
