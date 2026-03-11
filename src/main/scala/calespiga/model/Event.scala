@@ -160,6 +160,8 @@ object Event {
     case class GridManualConnectionChanged(
         connect: Boolean
     ) extends GridData
+
+    case class GridTariffChanged(tariff: GridTariff) extends GridData
   }
 
   object Power {

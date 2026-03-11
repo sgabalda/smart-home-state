@@ -14,4 +14,5 @@ object GridProcessor {
   ): SingleProcessor =
     GridConnectionProcessor(config, GridConnectionManager(config))
       .andThen(GridSyncDetector(syncConfig, config.id, config.syncStatusItem))
+      .andThen(GridTariffProcessor(config))
 }
