@@ -38,6 +38,7 @@ private object GridConnectionProcessor {
             else
               manager.releaseConnection(GridSignal.Manual, state)
 
+          case _ => (state, Set.empty)
         }
 
       case Event.System.StartupEvent =>

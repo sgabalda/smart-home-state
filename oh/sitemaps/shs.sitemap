@@ -85,6 +85,7 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=XarxaStatusSHS icon="electric_tower" label="Estat connexió: [%s]"
             Text item=XarxaActorsConexioSHS icon="switch" label="Raó connexió: [%s]"
             Text item=XarxaSincronitzacioSHS icon="time" label="Sincronització [%s]"
+            Text item=XarxaTarifaSHS icon="price" label="Tarifa: [%s]"
         }
     }
 

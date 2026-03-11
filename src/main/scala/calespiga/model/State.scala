@@ -102,7 +102,8 @@ object State {
       status: Option[GridSignal.ControllerState] = None,
       lastCommandSent: Option[GridSignal.ControllerState] = None,
       devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
-      lastSyncing: Option[java.time.Instant] = None
+      lastSyncing: Option[java.time.Instant] = None,
+      currentTariff: Option[GridTariff] = None
   )
   object Grid:
     given schema: Schema[Grid] = derived[

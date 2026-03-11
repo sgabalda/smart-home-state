@@ -76,6 +76,7 @@ String XarxaStatusSHS "Estat connexió xarxa"       // status-item
 String XarxaManualConnexioSHS "Connexió manual xarxa" // manual-switch-item
 String XarxaActorsConexioSHS "Raó connexió" // connection-reason-item
 String XarxaSincronitzacioSHS "Sincronització xarxa"  // sync-status-item
+String XarxaTarifaSHS "Tarifa xarxa"                 // tariff-item
 
 /*
 ----------------------

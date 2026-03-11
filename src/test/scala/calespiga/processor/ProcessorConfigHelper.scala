@@ -127,7 +127,8 @@ object ProcessorConfigHelper {
     manualSwitchItem = "grid/manualSwitch",
     syncStatusItem = "grid/syncStatus",
     reasonItem = "grid/connectionReason",
-    resendInterval = 20.seconds
+    resendInterval = 20.seconds,
+    tariffItem = "grid/tariff"
   )
 
   val processorConfig: ProcessorConfig = ProcessorConfig(
