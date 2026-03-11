@@ -79,4 +79,71 @@ class GridTariffSuite extends FunSuite {
       Instant.parse("2024-01-06T00:00:00Z")
     ) // Saturday 00:00 = Vall
   }
+
+  // Daylight saving time tests using Europe/Madrid (CET/CEST)
+  // Spring forward 2024: March 31 at 02:00 CET (UTC+1) → 03:00 CEST (UTC+2) — Sunday loses 1h
+  // Fall back   2024: October 27 at 03:00 CEST (UTC+2) → 02:00 CET (UTC+1) — Sunday gains 1h
+
+  private val madrid = ZoneId.of("Europe/Madrid")
+
+  test(
+    "spring-forward: next change from Saturday Vall resolves to Monday 08:00 CEST"
+  ) {
+    // Saturday March 30, 2024 22:00 CET (+01:00) = 2024-03-30T21:00:00Z
+    val now = Instant.parse("2024-03-30T21:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    // Monday April 1 is already in CEST (+02:00), so 08:00 CEST = 06:00 UTC
+    assertEquals(next, Instant.parse("2024-04-01T06:00:00Z"))
+  }
+
+  test("spring-forward: delay to Monday 08:00 is 33 hours, not the naive 34") {
+    // Without DST awareness the wall-clock span Sat 22:00 → Mon 08:00 looks like 34 h.
+    // The spring-forward on Sunday steals 1 h, so the actual elapsed time is 33 h.
+    // IO.sleep uses this Duration, so it must reflect the real physical elapsed time.
+    val now = Instant.parse("2024-03-30T21:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    assertEquals(
+      java.time.Duration.between(now, next).toSeconds(),
+      java.time.Duration.ofHours(33).toSeconds()
+    )
+  }
+
+  test(
+    "spring-forward: next change from spring-forward Sunday Vall points to Monday 08:00 CEST"
+  ) {
+    // Sunday March 31, 2024 10:00 CEST (+02:00) = 2024-03-31T08:00:00Z — already in summer time
+    val now = Instant.parse("2024-03-31T08:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    assertEquals(next, Instant.parse("2024-04-01T06:00:00Z"))
+  }
+
+  test(
+    "fall-back: next change from Saturday Vall resolves to Monday 08:00 CET"
+  ) {
+    // Saturday October 26, 2024 22:00 CEST (+02:00) = 2024-10-26T20:00:00Z
+    val now = Instant.parse("2024-10-26T20:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    // Monday October 28 is in CET (+01:00), so 08:00 CET = 07:00 UTC
+    assertEquals(next, Instant.parse("2024-10-28T07:00:00Z"))
+  }
+
+  test("fall-back: delay to Monday 08:00 is 35 hours, not the naive 34") {
+    // Without DST awareness the wall-clock span Sat 22:00 → Mon 08:00 looks like 34 h.
+    // The fall-back on Sunday adds 1 h, so the actual elapsed time is 35 h.
+    val now = Instant.parse("2024-10-26T20:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    assertEquals(
+      java.time.Duration.between(now, next).toSeconds,
+      java.time.Duration.ofHours(35).toSeconds
+    )
+  }
+
+  test(
+    "fall-back: next change from fall-back Sunday Vall points to Monday 08:00 CET"
+  ) {
+    // Sunday October 27, 2024 10:00 CET (+01:00) = 2024-10-27T09:00:00Z — already in winter time
+    val now = Instant.parse("2024-10-27T09:00:00Z")
+    val next = GridTariff.nextChangeInstant(now, madrid)
+    assertEquals(next, Instant.parse("2024-10-28T07:00:00Z"))
+  }
 }
