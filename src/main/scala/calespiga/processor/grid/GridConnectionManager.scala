@@ -29,7 +29,8 @@ trait GridConnectionManager {
 object GridConnectionManager {
 
   private final case class Impl(
-      gridActions: CommandActions[GridSignal.ControllerState]
+      gridActions: CommandActions[GridSignal.ControllerState],
+      config: GridConfig
   ) extends GridConnectionManager {
 
     private def shouldBeConnected(grid: State.Grid): Boolean =
@@ -38,6 +39,17 @@ object GridConnectionManager {
     private def desiredCommand(grid: State.Grid): GridSignal.ControllerState =
       if (shouldBeConnected(grid)) GridSignal.Connected
       else GridSignal.Disconnected
+
+    private def actorsUpdateActions(state: State): Set[Action] = Set(
+      Action.SetUIItemValue(
+        config.reasonItem,
+        state.grid.devicesRequestedConnection
+          .map(_.toString)
+          .toSeq
+          .sorted
+          .mkString(",")
+      )
+    )
 
     override def requestConnection(
         actor: GridSignal.ActorsConnecting,
@@ -48,7 +60,12 @@ object GridConnectionManager {
       val cmd = desiredCommand(newState.grid)
       val stateWithCmd =
         newState.modify(_.grid.lastCommandSent).setTo(Some(cmd))
-      (stateWithCmd, gridActions.commandActionWithResend(cmd))
+      (
+        stateWithCmd,
+        gridActions.commandActionWithResend(cmd) ++ actorsUpdateActions(
+          stateWithCmd
+        )
+      )
     }
 
     override def releaseConnection(
@@ -60,13 +77,18 @@ object GridConnectionManager {
       val cmd = desiredCommand(newState.grid)
       val stateWithCmd =
         newState.modify(_.grid.lastCommandSent).setTo(Some(cmd))
-      (stateWithCmd, gridActions.commandActionWithResend(cmd))
+      (
+        stateWithCmd,
+        gridActions.commandActionWithResend(cmd) ++ actorsUpdateActions(
+          stateWithCmd
+        )
+      )
     }
     def applyConnection(state: State): (State, Set[Action]) = {
       val cmd = desiredCommand(state.grid)
       (
         state.modify(_.grid.lastCommandSent).setTo(Some(cmd)),
-        gridActions.commandActionWithResend(cmd)
+        gridActions.commandActionWithResend(cmd) ++ actorsUpdateActions(state)
       )
     }
 
@@ -76,6 +98,7 @@ object GridConnectionManager {
       config: GridConfig
   ): GridConnectionManager =
     Impl(
-      gridActions = Actions(config)
+      gridActions = Actions(config),
+      config
     )
 }

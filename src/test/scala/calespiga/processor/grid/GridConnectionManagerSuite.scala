@@ -12,7 +12,8 @@ class GridConnectionManagerSuite extends FunSuite {
   private val config = ProcessorConfigHelper.gridConfig
 
   private def expectedActions(
-      cmd: GridSignal.ControllerState
+      cmd: GridSignal.ControllerState,
+      state: State
   ): Set[Action] =
     Set(
       Action.SendMqttStringMessage(
@@ -26,6 +27,14 @@ class GridConnectionManagerSuite extends FunSuite {
           GridSignal.toMqttCommand(cmd)
         ),
         config.resendInterval
+      ),
+      Action.SetUIItemValue(
+        config.reasonItem,
+        state.grid.devicesRequestedConnection
+          .map(_.toString)
+          .toSeq
+          .sorted
+          .mkString(",")
       )
     )
 
@@ -41,7 +50,7 @@ class GridConnectionManagerSuite extends FunSuite {
       Set[GridSignal.ActorsConnecting](GridSignal.Manual)
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Connected))
-    assertEquals(actions, expectedActions(GridSignal.Connected))
+    assertEquals(actions, expectedActions(GridSignal.Connected, newState))
   }
 
   test(
@@ -58,7 +67,7 @@ class GridConnectionManagerSuite extends FunSuite {
       Set[GridSignal.ActorsConnecting](GridSignal.Car, GridSignal.Batteries)
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Connected))
-    assertEquals(actions, expectedActions(GridSignal.Connected))
+    assertEquals(actions, expectedActions(GridSignal.Connected, newState))
   }
 
   test(
@@ -75,7 +84,7 @@ class GridConnectionManagerSuite extends FunSuite {
       Set.empty[GridSignal.ActorsConnecting]
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Disconnected))
-    assertEquals(actions, expectedActions(GridSignal.Disconnected))
+    assertEquals(actions, expectedActions(GridSignal.Disconnected, newState))
   }
 
   test(
@@ -92,7 +101,7 @@ class GridConnectionManagerSuite extends FunSuite {
       Set[GridSignal.ActorsConnecting](GridSignal.Car)
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Connected))
-    assertEquals(actions, expectedActions(GridSignal.Connected))
+    assertEquals(actions, expectedActions(GridSignal.Connected, newState))
   }
 
   test(
@@ -106,7 +115,7 @@ class GridConnectionManagerSuite extends FunSuite {
       Set.empty[GridSignal.ActorsConnecting]
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Disconnected))
-    assertEquals(actions, expectedActions(GridSignal.Disconnected))
+    assertEquals(actions, expectedActions(GridSignal.Disconnected, newState))
   }
 
   test("applyConnection sends Connected when actors are present") {
@@ -120,7 +129,7 @@ class GridConnectionManagerSuite extends FunSuite {
     val (newState, actions) = manager.applyConnection(state)
 
     assertEquals(newState, expectedState)
-    assertEquals(actions, expectedActions(GridSignal.Connected))
+    assertEquals(actions, expectedActions(GridSignal.Connected, newState))
   }
 
   test("applyConnection sends Disconnected when no actors present") {
@@ -130,6 +139,6 @@ class GridConnectionManagerSuite extends FunSuite {
     val (newState, actions) = manager.applyConnection(state)
 
     assertEquals(newState, expectedState)
-    assertEquals(actions, expectedActions(GridSignal.Disconnected))
+    assertEquals(actions, expectedActions(GridSignal.Disconnected, newState))
   }
 }

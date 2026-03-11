@@ -47,13 +47,6 @@ private object GridConnectionProcessor {
           newState.grid.devicesRequestedConnection
             .contains(GridSignal.Manual)
             .toString
-        ) + Action.SetUIItemValue(
-          config.reasonItem,
-          newState.grid.devicesRequestedConnection
-            .map(_.toString)
-            .toSeq
-            .sorted
-            .mkString(",")
         )
         (newState, actWithUi)
 

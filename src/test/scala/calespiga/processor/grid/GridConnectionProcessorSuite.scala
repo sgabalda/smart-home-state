@@ -135,7 +135,7 @@ class GridConnectionProcessorSuite extends FunSuite {
   // ── StartupEvent ─────────────────────────────────────────────────────────────
 
   test(
-    "StartupEvent calls manager.applyConnection and adds manual switch UI item"
+    "StartupEvent calls manager.applyConnection and adds actions returned"
   ) {
     val managerState = State()
       .modify(_.grid.lastCommandSent)
@@ -153,7 +153,6 @@ class GridConnectionProcessorSuite extends FunSuite {
     assert(
       actions.contains(Action.SetUIItemValue(config.manualSwitchItem, "false"))
     )
-    assert(actions.contains(Action.SetUIItemValue(config.reasonItem, "")))
     assert(managerActions.subsetOf(actions))
   }
 
@@ -171,18 +170,6 @@ class GridConnectionProcessorSuite extends FunSuite {
     assert(
       actions.contains(Action.SetUIItemValue(config.manualSwitchItem, "true"))
     )
-  }
-
-  test("StartupEvent sets reasonItem to comma-separated actors") {
-    val state = State()
-      .modify(_.grid.devicesRequestedConnection)
-      .setTo(Set(GridSignal.Car))
-    val stub = ManagerStub(applyResult = (state, Set.empty))
-    val processor = GridConnectionProcessor(config, stub)
-
-    val (_, actions) = processor.process(state, Event.System.StartupEvent, now)
-
-    assert(actions.contains(Action.SetUIItemValue(config.reasonItem, "Car")))
   }
 
   // ── Unrelated events ─────────────────────────────────────────────────────────
