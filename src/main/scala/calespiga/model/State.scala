@@ -1,7 +1,11 @@
 package calespiga.model
 
+import sttp.tapir.Schema
+import sttp.tapir.generic.auto._
+
 import calespiga.model.State.{
   Fans,
+  Grid,
   Temperatures,
   FeatureFlags,
   Heater,
@@ -15,10 +19,21 @@ case class State(
     fans: Fans = Fans(),
     heater: Heater = Heater(),
     infraredStove: InfraredStove = InfraredStove(),
-    powerManagement: PowerManagement = PowerManagement()
+    powerManagement: PowerManagement = PowerManagement(),
+    grid: Grid = Grid()
 )
 
 object State {
+
+  /** tapir's built-in schemaForSet returns Schema[collection.Set[T]], not
+    * Schema[immutable.Set[T]]. This given bridges the gap for any Set field in
+    * the state model.
+    */
+  given schemaForImmutableSet[T: Schema]: Schema[Set[T]] =
+    summon[Schema[T]]
+      .asIterable[List]
+      .uniqueItems(true)
+      .map(list => Some(list.toSet))(_.toList)
 
   case class Temperatures(
       externalTemperature: Option[Double] = None,
@@ -83,9 +98,21 @@ object State {
       consumersOrder: Seq[String] = Seq.empty
   )
 
+  case class Grid(
+      status: Option[GridSignal.ControllerState] = None,
+      lastCommandSent: Option[GridSignal.ControllerState] = None,
+      devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
+      lastSyncing: Option[java.time.Instant] = None
+  )
+  object Grid:
+    given schema: Schema[Grid] = derived[
+      Grid
+    ] // required for the set to be properly encoded in the OpenAPI docs
+
   case class FeatureFlags(
       // to be removed when heater is controlled by SHS
       heaterManagementEnabled: Boolean = false,
-      infraredStoveEnabled: Boolean = true
+      infraredStoveEnabled: Boolean = false,
+      gridConnectionEnabled: Boolean = false
   )
 }

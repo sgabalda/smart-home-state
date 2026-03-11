@@ -15,6 +15,7 @@ import calespiga.HealthStatusManager
 import sttp.model.StatusCode
 
 object Endpoints {
+
   val stateEndpoint: PublicEndpoint[Unit, String, State, Fs2Streams[IO]] =
     endpoint.get
       .in("state")

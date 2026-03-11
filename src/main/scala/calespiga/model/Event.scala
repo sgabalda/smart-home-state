@@ -6,6 +6,7 @@ import java.time.Instant
 import calespiga.mqtt.annotations.InputTopicMapper
 import calespiga.openhab.annotations.InputEventOHItem
 import calespiga.openhab.annotations.InputOHItemsMapper
+import calespiga.model.GridSignal
 
 case class Event(
     timestamp: Instant,
@@ -45,6 +46,10 @@ object Event {
 
     @InputEventOHItem("EstufaInfrarrojosEnabledSHS")
     case class SetInfraredStoveEnabled(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("XarxaEnabledSHS")
+    case class SetGridConnectionEnabled(enable: Boolean)
+        extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -141,6 +146,20 @@ object Event {
         minutes: Int
     ) extends InfraredStoveData
 
+  }
+
+  object Grid {
+    sealed trait GridData extends EventData
+
+    @InputEventMqtt("grid/connection/status")
+    case class GridConnectionStatusReported(
+        status: GridSignal.ControllerState
+    ) extends GridData
+
+    @InputEventOHItem("XarxaManualConnexioSHS")
+    case class GridManualConnectionChanged(
+        connect: Boolean
+    ) extends GridData
   }
 
   object Power {

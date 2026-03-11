@@ -8,6 +8,7 @@ import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
 import calespiga.processor.power.PowerProcessor
 import calespiga.processor.infraredStove.InfraredStoveProcessor
+import calespiga.processor.grid.GridProcessor
 
 trait StateProcessor {
   def process(
@@ -66,6 +67,7 @@ object StateProcessor {
       config.offlineDetector,
       config.syncDetector
     ).toEffectful,
+    GridProcessor(config.grid, config.syncDetector).toEffectful,
     FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
   )
 

@@ -95,7 +95,9 @@ object ProcessorConfigHelper {
     setHeaterManagementItem = "featureFlags/setHeaterManagement",
     infraredStoveMqttTopic =
       Set("infraredStove/topic1", "infraredStove/topic2"),
-    setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled"
+    setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled",
+    gridMqttTopic = Set("grid/topic1", "grid/topic2"),
+    setGridConnectionEnabledItem = "featureFlags/setGridConnectionEnabled"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
@@ -118,6 +120,16 @@ object ProcessorConfigHelper {
     dynamicPower = dynamicPowerProcessorConfig
   )
 
+  val gridConfig: GridConfig = GridConfig(
+    id = "grid-processor",
+    mqttTopicForCommand = "grid/command",
+    statusItem = "grid/status",
+    manualSwitchItem = "grid/manualSwitch",
+    syncStatusItem = "grid/syncStatus",
+    reasonItem = "grid/connectionReason",
+    resendInterval = 20.seconds
+  )
+
   val processorConfig: ProcessorConfig = ProcessorConfig(
     temperatureFans = temperatureFansConfig,
     offlineDetector = offlineDetectorConfig,
@@ -125,6 +137,7 @@ object ProcessorConfigHelper {
     heater = heaterConfig,
     infraredStove = infraredStoveConfig,
     featureFlags = featureFlagsConfig,
-    power = powerProcessorConfig
+    power = powerProcessorConfig,
+    grid = gridConfig
   )
 }
