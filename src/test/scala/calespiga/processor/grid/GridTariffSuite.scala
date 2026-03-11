@@ -102,7 +102,10 @@ class GridTariffSuite extends FunSuite {
     // IO.sleep uses this Duration, so it must reflect the real physical elapsed time.
     val now = Instant.parse("2024-03-30T21:00:00Z")
     val next = GridTariff.nextChangeInstant(now, madrid)
-    assertEquals(java.time.Duration.between(now, next).toHours, 33L)
+    assertEquals(
+      java.time.Duration.between(now, next).toSeconds(),
+      java.time.Duration.ofHours(33).toSeconds()
+    )
   }
 
   test(
@@ -129,7 +132,10 @@ class GridTariffSuite extends FunSuite {
     // The fall-back on Sunday adds 1 h, so the actual elapsed time is 35 h.
     val now = Instant.parse("2024-10-26T20:00:00Z")
     val next = GridTariff.nextChangeInstant(now, madrid)
-    assertEquals(java.time.Duration.between(now, next).toHours, 35L)
+    assertEquals(
+      java.time.Duration.between(now, next).toSeconds,
+      java.time.Duration.ofHours(35).toSeconds
+    )
   }
 
   test(
