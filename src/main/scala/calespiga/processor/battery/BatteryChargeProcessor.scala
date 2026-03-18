@@ -10,34 +10,32 @@ import java.time.Instant
 
 private[battery] object BatteryChargeProcessor {
 
+  private def matchesTariff(
+      current: Option[GridTariff],
+      config: BatteryChargeTariff
+  ): Boolean =
+    config match
+      case BatteryChargeTariff.AllTariffs =>
+        current.isDefined
+      case BatteryChargeTariff.PlaAndVall =>
+        current.exists(t => t == GridTariff.Pla || t == GridTariff.Vall)
+      case BatteryChargeTariff.Vall =>
+        current.contains(GridTariff.Vall)
+      case BatteryChargeTariff.NoneCharge =>
+        false
+
   private def shouldChargeBattery(state: State): Boolean =
+    val currentTariff = state.grid.currentTariff
+
     state.battery.status match
       case Some(BatteryStatus.Low) =>
-        state.battery.lowChargeTariff.exists {
-          case BatteryChargeTariff.AllTariffs =>
-            state.grid.currentTariff.isDefined
-          case BatteryChargeTariff.PlaAndVall =>
-            state.grid.currentTariff.exists(t =>
-              t == GridTariff.Pla || t == GridTariff.Vall
-            )
-          case BatteryChargeTariff.Vall =>
-            state.grid.currentTariff.contains(GridTariff.Vall)
-          case BatteryChargeTariff.NoneCharge => false
-        }
+        state.battery.lowChargeTariff.exists(matchesTariff(currentTariff, _))
+
       case Some(BatteryStatus.Medium) =>
-        state.battery.mediumChargeTariff.exists {
-          case BatteryChargeTariff.AllTariffs =>
-            state.grid.currentTariff.isDefined
-          case BatteryChargeTariff.PlaAndVall =>
-            state.grid.currentTariff.exists(t =>
-              t == GridTariff.Pla || t == GridTariff.Vall
-            )
-          case BatteryChargeTariff.Vall =>
-            state.grid.currentTariff.contains(GridTariff.Vall)
-          case BatteryChargeTariff.NoneCharge => false
-        }
-      case Some(BatteryStatus.High) => false
-      case None                     => false
+        state.battery.mediumChargeTariff.exists(matchesTariff(currentTariff, _))
+
+      case Some(BatteryStatus.High) | None =>
+        false
 
   private final case class Impl(
       config: BatteryConfig,
@@ -51,78 +49,95 @@ private[battery] object BatteryChargeProcessor {
       if shouldConnect then
         manager.requestConnection(GridSignal.Batteries, state)
       else manager.releaseConnection(GridSignal.Batteries, state)
+
+    private def updateStateAndReconnect(
+        newState: State,
+        actions: Set[Action]
+    ): (State, Set[Action]) =
+      val shouldConnect = shouldChargeBattery(newState)
+      val (stateAfter, managerActions) =
+        applyConnectionChange(newState, shouldConnect)
+      (stateAfter, actions ++ managerActions)
+
+    private def addIfDefined[A](
+        opt: Option[A],
+        item: String,
+        toLabel: A => String,
+        builder: scala.collection.mutable.Builder[Action, Set[Action]]
+    ): Unit =
+      opt.foreach(v => builder += Action.SetUIItemValue(item, toLabel(v)))
+
     override def process(
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
-    ): (State, Set[Action]) = eventData match {
-      case Event.Battery.BatteryStatusReported(status) =>
-        val newState = state.modify(_.battery.status).setTo(Some(status))
-        val actions = Set(
-          Action.SetUIItemValue(config.statusItem, status.label)
-        )
-        val shouldConnect = shouldChargeBattery(newState)
-        val (stateAfter, managerActions) =
-          applyConnectionChange(newState, shouldConnect)
-        (stateAfter, actions ++ managerActions)
+    ): (State, Set[Action]) =
+      eventData match {
 
-      case Event.Battery.BatteryChargeLowTariffChanged(tariff) =>
-        val newState =
-          state.modify(_.battery.lowChargeTariff).setTo(Some(tariff))
-        val actions = Set(
-          Action.SetUIItemValue(config.lowChargeTariffItem, tariff.label)
-        )
-        val shouldConnect = shouldChargeBattery(newState)
-        val (stateAfter, managerActions) =
-          applyConnectionChange(newState, shouldConnect)
-        (stateAfter, actions ++ managerActions)
+        case Event.Battery.BatteryStatusReported(status) =>
+          val newState =
+            state.modify(_.battery.status).setTo(Some(status))
+          val actions =
+            Set[Action](Action.SetUIItemValue(config.statusItem, status.label))
 
-      case Event.Battery.BatteryChargeMediumTariffChanged(tariff) =>
-        val newState =
-          state.modify(_.battery.mediumChargeTariff).setTo(Some(tariff))
-        val actions = Set(
-          Action.SetUIItemValue(config.mediumChargeTariffItem, tariff.label)
-        )
-        val shouldConnect = shouldChargeBattery(newState)
-        val (stateAfter, managerActions) =
-          applyConnectionChange(newState, shouldConnect)
-        (stateAfter, actions ++ managerActions)
+          updateStateAndReconnect(newState, actions)
 
-      case Event.Grid.GridTariffChanged(_) =>
-        val shouldConnect = shouldChargeBattery(state)
-        val (stateAfter, managerActions) =
+        case Event.Battery.BatteryChargeLowTariffChanged(tariff) =>
+          val newState =
+            state.modify(_.battery.lowChargeTariff).setTo(Some(tariff))
+          val actions =
+            Set[Action](
+              Action.SetUIItemValue(config.lowChargeTariffItem, tariff.label)
+            )
+
+          updateStateAndReconnect(newState, actions)
+
+        case Event.Battery.BatteryChargeMediumTariffChanged(tariff) =>
+          val newState =
+            state.modify(_.battery.mediumChargeTariff).setTo(Some(tariff))
+          val actions =
+            Set[Action](
+              Action.SetUIItemValue(config.mediumChargeTariffItem, tariff.label)
+            )
+
+          updateStateAndReconnect(newState, actions)
+
+        case Event.Grid.GridTariffChanged(_) =>
+          val shouldConnect = shouldChargeBattery(state)
           applyConnectionChange(state, shouldConnect)
-        (stateAfter, managerActions)
 
-      case Event.System.StartupEvent =>
-        val actionsBuilder = Set.newBuilder[Action]
-        state.battery.status.foreach { status =>
-          actionsBuilder += Action.SetUIItemValue(
+        case Event.System.StartupEvent =>
+          val actionsBuilder = Set.newBuilder[Action]
+
+          addIfDefined(
+            state.battery.status,
             config.statusItem,
-            status.label
+            _.label,
+            actionsBuilder
           )
-        }
-        state.battery.lowChargeTariff.foreach { tariff =>
-          actionsBuilder += Action.SetUIItemValue(
+          addIfDefined(
+            state.battery.lowChargeTariff,
             config.lowChargeTariffItem,
-            tariff.label
+            _.label,
+            actionsBuilder
           )
-        }
-        state.battery.mediumChargeTariff.foreach { tariff =>
-          actionsBuilder += Action.SetUIItemValue(
+          addIfDefined(
+            state.battery.mediumChargeTariff,
             config.mediumChargeTariffItem,
-            tariff.label
+            _.label,
+            actionsBuilder
           )
-        }
-        (state, actionsBuilder.result())
 
-      case _ =>
-        (state, Set.empty)
-    }
+          (state, actionsBuilder.result())
+
+        case _ =>
+          (state, Set.empty)
+      }
   }
 
   def apply(
       config: BatteryConfig,
       manager: calespiga.processor.grid.GridConnectionManager
-  ): SingleProcessor = Impl(config, manager)
+  ): SingleProcessor =
+    Impl(config, manager)
 }
