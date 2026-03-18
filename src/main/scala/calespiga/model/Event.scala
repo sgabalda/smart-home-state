@@ -164,6 +164,21 @@ object Event {
     case class GridTariffChanged(tariff: GridTariff) extends GridData
   }
 
+  object Battery {
+    sealed trait BatteryData extends EventData
+
+    @InputEventMqtt("battery/level/status")
+    case class BatteryStatusReported(status: BatteryStatus) extends BatteryData
+
+    @InputEventOHItem("XarxaCarregarBateriaLowSHS")
+    case class BatteryChargeLowTariffChanged(tariff: BatteryChargeTariff)
+        extends BatteryData
+
+    @InputEventOHItem("XarxaCarregarBateriaMediumSHS")
+    case class BatteryChargeMediumTariffChanged(tariff: BatteryChargeTariff)
+        extends BatteryData
+  }
+
   object Power {
     sealed trait PowerData extends EventData
 

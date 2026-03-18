@@ -80,6 +80,17 @@ String XarxaTarifaSHS "Tarifa xarxa"                 // tariff-item
 
 /*
 ----------------------
+BATTERY
+----------------------
+*/
+String XarxaBateriaTitle "Bateria"
+String XarxaBateriaEstatSHS "Estat bateria"               // battery status item
+String XarxaBateriaCarregarLowSHS "Tarifa càrrega bateria low"
+String XarxaBateriaCarregarMediumSHS "Tarifa càrrega bateria medium"
+String XarxaBateriaMicroControladorEstatSHS "Estat microcontrolador bateria"
+
+/*
+----------------------
 SYSTEM 
 ----------------------
 */

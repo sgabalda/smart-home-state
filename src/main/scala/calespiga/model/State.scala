@@ -10,7 +10,8 @@ import calespiga.model.State.{
   FeatureFlags,
   Heater,
   PowerManagement,
-  InfraredStove
+  InfraredStove,
+  Battery
 }
 
 case class State(
@@ -20,7 +21,8 @@ case class State(
     heater: Heater = Heater(),
     infraredStove: InfraredStove = InfraredStove(),
     powerManagement: PowerManagement = PowerManagement(),
-    grid: Grid = Grid()
+    grid: Grid = Grid(),
+    battery: Battery = Battery()
 )
 
 object State {
@@ -109,6 +111,12 @@ object State {
     given schema: Schema[Grid] = derived[
       Grid
     ] // required for the set to be properly encoded in the OpenAPI docs
+
+  case class Battery(
+      status: Option[BatteryStatus] = None,
+      lowChargeTariff: Option[BatteryChargeTariff] = None,
+      mediumChargeTariff: Option[BatteryChargeTariff] = None
+  )
 
   case class FeatureFlags(
       // to be removed when heater is controlled by SHS

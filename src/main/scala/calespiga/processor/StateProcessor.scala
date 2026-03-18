@@ -8,7 +8,8 @@ import cats.effect.Ref
 import calespiga.processor.temperatures.TemperaturesProcessor
 import calespiga.processor.power.PowerProcessor
 import calespiga.processor.infraredStove.InfraredStoveProcessor
-import calespiga.processor.grid.GridProcessor
+import calespiga.processor.grid.{GridConnectionManager, GridProcessor}
+import calespiga.processor.battery.BatteryProcessor
 
 trait StateProcessor {
   def process(
@@ -49,27 +50,36 @@ object StateProcessor {
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
-  ): List[EffectfulProcessor] = List(
-    TemperaturesProcessor(
-      config.temperatureFans,
-      config.offlineDetector,
-      config.syncDetector
-    ).toEffectful,
-    HeaterProcessor(
-      config.heater,
-      zoneId,
-      config.offlineDetector,
-      config.syncDetector
-    ).toEffectful,
-    InfraredStoveProcessor(
-      config.infraredStove,
-      zoneId,
-      config.offlineDetector,
-      config.syncDetector
-    ).toEffectful,
-    GridProcessor(config.grid, config.syncDetector).toEffectful,
-    FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
-  )
+  ): List[EffectfulProcessor] = {
+    val gridManager = GridConnectionManager(config.grid)
+
+    List(
+      TemperaturesProcessor(
+        config.temperatureFans,
+        config.offlineDetector,
+        config.syncDetector
+      ).toEffectful,
+      HeaterProcessor(
+        config.heater,
+        zoneId,
+        config.offlineDetector,
+        config.syncDetector
+      ).toEffectful,
+      InfraredStoveProcessor(
+        config.infraredStove,
+        zoneId,
+        config.offlineDetector,
+        config.syncDetector
+      ).toEffectful,
+      GridProcessor(config.grid, config.syncDetector, gridManager).toEffectful,
+      BatteryProcessor(
+        config.battery,
+        gridManager,
+        config.offlineDetector
+      ).toEffectful,
+      FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
+    )
+  }
 
   def apply(
       config: calespiga.config.ProcessorConfig,
