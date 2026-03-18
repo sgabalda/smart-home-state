@@ -53,7 +53,17 @@ final case class ProcessorConfig(
     infraredStove: InfraredStoveConfig,
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
-    grid: GridConfig
+    grid: GridConfig,
+    battery: BatteryConfig
+) derives ConfigReader
+
+final case class BatteryConfig(
+    statusMqttTopic: String,
+    statusItem: String,
+    lowChargeTariffItem: String,
+    mediumChargeTariffItem: String,
+    onlineStatusItem: String,
+    id: String
 ) derives ConfigReader
 
 final case class PowerProcessorConfig(

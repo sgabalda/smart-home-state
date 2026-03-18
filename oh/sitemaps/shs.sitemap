@@ -89,6 +89,16 @@ sitemap shs label="Ca l'espiga SHS" {
         }
     }
 
+    Text item=XarxaBateriaTitle label="Bateria" icon="battery"
+    {
+        Frame label="Bateria" {
+            Text item=XarxaBateriaEstatSHS icon="battery" label="Estat: [%s]"
+            Selection item=XarxaBateriaCarregarLowSHS icon="battery" label="Càrrega baixa: [%s]" mappings=["all tariffs"="Tot", "pla + vall"="Pla + Vall", "vall"="Vall", "none"="Cap"]
+            Selection item=XarxaBateriaCarregarMediumSHS icon="battery" label="Càrrega mitja: [%s]" mappings=["all tariffs"="Tot", "pla + vall"="Pla + Vall", "vall"="Vall", "none"="Cap"]
+            Text item=XarxaBateriaMicroControladorEstatSHS icon="receiver" label="Estat micro: [%s]"
+        }
+    }
+
     Text item=SystemTitle label="Estat" icon="alert"
     {
         Frame label="Alarmes" {

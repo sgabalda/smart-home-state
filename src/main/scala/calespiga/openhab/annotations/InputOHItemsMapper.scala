@@ -88,6 +88,15 @@ object InputOHItemsMapper {
               getNewExpr(convertedValueExpr)
 
             case tpe
+                if tpe =:= TypeRepr.of[calespiga.model.BatteryChargeTariff] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.BatteryChargeTariff
+                  .fromString(valueStr)
+                  .getOrElse(calespiga.model.BatteryChargeTariff.NoneCharge)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe
                 if tpe =:= TypeRepr
                   .of[calespiga.model.HeaterSignal.UserCommand] =>
               val convertedValueExpr = '{ (valueStr: String) =>

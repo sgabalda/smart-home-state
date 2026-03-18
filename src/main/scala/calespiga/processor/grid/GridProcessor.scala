@@ -10,9 +10,10 @@ object GridProcessor {
 
   def apply(
       config: GridConfig,
-      syncConfig: SyncDetectorConfig
+      syncConfig: SyncDetectorConfig,
+      manager: GridConnectionManager
   ): SingleProcessor =
-    GridConnectionProcessor(config, GridConnectionManager(config))
+    GridTariffProcessor(config)
+      .andThen(GridConnectionProcessor(config, manager))
       .andThen(GridSyncDetector(syncConfig, config.id, config.syncStatusItem))
-      .andThen(GridTariffProcessor(config))
 }

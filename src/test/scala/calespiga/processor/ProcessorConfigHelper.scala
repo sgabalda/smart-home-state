@@ -131,6 +131,15 @@ object ProcessorConfigHelper {
     tariffItem = "grid/tariff"
   )
 
+  val batteryConfig: BatteryConfig = BatteryConfig(
+    statusMqttTopic = "battery/level/status",
+    statusItem = "grid/batteryStatus",
+    lowChargeTariffItem = "grid/batteryLowChargeTariff",
+    mediumChargeTariffItem = "grid/batteryMediumChargeTariff",
+    onlineStatusItem = "grid/batteryOnlineStatus",
+    id = "battery-processor"
+  )
+
   val processorConfig: ProcessorConfig = ProcessorConfig(
     temperatureFans = temperatureFansConfig,
     offlineDetector = offlineDetectorConfig,
@@ -139,6 +148,7 @@ object ProcessorConfigHelper {
     infraredStove = infraredStoveConfig,
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
-    grid = gridConfig
+    grid = gridConfig,
+    battery = batteryConfig
   )
 }

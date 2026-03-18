@@ -136,6 +136,23 @@ object InputTopicMapper {
               }
               getNewExpr(convertedValueExpr)
 
+            case tpe if tpe =:= TypeRepr.of[calespiga.model.BatteryStatus] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.BatteryStatus
+                  .fromString(valueStr)
+                  .getOrElse(calespiga.model.BatteryStatus.Low)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe
+                if tpe =:= TypeRepr.of[calespiga.model.BatteryChargeTariff] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.BatteryChargeTariff
+                  .fromString(valueStr)
+                  .getOrElse(calespiga.model.BatteryChargeTariff.NoneCharge)
+              }
+              getNewExpr(convertedValueExpr)
+
             case _ =>
               report.errorAndAbort(
                 s"Unsupported parameter type: ${paramType.show}"
