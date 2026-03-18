@@ -1,23 +1,20 @@
 package calespiga.processor.battery
 
 import munit.FunSuite
-import calespiga.model.{
-  Action,
-  Event,
-  State,
-  GridTariff,
-  BatteryStatus,
-  BatteryChargeTariff,
-  GridSignal
-}
+import calespiga.model._
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 import java.time.Instant
 import calespiga.processor.grid.GridConnectionManager
 
 class BatteryProcessorSuite extends FunSuite {
+
   private val now = Instant.parse("2024-01-01T10:00:00Z")
   private val config = ProcessorConfigHelper.batteryConfig
+
+  // ======================
+  // Test infrastructure
+  // ======================
 
   private class ManagerStub extends GridConnectionManager {
     var requestCalls: List[GridSignal.ActorsConnecting] = Nil
@@ -43,411 +40,301 @@ class BatteryProcessorSuite extends FunSuite {
       (state, Set.empty)
   }
 
-  private def baseProcessor(manager: ManagerStub) =
-    BatteryChargeProcessor(
-      config,
-      manager
-    )
+  private def processor(manager: ManagerStub) =
+    BatteryChargeProcessor(config, manager)
+
+  private def baseState =
+    State()
+
+  private def withTariff(state: State, tariff: GridTariff) =
+    state.modify(_.grid.currentTariff).setTo(Some(tariff))
+
+  private def withStatus(state: State, status: BatteryStatus) =
+    state.modify(_.battery.status).setTo(Some(status))
+
+  private def withChargeTariff(
+      state: State,
+      status: BatteryStatus,
+      tariff: BatteryChargeTariff
+  ) =
+    status match
+      case BatteryStatus.Low =>
+        state
+          .modify(_.battery.lowChargeTariff)
+          .setTo(Some(tariff))
+          .modify(_.battery.mediumChargeTariff)
+          .setTo(None)
+
+      case BatteryStatus.Medium =>
+        state
+          .modify(_.battery.lowChargeTariff)
+          .setTo(None)
+          .modify(_.battery.mediumChargeTariff)
+          .setTo(Some(tariff))
+
+      case BatteryStatus.High =>
+        state
+          .modify(_.battery.lowChargeTariff)
+          .setTo(None)
+          .modify(_.battery.mediumChargeTariff)
+          .setTo(None)
+
+  private def assertManager(manager: ManagerStub, shouldConnect: Boolean) =
+    if shouldConnect then
+      assertEquals(manager.requestCalls, List(GridSignal.Batteries))
+      assertEquals(manager.releaseCalls, Nil)
+    else
+      assertEquals(manager.releaseCalls, List(GridSignal.Batteries))
+      assertEquals(manager.requestCalls, Nil)
+
+  // ======================
+  // Basic behavior tests
+  // ======================
 
   test("Battery status reported updates state and UI") {
     val manager = new ManagerStub()
-    val processor = baseProcessor(manager)
-    val (newState, actions) = processor.process(
-      State(),
+    val p = processor(manager)
+
+    val (newState, actions) = p.process(
+      baseState,
       Event.Battery.BatteryStatusReported(BatteryStatus.Low),
       now
     )
+
     assertEquals(newState.battery.status, Some(BatteryStatus.Low))
-    assert(actions.contains(Action.SetUIItemValue(config.statusItem, "low")))
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(config.statusItem, "low"))
+    )
   }
 
-  test("Battery low charge tariff change updates state and UI") {
+  test("Battery low tariff change updates state and UI") {
     val manager = new ManagerStub()
-    val processor = baseProcessor(manager)
-    val (newState, actions) = processor.process(
-      State(),
+    val p = processor(manager)
+
+    val (newState, actions) = p.process(
+      baseState,
       Event.Battery.BatteryChargeLowTariffChanged(BatteryChargeTariff.Vall),
       now
     )
+
+    assertEquals(newState.battery.lowChargeTariff, Some(BatteryChargeTariff.Vall))
     assertEquals(
-      newState.battery.lowChargeTariff,
-      Some(BatteryChargeTariff.Vall)
-    )
-    assert(
-      actions.contains(
-        Action.SetUIItemValue(config.lowChargeTariffItem, "vall")
-      )
+      actions,
+      Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, "vall"))
     )
   }
 
-  test("Battery medium charge tariff change updates state and UI") {
+  // ======================
+  // Scenario definitions
+  // ======================
+
+  case class Scenario(
+      status: BatteryStatus,
+      tariff: BatteryChargeTariff,
+      shouldConnect: GridTariff => Boolean
+  )
+
+  private val always: GridTariff => Boolean = _ => true
+  private val never: GridTariff => Boolean = _ => false
+  private val vallOnly: GridTariff => Boolean = _ == GridTariff.Vall
+  private val plaAndVall: GridTariff => Boolean =
+    t => t == GridTariff.Vall || t == GridTariff.Pla
+
+  private val scenarios = List(
+    Scenario(BatteryStatus.Low, BatteryChargeTariff.AllTariffs, always),
+    Scenario(BatteryStatus.Low, BatteryChargeTariff.PlaAndVall, plaAndVall),
+    Scenario(BatteryStatus.Low, BatteryChargeTariff.Vall, vallOnly),
+    Scenario(BatteryStatus.Low, BatteryChargeTariff.NoneCharge, never),
+    Scenario(BatteryStatus.Medium, BatteryChargeTariff.AllTariffs, always),
+    Scenario(BatteryStatus.Medium, BatteryChargeTariff.PlaAndVall, plaAndVall),
+    Scenario(BatteryStatus.Medium, BatteryChargeTariff.Vall, vallOnly),
+    Scenario(BatteryStatus.Medium, BatteryChargeTariff.NoneCharge, never),
+    Scenario(BatteryStatus.High, BatteryChargeTariff.AllTariffs, never)
+  )
+
+  private val tariffs = GridTariff.values
+
+  // ======================
+  // Core behavior tests
+  // ======================
+
+  tariffs.foreach { gridTariff =>
+    scenarios.foreach { s =>
+      test(s"Grid change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+
+        val manager = new ManagerStub()
+        val p = processor(manager)
+
+        val initialState =
+          withChargeTariff(
+            withStatus(withTariff(baseState, gridTariff), s.status),
+            s.status,
+            s.tariff
+          )
+
+        val (_, actions) = p.process(
+          initialState,
+          Event.Grid.GridTariffChanged(gridTariff),
+          now
+        )
+
+        assertEquals(actions, Set.empty)
+        assertManager(manager, s.shouldConnect(gridTariff))
+      }
+    }
+  }
+
+  tariffs.foreach { gridTariff =>
+    scenarios.foreach { s =>
+      test(s"Status change: tariff=$gridTariff newStatus=${s.status}") {
+
+        val manager = new ManagerStub()
+        val p = processor(manager)
+
+        val initialState =
+          withChargeTariff(
+            withTariff(baseState, gridTariff),
+            s.status,
+            s.tariff
+          )
+
+        val (stateAfter, actions) = p.process(
+          initialState,
+          Event.Battery.BatteryStatusReported(s.status),
+          now
+        )
+
+        assertEquals(stateAfter.battery.status, Some(s.status))
+        assertEquals(
+          actions,
+          Set[Action](Action.SetUIItemValue(config.statusItem, s.status.label))
+        )
+
+        assertManager(manager, s.shouldConnect(gridTariff))
+      }
+    }
+  }
+
+  tariffs.foreach { gridTariff =>
+    scenarios.foreach { s =>
+      test(s"Relevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+
+        val manager = new ManagerStub()
+        val p = processor(manager)
+
+        val initialState =
+          withStatus(withTariff(baseState, gridTariff), s.status)
+
+        val event = s.status match
+          case BatteryStatus.Low =>
+            Event.Battery.BatteryChargeLowTariffChanged(s.tariff)
+          case BatteryStatus.Medium =>
+            Event.Battery.BatteryChargeMediumTariffChanged(s.tariff)
+          case BatteryStatus.High =>
+            // High ignores tariff but we still test behavior consistency
+            Event.Battery.BatteryChargeLowTariffChanged(s.tariff)
+
+        val (stateAfter, actions) =
+          p.process(initialState, event, now)
+
+        val expectedActions = s.status match
+          case BatteryStatus.Low =>
+            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+          case BatteryStatus.Medium =>
+            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+          case BatteryStatus.High =>
+            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+
+        assertEquals(actions, expectedActions)
+
+        assertManager(manager, s.shouldConnect(gridTariff))
+      }
+    }
+  }
+
+  tariffs.foreach { gridTariff =>
+    scenarios.foreach { s =>
+      test(s"Irrelevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+
+        val manager = new ManagerStub()
+        val p = processor(manager)
+
+        val initialState =
+          withStatus(withTariff(baseState, gridTariff), s.status)
+
+        val event = s.status match
+          case BatteryStatus.Low =>
+            Event.Battery.BatteryChargeMediumTariffChanged(s.tariff)
+          case BatteryStatus.Medium =>
+            Event.Battery.BatteryChargeLowTariffChanged(s.tariff)
+          case BatteryStatus.High =>
+            Event.Battery.BatteryChargeMediumTariffChanged(s.tariff)
+
+        val (stateAfter, actions) =
+          p.process(initialState, event, now)
+
+        val expectedActions = s.status match
+          case BatteryStatus.Low =>
+            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+          case BatteryStatus.Medium =>
+            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+          case BatteryStatus.High =>
+            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+
+        assertEquals(actions, expectedActions)
+
+        // Key assertion: should NOT connect regardless of tariff logic
+        assertManager(manager, shouldConnect = false)
+      }
+    }
+  }
+
+  // ======================
+  // Missing important tests
+  // ======================
+
+  test("Startup event restores UI state") {
     val manager = new ManagerStub()
-    val processor = baseProcessor(manager)
-    val (newState, actions) = processor.process(
-      State(),
-      Event.Battery.BatteryChargeMediumTariffChanged(
-        BatteryChargeTariff.PlaAndVall
-      ),
-      now
-    )
+    val p = processor(manager)
+
+    val initialState = State()
+      .modify(_.battery.status).setTo(Some(BatteryStatus.Low))
+      .modify(_.battery.lowChargeTariff).setTo(Some(BatteryChargeTariff.Vall))
+      .modify(_.battery.mediumChargeTariff).setTo(Some(BatteryChargeTariff.AllTariffs))
+
+    val (_, actions) = p.process(initialState, Event.System.StartupEvent, now)
+
     assertEquals(
-      newState.battery.mediumChargeTariff,
-      Some(BatteryChargeTariff.PlaAndVall)
-    )
-    assert(
-      actions.contains(
-        Action.SetUIItemValue(config.mediumChargeTariffItem, "pla + vall")
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(config.statusItem, "low"),
+        Action.SetUIItemValue(config.lowChargeTariffItem, "vall"),
+        Action.SetUIItemValue(config.mediumChargeTariffItem, "all tariffs")
       )
     )
   }
 
-  val always = (_: GridTariff) => true
-  val never = (_: GridTariff) => false
-  val withVall = (t: GridTariff) => t == GridTariff.Vall
-  val withPlaAndVall = (t: GridTariff) =>
-    t == GridTariff.Vall || t == GridTariff.Pla
+  test("Startup event with empty state produces no actions") {
+    val manager = new ManagerStub()
+    val p = processor(manager)
 
-  val tariffs = GridTariff.values
+    val (_, actions) = p.process(State(), Event.System.StartupEvent, now)
 
-  val statusAndTariffs =
-    List[(BatteryStatus, BatteryChargeTariff, GridTariff => Boolean)](
-      (BatteryStatus.Low, BatteryChargeTariff.AllTariffs, always),
-      (BatteryStatus.Low, BatteryChargeTariff.PlaAndVall, withPlaAndVall),
-      (BatteryStatus.Low, BatteryChargeTariff.Vall, withVall),
-      (BatteryStatus.Low, BatteryChargeTariff.NoneCharge, never),
-      (BatteryStatus.Medium, BatteryChargeTariff.AllTariffs, always),
-      (BatteryStatus.Medium, BatteryChargeTariff.PlaAndVall, withPlaAndVall),
-      (BatteryStatus.Medium, BatteryChargeTariff.Vall, withVall),
-      (BatteryStatus.Medium, BatteryChargeTariff.NoneCharge, never),
-      (BatteryStatus.High, BatteryChargeTariff.AllTariffs, never),
-      (BatteryStatus.High, BatteryChargeTariff.PlaAndVall, never),
-      (BatteryStatus.High, BatteryChargeTariff.Vall, never),
-      (BatteryStatus.High, BatteryChargeTariff.NoneCharge, never)
-    )
-
-  tariffs.foreach { (toTariff) =>
-    statusAndTariffs.foreach { (status, chargeTariff, result) =>
-      val connect = if result(toTariff) then "connect" else "not connect"
-      test(
-        s"Tariff change to $toTariff, battery=$status, charging=$chargeTariff => $connect"
-      ) {
-        val manager = new ManagerStub()
-        val processor = baseProcessor(manager)
-
-        val stateWithTariffAndStatus = State()
-          .modify(_.grid.currentTariff)
-          .setTo(Some(toTariff))
-          .modify(_.battery.status)
-          .setTo(Some(status))
-
-        val initialState = status match {
-          case BatteryStatus.Low =>
-            stateWithTariffAndStatus
-              .modify(_.battery.lowChargeTariff)
-              .setTo(Some(chargeTariff))
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(None)
-          case BatteryStatus.Medium =>
-            stateWithTariffAndStatus
-              .modify(_.battery.lowChargeTariff)
-              .setTo(None)
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.High =>
-            stateWithTariffAndStatus
-              .modify(_.battery.lowChargeTariff)
-              .setTo(None)
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(None)
-        }
-
-        val (stateAfter, actions) = processor.process(
-          initialState,
-          Event.Grid.GridTariffChanged(toTariff),
-          now
-        )
-
-        assert(
-          actions.isEmpty,
-          "No UI actions should be produced on tariff change"
-        )
-
-        if result(toTariff) then
-          assert(
-            manager.requestCalls.contains(
-              GridSignal.Batteries
-            ) && manager.releaseCalls.isEmpty
-          )
-        else
-          assert(
-            manager.releaseCalls.contains(
-              GridSignal.Batteries
-            ) && manager.requestCalls.isEmpty
-          )
-      }
-    }
+    assertEquals(actions, Set.empty)
   }
 
-  tariffs.foreach { (toTariff) =>
-    statusAndTariffs.foreach { (status, chargeTariff, result) =>
-      val connect = if result(toTariff) then "connect" else "not connect"
-      test(
-        s"Tariff=$toTariff, battery to $status, charging=$chargeTariff => $connect"
-      ) {
-        val manager = new ManagerStub()
-        val processor = baseProcessor(manager)
+  test("No grid tariff means no connection") {
+    val manager = new ManagerStub()
+    val p = processor(manager)
 
-        val stateWithTariff = State()
-          .modify(_.grid.currentTariff)
-          .setTo(Some(toTariff))
-          .modify(_.battery.status)
-          .setTo(None)
+    val state =
+      State()
+        .modify(_.battery.status).setTo(Some(BatteryStatus.Low))
+        .modify(_.battery.lowChargeTariff).setTo(Some(BatteryChargeTariff.AllTariffs))
 
-        val initialState = status match {
-          case BatteryStatus.Low =>
-            stateWithTariff
-              .modify(_.battery.lowChargeTariff)
-              .setTo(Some(chargeTariff))
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(None)
-          case BatteryStatus.Medium =>
-            stateWithTariff
-              .modify(_.battery.lowChargeTariff)
-              .setTo(None)
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.High =>
-            stateWithTariff
-              .modify(_.battery.lowChargeTariff)
-              .setTo(None)
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(None)
-        }
+    val _ = p.process(state, Event.Grid.GridTariffChanged(GridTariff.Pla), now)
 
-        val (stateAfter, actions) = processor.process(
-          initialState,
-          Event.Battery.BatteryStatusReported(status),
-          now
-        )
-
-        assertEquals(
-          actions,
-          Set[Action](Action.SetUIItemValue(config.statusItem, status.label)),
-          "No UI actions should be produced on tariff change"
-        )
-
-        assertEquals(stateAfter.battery.status, Some(status))
-
-        if result(toTariff) then
-          assert(
-            manager.requestCalls.contains(
-              GridSignal.Batteries
-            ) && manager.releaseCalls.isEmpty
-          )
-        else
-          assert(
-            manager.releaseCalls.contains(
-              GridSignal.Batteries
-            ) && manager.requestCalls.isEmpty
-          )
-      }
-    }
-  }
-
-  tariffs.foreach { (toTariff) =>
-    statusAndTariffs.foreach { (status, chargeTariff, result) =>
-      val connect = if result(toTariff) then "connect" else "not connect"
-      test(
-        s"Tariff=$toTariff, battery=$status, charging for $status to $chargeTariff => $connect"
-      ) {
-        val manager = new ManagerStub()
-        val processor = baseProcessor(manager)
-
-        val initialState = State()
-          .modify(_.grid.currentTariff)
-          .setTo(Some(toTariff))
-          .modify(_.battery.status)
-          .setTo(Some(status))
-
-        val eventForCurrent = status match {
-          case BatteryStatus.Low =>
-            Event.Battery.BatteryChargeLowTariffChanged(chargeTariff)
-          case BatteryStatus.Medium =>
-            Event.Battery.BatteryChargeMediumTariffChanged(chargeTariff)
-          case BatteryStatus.High =>
-            // For high status, charge tariff doesn't matter, but we can still test the change
-            Event.Battery.BatteryChargeLowTariffChanged(chargeTariff)
-        }
-
-        val (stateAfter, actions) = processor.process(
-          initialState,
-          eventForCurrent,
-          now
-        )
-
-        val actionsExpected = status match {
-          case BatteryStatus.Low =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.lowChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-          case BatteryStatus.Medium =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-          case BatteryStatus.High =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.lowChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-        }
-
-        val stateExpected = status match {
-          case BatteryStatus.Low =>
-            initialState
-              .modify(_.battery.lowChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.Medium =>
-            initialState
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.High =>
-            initialState
-              .modify(_.battery.lowChargeTariff)
-              .setTo(Some(chargeTariff))
-        }
-
-        assertEquals(
-          actions,
-          actionsExpected,
-          "UI actions should update the correct tariff item"
-        )
-
-        assertEquals(
-          stateAfter,
-          stateExpected,
-          "State should update the correct tariff field"
-        )
-
-        if result(toTariff) then
-          assert(
-            manager.requestCalls.contains(
-              GridSignal.Batteries
-            ) && manager.releaseCalls.isEmpty
-          )
-        else
-          assert(
-            manager.releaseCalls.contains(
-              GridSignal.Batteries
-            ) && manager.requestCalls.isEmpty
-          )
-      }
-    }
-  }
-
-  tariffs.foreach { (toTariff) =>
-    statusAndTariffs.foreach { (status, chargeTariff, _) =>
-      val result = never
-      val connect = "not connect"
-      test(
-        s"Tariff=$toTariff, battery=$status, charging for $status to $chargeTariff => $connect"
-      ) {
-        val manager = new ManagerStub()
-        val processor = baseProcessor(manager)
-
-        val initialState = State()
-          .modify(_.grid.currentTariff)
-          .setTo(Some(toTariff))
-          .modify(_.battery.status)
-          .setTo(Some(status))
-
-        val eventForOther = status match {
-          case BatteryStatus.Low =>
-            Event.Battery.BatteryChargeMediumTariffChanged(chargeTariff)
-          case BatteryStatus.Medium =>
-            Event.Battery.BatteryChargeLowTariffChanged(chargeTariff)
-          case BatteryStatus.High =>
-            // For high status, charge tariff doesn't matter, but we can still test the change
-            Event.Battery.BatteryChargeMediumTariffChanged(chargeTariff)
-        }
-
-        val (stateAfter, actions) = processor.process(
-          initialState,
-          eventForOther,
-          now
-        )
-
-        val actionsExpected = status match {
-          case BatteryStatus.Low =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-          case BatteryStatus.Medium =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.lowChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-          case BatteryStatus.High =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                chargeTariff.label
-              )
-            )
-        }
-
-        val stateExpected = status match {
-          case BatteryStatus.Low =>
-            initialState
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.Medium =>
-            initialState
-              .modify(_.battery.lowChargeTariff)
-              .setTo(Some(chargeTariff))
-          case BatteryStatus.High =>
-            initialState
-              .modify(_.battery.mediumChargeTariff)
-              .setTo(Some(chargeTariff))
-        }
-
-        assertEquals(
-          actions,
-          actionsExpected,
-          "UI actions should update the correct tariff item"
-        )
-
-        assertEquals(
-          stateAfter,
-          stateExpected,
-          "State should update the correct tariff field"
-        )
-
-        if result(toTariff) then
-          assert(
-            manager.requestCalls.contains(
-              GridSignal.Batteries
-            ) && manager.releaseCalls.isEmpty
-          )
-        else
-          assert(
-            manager.releaseCalls.contains(
-              GridSignal.Batteries
-            ) && manager.requestCalls.isEmpty
-          )
-      }
-    }
+    assertManager(manager, shouldConnect = false)
   }
 }
