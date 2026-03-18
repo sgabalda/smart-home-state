@@ -321,7 +321,7 @@ class BatteryProcessorSuite extends FunSuite {
   }
 
   // ======================
-  // Missing important tests
+  // Other important tests
   // ======================
 
   test("Startup event restores UI state") {
