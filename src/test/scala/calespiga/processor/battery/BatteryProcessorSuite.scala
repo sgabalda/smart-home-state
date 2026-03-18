@@ -118,7 +118,10 @@ class BatteryProcessorSuite extends FunSuite {
       now
     )
 
-    assertEquals(newState.battery.lowChargeTariff, Some(BatteryChargeTariff.Vall))
+    assertEquals(
+      newState.battery.lowChargeTariff,
+      Some(BatteryChargeTariff.Vall)
+    )
     assertEquals(
       actions,
       Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, "vall"))
@@ -161,7 +164,9 @@ class BatteryProcessorSuite extends FunSuite {
 
   tariffs.foreach { gridTariff =>
     scenarios.foreach { s =>
-      test(s"Grid change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+      test(
+        s"Grid change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
+      ) {
 
         val manager = new ManagerStub()
         val p = processor(manager)
@@ -218,7 +223,9 @@ class BatteryProcessorSuite extends FunSuite {
 
   tariffs.foreach { gridTariff =>
     scenarios.foreach { s =>
-      test(s"Relevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+      test(
+        s"Relevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
+      ) {
 
         val manager = new ManagerStub()
         val p = processor(manager)
@@ -240,11 +247,20 @@ class BatteryProcessorSuite extends FunSuite {
 
         val expectedActions = s.status match
           case BatteryStatus.Low =>
-            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
+            )
           case BatteryStatus.Medium =>
-            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(
+                config.mediumChargeTariffItem,
+                s.tariff.label
+              )
+            )
           case BatteryStatus.High =>
-            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
+            )
 
         assertEquals(actions, expectedActions)
 
@@ -255,7 +271,9 @@ class BatteryProcessorSuite extends FunSuite {
 
   tariffs.foreach { gridTariff =>
     scenarios.foreach { s =>
-      test(s"Irrelevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}") {
+      test(
+        s"Irrelevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
+      ) {
 
         val manager = new ManagerStub()
         val p = processor(manager)
@@ -276,11 +294,23 @@ class BatteryProcessorSuite extends FunSuite {
 
         val expectedActions = s.status match
           case BatteryStatus.Low =>
-            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(
+                config.mediumChargeTariffItem,
+                s.tariff.label
+              )
+            )
           case BatteryStatus.Medium =>
-            Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
+            )
           case BatteryStatus.High =>
-            Set[Action](Action.SetUIItemValue(config.mediumChargeTariffItem, s.tariff.label))
+            Set[Action](
+              Action.SetUIItemValue(
+                config.mediumChargeTariffItem,
+                s.tariff.label
+              )
+            )
 
         assertEquals(actions, expectedActions)
 
@@ -299,9 +329,12 @@ class BatteryProcessorSuite extends FunSuite {
     val p = processor(manager)
 
     val initialState = State()
-      .modify(_.battery.status).setTo(Some(BatteryStatus.Low))
-      .modify(_.battery.lowChargeTariff).setTo(Some(BatteryChargeTariff.Vall))
-      .modify(_.battery.mediumChargeTariff).setTo(Some(BatteryChargeTariff.AllTariffs))
+      .modify(_.battery.status)
+      .setTo(Some(BatteryStatus.Low))
+      .modify(_.battery.lowChargeTariff)
+      .setTo(Some(BatteryChargeTariff.Vall))
+      .modify(_.battery.mediumChargeTariff)
+      .setTo(Some(BatteryChargeTariff.AllTariffs))
 
     val (_, actions) = p.process(initialState, Event.System.StartupEvent, now)
 
@@ -330,8 +363,10 @@ class BatteryProcessorSuite extends FunSuite {
 
     val state =
       State()
-        .modify(_.battery.status).setTo(Some(BatteryStatus.Low))
-        .modify(_.battery.lowChargeTariff).setTo(Some(BatteryChargeTariff.AllTariffs))
+        .modify(_.battery.status)
+        .setTo(Some(BatteryStatus.Low))
+        .modify(_.battery.lowChargeTariff)
+        .setTo(Some(BatteryChargeTariff.AllTariffs))
 
     val _ = p.process(state, Event.Grid.GridTariffChanged(GridTariff.Pla), now)
 
