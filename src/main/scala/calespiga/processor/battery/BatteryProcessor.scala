@@ -20,4 +20,7 @@ object BatteryProcessor {
           config.onlineStatusItem
         )
       )
+      .andThen(
+        BatteryAlertOnLowProcessor()
+      )
 }
