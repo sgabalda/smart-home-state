@@ -33,7 +33,9 @@ class OfflineDetectorSuite extends FunSuite {
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id,
-        Action.SetUIItemValue(statusItem, config.offlineText),
+        Action.SendFeedbackEvent(
+          Event.System.OfflineDetected(originalId + OfflineDetector.ID_SUFFIX)
+        ),
         config.timeoutDuration
       )
     )
@@ -48,7 +50,9 @@ class OfflineDetectorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
         id,
-        Action.SetUIItemValue(statusItem, config.offlineText),
+        Action.SendFeedbackEvent(
+          Event.System.OfflineDetected(originalId + OfflineDetector.ID_SUFFIX)
+        ),
         config.timeoutDuration
       )
     )
@@ -62,5 +66,78 @@ class OfflineDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, unrelatedEvent, now)
     assertEquals(newState, state)
     assertEquals(actions, Set.empty)
+  }
+
+  test("OfflineDetected event updates state with provided function") {
+    var stateModifierCalled = false
+    var capturedSignal: calespiga.model.OfflineOnlineSignal = null
+
+    val stateModifier: (State, calespiga.model.OfflineOnlineSignal) => State =
+      (state, signal) => {
+        stateModifierCalled = true
+        capturedSignal = signal
+        state
+      }
+
+    val detectorWithModifier =
+      OfflineDetector(config, originalId, matcher, statusItem, stateModifier)
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+
+    val (_, _) = detectorWithModifier.process(state, offlineEvent, now)
+
+    assert(stateModifierCalled, "State modifier was not called")
+    assertEquals(capturedSignal, calespiga.model.OfflineOnlineSignal.Offline)
+  }
+
+  test("OfflineDetected event sets UI item to offline") {
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+
+    val (_, actions) = detector.process(state, offlineEvent, now)
+
+    val expectedOfflineAction =
+      Action.SetUIItemValue(statusItem, config.offlineText)
+    assert(
+      actions.contains(expectedOfflineAction),
+      s"Expected action $expectedOfflineAction in $actions"
+    )
+  }
+
+  test("OfflineDetected event sends NO notification if not configured") {
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+
+    val (_, actions) = detector.process(state, offlineEvent, now)
+
+    assert(
+      !actions
+        .find({
+          case Action.SendNotification(_, _, _) => true
+          case _                                => false
+        })
+        .isDefined,
+      s"Expected NO notification action in $actions"
+    )
+  }
+
+  test("OfflineDetected event sends notification if configured") {
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+    val notificationMessage = "Device is offline"
+    val detector = OfflineDetector(
+      config,
+      originalId,
+      matcher,
+      statusItem,
+      messageOffline = Some(notificationMessage)
+    )
+
+    val (_, actions) = detector.process(state, offlineEvent, now)
+
+    assert(
+      actions.contains(Action.SendNotification(id, notificationMessage, None)),
+      s"Expected notification action in $actions"
+    )
   }
 }

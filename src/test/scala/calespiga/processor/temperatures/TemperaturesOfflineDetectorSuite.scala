@@ -22,7 +22,9 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id + OfflineDetector.ID_SUFFIX,
-        Action.SetUIItemValue(statusItem, config.offlineText),
+        Action.SendFeedbackEvent(
+          Event.System.OfflineDetected(id + OfflineDetector.ID_SUFFIX)
+        ),
         config.timeoutDuration
       )
     )
@@ -38,7 +40,9 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
       Action.SetUIItemValue(statusItem, config.onlineText),
       Action.Delayed(
         id + OfflineDetector.ID_SUFFIX,
-        Action.SetUIItemValue(statusItem, config.offlineText),
+        Action.SendFeedbackEvent(
+          Event.System.OfflineDetected(id + OfflineDetector.ID_SUFFIX)
+        ),
         config.timeoutDuration
       )
     )
@@ -53,7 +57,9 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
     val expectedActions: Set[Action] = Set(
       Action.Delayed(
         id + OfflineDetector.ID_SUFFIX,
-        Action.SetUIItemValue(statusItem, config.offlineText),
+        Action.SendFeedbackEvent(
+          Event.System.OfflineDetected(id + OfflineDetector.ID_SUFFIX)
+        ),
         config.timeoutDuration
       )
     )

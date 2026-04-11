@@ -128,7 +128,9 @@ object ProcessorConfigHelper {
     syncStatusItem = "grid/syncStatus",
     reasonItem = "grid/connectionReason",
     resendInterval = 20.seconds,
-    tariffItem = "grid/tariff"
+    tariffItem = "grid/tariff",
+    onlineStatusItem = "grid/onlineStatus",
+    offlineNotification = "El dispositiu de control de la xarxa no respon"
   )
 
   val batteryConfig: BatteryConfig = BatteryConfig(
@@ -137,7 +139,8 @@ object ProcessorConfigHelper {
     lowChargeTariffItem = "grid/batteryLowChargeTariff",
     mediumChargeTariffItem = "grid/batteryMediumChargeTariff",
     onlineStatusItem = "grid/batteryOnlineStatus",
-    id = "battery-processor"
+    id = "battery-processor",
+    offlineNotification = "El dispositiu de control de la bateria no respon"
   )
 
   val processorConfig: ProcessorConfig = ProcessorConfig(

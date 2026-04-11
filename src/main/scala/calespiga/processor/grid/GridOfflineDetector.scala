@@ -1,4 +1,4 @@
-package calespiga.processor.battery
+package calespiga.processor.grid
 
 import calespiga.config.OfflineDetectorConfig
 import calespiga.processor.SingleProcessor
@@ -6,26 +6,26 @@ import calespiga.processor.utils.OfflineDetector
 import calespiga.model.Event
 import com.softwaremill.quicklens.*
 
-private[battery] object BatteryOfflineDetector {
+private[grid] object GridOfflineDetector {
 
   private val eventMatcher: Event.EventData => Boolean = {
-    case Event.Battery.BatteryStatusReported(_) => true
-    case Event.System.StartupEvent              => true
-    case _                                      => false
+    case Event.Grid.GridConnectionStatusReported(_) => true
+    case Event.System.StartupEvent                  => true
+    case _                                          => false
   }
 
   def apply(
       offlineConfig: OfflineDetectorConfig,
-      batteryId: String,
+      gridId: String,
       onlineStatusItem: String,
-      messageOffline: String
+      offlineNotification: String
   ): SingleProcessor =
     OfflineDetector(
       offlineConfig,
-      batteryId,
+      gridId,
       eventMatcher,
       onlineStatusItem,
-      (state, online) => state.modify(_.battery.online).setTo(Some(online)),
-      Some(messageOffline)
+      (state, online) => state.modify(_.grid.online).setTo(Some(online)),
+      Some(offlineNotification)
     )
 }
