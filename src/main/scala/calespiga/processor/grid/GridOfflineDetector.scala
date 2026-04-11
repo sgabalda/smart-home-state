@@ -16,14 +16,16 @@ private[grid] object GridOfflineDetector {
 
   def apply(
       offlineConfig: OfflineDetectorConfig,
-      batteryId: String,
-      onlineStatusItem: String
+      gridId: String,
+      onlineStatusItem: String,
+      offlineNotification: String
   ): SingleProcessor =
     OfflineDetector(
       offlineConfig,
-      batteryId,
+      gridId,
       eventMatcher,
       onlineStatusItem,
-      (state, online) => state.modify(_.grid.online).setTo(Some(online))
+      (state, online) => state.modify(_.grid.online).setTo(Some(online)),
+      Some(offlineNotification)
     )
 }

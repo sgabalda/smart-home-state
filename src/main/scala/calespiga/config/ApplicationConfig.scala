@@ -63,6 +63,7 @@ final case class BatteryConfig(
     lowChargeTariffItem: String,
     mediumChargeTariffItem: String,
     onlineStatusItem: String,
+    offlineNotification: String,
     id: String
 ) derives ConfigReader
 
@@ -187,7 +188,8 @@ final case class GridConfig(
     resendInterval: FiniteDuration,
     id: String,
     tariffItem: String,
-    onlineStatusItem: String
+    onlineStatusItem: String,
+    offlineNotification: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

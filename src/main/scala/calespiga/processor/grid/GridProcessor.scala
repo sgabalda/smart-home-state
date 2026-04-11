@@ -19,6 +19,6 @@ object GridProcessor {
       .andThen(GridConnectionProcessor(config, manager))
       .andThen(GridSyncDetector(syncConfig, config.id, config.syncStatusItem))
       .andThen(
-        GridOfflineDetector(offlineConfig, config.id, config.onlineStatusItem)
+        GridOfflineDetector(offlineConfig, config.id, config.onlineStatusItem, config.offlineNotification)
       )
 }

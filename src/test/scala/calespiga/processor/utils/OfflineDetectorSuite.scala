@@ -103,4 +103,33 @@ class OfflineDetectorSuite extends FunSuite {
       s"Expected action $expectedOfflineAction in $actions"
     )
   }
+
+  test("OfflineDetected event sends NO notification if not configured") {
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+
+    val (_, actions) = detector.process(state, offlineEvent, now)
+
+    assert(
+      !actions.find({
+        case Action.SendNotification(_, _, _) => true
+        case _                              => false
+      }).isDefined,
+      s"Expected NO notification action in $actions"
+    )
+  }
+
+  test("OfflineDetected event sends notification if configured") {
+    val state = State()
+    val offlineEvent = Event.System.OfflineDetected(id)
+    val notificationMessage = "Device is offline"
+    val detector = OfflineDetector(config, originalId, matcher, statusItem, messageOffline = Some(notificationMessage))
+
+    val (_, actions) = detector.process(state, offlineEvent, now)
+
+    assert(
+      actions.contains(Action.SendNotification(id, notificationMessage, None)),
+      s"Expected notification action in $actions"
+    )
+  }
 }

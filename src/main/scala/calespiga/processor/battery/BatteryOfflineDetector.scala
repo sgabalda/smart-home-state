@@ -17,13 +17,15 @@ private[battery] object BatteryOfflineDetector {
   def apply(
       offlineConfig: OfflineDetectorConfig,
       batteryId: String,
-      onlineStatusItem: String
+      onlineStatusItem: String,
+      messageOffline: String
   ): SingleProcessor =
     OfflineDetector(
       offlineConfig,
       batteryId,
       eventMatcher,
       onlineStatusItem,
-      (state, online) => state.modify(_.battery.online).setTo(Some(online))
+      (state, online) => state.modify(_.battery.online).setTo(Some(online)),
+      Some(messageOffline)
     )
 }

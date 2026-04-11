@@ -17,7 +17,8 @@ object BatteryProcessor {
         BatteryOfflineDetector(
           offlineConfig,
           config.id,
-          config.onlineStatusItem
+          config.onlineStatusItem,
+          config.offlineNotification
         )
       )
       .andThen(
