@@ -9,24 +9,33 @@ import calespiga.model.OfflineOnlineSignal
 import calespiga.model.Action.SendFeedbackEvent
 import calespiga.model.Action.SendNotification
 
-/**
-  * Generic offline detector processor that can be used for any component by providing a matching function for the 
-  * relevant events and the actions to set online/offline status. 
-  * It handles scheduling the offline timeout and resetting it on relevant events.
+/** Generic offline detector processor that can be used for any component by
+  * providing a matching function for the relevant events and the actions to set
+  * online/offline status. It handles scheduling the offline timeout and
+  * resetting it on relevant events.
   */
 object OfflineDetector {
 
   val ID_SUFFIX = "-offline-detector"
 
-  /**
-    * Creates an offline detector processor.
+  /** Creates an offline detector processor.
     *
-    * @param config Configuration for the offline detector, including timeout duration and online/offline text.
-    * @param id Identifier for the component being monitored (used for scheduling and feedback events). 
-    * @param eventMatcher Function to match relevant events that indicate the component is online.
-    * @param statusItem The UI item to update with online/offline status.
-    * @param offlineStateFieldModifier Function to modify the state when the component is offline. If not provided, the state is not modified.
-    * @param messageOffline Optional message to display when the component goes offline. If not provided, no notification is sent on offline.
+    * @param config
+    *   Configuration for the offline detector, including timeout duration and
+    *   online/offline text.
+    * @param id
+    *   Identifier for the component being monitored (used for scheduling and
+    *   feedback events).
+    * @param eventMatcher
+    *   Function to match relevant events that indicate the component is online.
+    * @param statusItem
+    *   The UI item to update with online/offline status.
+    * @param offlineStateFieldModifier
+    *   Function to modify the state when the component is offline. If not
+    *   provided, the state is not modified.
+    * @param messageOffline
+    *   Optional message to display when the component goes offline. If not
+    *   provided, no notification is sent on offline.
     * @return
     */
   def apply(

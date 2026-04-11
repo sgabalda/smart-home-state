@@ -111,10 +111,12 @@ class OfflineDetectorSuite extends FunSuite {
     val (_, actions) = detector.process(state, offlineEvent, now)
 
     assert(
-      !actions.find({
-        case Action.SendNotification(_, _, _) => true
-        case _                              => false
-      }).isDefined,
+      !actions
+        .find({
+          case Action.SendNotification(_, _, _) => true
+          case _                                => false
+        })
+        .isDefined,
       s"Expected NO notification action in $actions"
     )
   }
@@ -123,7 +125,13 @@ class OfflineDetectorSuite extends FunSuite {
     val state = State()
     val offlineEvent = Event.System.OfflineDetected(id)
     val notificationMessage = "Device is offline"
-    val detector = OfflineDetector(config, originalId, matcher, statusItem, messageOffline = Some(notificationMessage))
+    val detector = OfflineDetector(
+      config,
+      originalId,
+      matcher,
+      statusItem,
+      messageOffline = Some(notificationMessage)
+    )
 
     val (_, actions) = detector.process(state, offlineEvent, now)
 
