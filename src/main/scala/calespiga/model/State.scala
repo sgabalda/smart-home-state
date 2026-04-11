@@ -105,7 +105,8 @@ object State {
       lastCommandSent: Option[GridSignal.ControllerState] = None,
       devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
       lastSyncing: Option[java.time.Instant] = None,
-      currentTariff: Option[GridTariff] = None
+      currentTariff: Option[GridTariff] = None,
+      online: Option[OfflineOnlineSignal] = None
   )
   object Grid:
     given schema: Schema[Grid] = derived[
@@ -115,7 +116,8 @@ object State {
   case class Battery(
       status: Option[BatteryStatus] = None,
       lowChargeTariff: Option[BatteryChargeTariff] = None,
-      mediumChargeTariff: Option[BatteryChargeTariff] = None
+      mediumChargeTariff: Option[BatteryChargeTariff] = None,
+      online: Option[OfflineOnlineSignal] = None
   )
 
   case class FeatureFlags(

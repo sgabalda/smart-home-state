@@ -186,7 +186,8 @@ final case class GridConfig(
     reasonItem: String,
     resendInterval: FiniteDuration,
     id: String,
-    tariffItem: String
+    tariffItem: String,
+    onlineStatusItem: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

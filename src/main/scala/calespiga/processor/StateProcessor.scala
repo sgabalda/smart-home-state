@@ -71,7 +71,12 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      GridProcessor(config.grid, config.syncDetector, gridManager).toEffectful,
+      GridProcessor(
+        config.grid,
+        config.syncDetector,
+        gridManager,
+        config.offlineDetector
+      ).toEffectful,
       BatteryProcessor(
         config.battery,
         gridManager,

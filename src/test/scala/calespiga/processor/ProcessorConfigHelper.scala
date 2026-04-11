@@ -128,7 +128,8 @@ object ProcessorConfigHelper {
     syncStatusItem = "grid/syncStatus",
     reasonItem = "grid/connectionReason",
     resendInterval = 20.seconds,
-    tariffItem = "grid/tariff"
+    tariffItem = "grid/tariff",
+    onlineStatusItem = "grid/onlineStatus"
   )
 
   val batteryConfig: BatteryConfig = BatteryConfig(
