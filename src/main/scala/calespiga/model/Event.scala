@@ -36,6 +36,10 @@ object Event {
 
     // Event triggered when the system starts and state is restored from persistence
     case object StartupEvent extends SystemData
+
+    case class OfflineDetected(id: String)
+        extends FeedbackEventData
+        with SystemData
   }
 
   object FeatureFlagEvents {
