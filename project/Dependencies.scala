@@ -10,7 +10,7 @@ object Dependencies {
 
     val fs2_mqtt = "1.0.1"
 
-    val http4s = "0.23.33"
+    val http4s = "0.23.34"
 
     val http4s_netty = "0.5.29"
 
