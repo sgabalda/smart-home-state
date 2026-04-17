@@ -100,6 +100,15 @@ sitemap shs label="Ca l'espiga SHS" {
         }
     }
 
+    Text item=CarChargerTitle label="Vehicle Elèctric" icon="electric_car"
+    {
+        Frame label="Carregador vehicle" {
+            Text item=CarChargerStatusSHS icon="car" label="Estat: [%s]"
+            Text item=CarChargerPowerSHS icon="power" label="Potència: [%.0f W]"
+            Text item=CarChargerEnergiaAvuiSHS icon="energy" label="Energia carregada avui: [%,d Wh]"
+        }
+    }
+
     Text item=SystemTitle label="Estat" icon="alert"
     {
         Frame label="Alarmes" {

@@ -6,6 +6,7 @@ import calespiga.model.HeaterSignal
 import calespiga.model.FanSignal
 import calespiga.model.InfraredStoveSignal
 import calespiga.model.GridSignal
+import calespiga.model.CarChargerSignal
 
 object InputTopicMapper {
 
@@ -133,6 +134,14 @@ object InputTopicMapper {
                 GridSignal
                   .controllerStateFromString(valueStr)
                   .getOrElse(GridSignal.Disconnected)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe if tpe =:= TypeRepr.of[CarChargerSignal.ControllerState] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                CarChargerSignal
+                  .controllerStateFromString(valueStr)
+                  .getOrElse(CarChargerSignal.Off)
               }
               getNewExpr(convertedValueExpr)
 
