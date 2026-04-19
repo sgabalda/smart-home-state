@@ -6,14 +6,12 @@ import com.softwaremill.quicklens.*
 import java.time.Instant
 import java.time.ZoneId
 import calespiga.processor.SingleProcessor
-import calespiga.processor.utils.EnergyCalculator
 
 private[carCharger] object CarChargerEnergyProcessor {
 
   private final case class Impl(
       config: CarChargerConfig,
-      zone: ZoneId,
-      energyCalculator: EnergyCalculator
+      zone: ZoneId
   ) extends SingleProcessor {
 
     override def process(
@@ -24,28 +22,13 @@ private[carCharger] object CarChargerEnergyProcessor {
       eventData match {
 
         case Event.CarCharger.CarChargerPowerReported(watts) =>
-          val baseEnergyToday: Float = (
-            for {
-              lastAccum <- state.carCharger.lastAccumulatedEnergyWh
-              dayStart <- state.carCharger.accumulatedAtDayStartWh
-            } yield lastAccum - dayStart
-          ).getOrElse(0f)
-
-          val newEnergyToday = energyCalculator.calculateEnergyToday(
-            state.carCharger.lastEnergyUpdate,
-            timestamp,
-            state.carCharger.currentPowerWatts.map(_.toInt).getOrElse(0),
-            baseEnergyToday,
-            zone
-          )
-
           val newState =
-            state.modify(_.carCharger.lastEnergyUpdate).setTo(Some(timestamp))
+            state.modify(_.carCharger.currentPowerWatts).setTo(Some(watts))
 
           val actions = Set[Action](
             Action.SetUIItemValue(
-              config.energyTodayItem,
-              newEnergyToday.toInt.toString
+              config.powerItem,
+              watts.toInt.toString
             )
           )
 
@@ -91,11 +74,5 @@ private[carCharger] object CarChargerEnergyProcessor {
   def apply(
       config: CarChargerConfig,
       zone: ZoneId
-  ): SingleProcessor = Impl(config, zone, EnergyCalculator())
-
-  private[carCharger] def apply(
-      config: CarChargerConfig,
-      zone: ZoneId,
-      energyCalculator: EnergyCalculator
-  ): SingleProcessor = Impl(config, zone, energyCalculator)
+  ): SingleProcessor = Impl(config, zone)
 }

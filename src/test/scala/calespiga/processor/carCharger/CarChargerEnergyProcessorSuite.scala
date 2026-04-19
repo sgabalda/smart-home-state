@@ -7,8 +7,6 @@ import java.time.Instant
 import java.time.ZoneId
 import com.softwaremill.quicklens.*
 import calespiga.processor.ProcessorConfigHelper
-import calespiga.processor.utils.EnergyCalculatorStub
-import scala.collection.mutable
 
 class CarChargerEnergyProcessorSuite extends FunSuite {
 
@@ -35,63 +33,25 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
         )
       )
 
-  test("CarChargerPowerReported calculates energy with same day") {
-    val secondsAgo = 3600
-    val initialEnergy = 100f
-    val calculatedEnergy = 2100f
-    val oneHourAgo = now.minusSeconds(secondsAgo)
-    val initialState = stateWithCarCharger(
-      currentPowerWatts = Some(7000f),
-      lastAccumulatedEnergyWh = Some(initialEnergy),
-      accumulatedAtDayStartWh = Some(0f),
-      lastEnergyUpdate = Some(oneHourAgo)
-    )
-
-    val calculatorCalls = mutable.ListBuffer
-      .empty[(Option[Instant], Instant, Int, Float, ZoneId)]
-    val energyCalculator = EnergyCalculatorStub(
-      calculateEnergyTodayStub =
-        (lastChange, timestamp, power, energy, zone) => {
-          calculatorCalls.addOne((lastChange, timestamp, power, energy, zone))
-          calculatedEnergy
-        }
-    )
-
+  test("CarChargerPowerReported updates current power only") {
     val event = CarChargerPowerReported(6500f)
-    val processor = CarChargerEnergyProcessor(config, zone, energyCalculator)
+    val processor = CarChargerEnergyProcessor(config, zone)
+    val initialState = stateWithCarCharger(currentPowerWatts = Some(7000f))
+
     val (newState, actions) = processor.process(initialState, event, now)
 
-    assertEquals(calculatorCalls.size, 1)
-    val (callLastChange, callTimestamp, callPower, callEnergy, callZone) =
-      calculatorCalls.head
-    assertEquals(callLastChange, Some(oneHourAgo))
-    assertEquals(callTimestamp, now)
-    assertEquals(callPower, 7000)
-    assertEquals(callEnergy, initialEnergy)
-    assertEquals(callZone, zone)
-
-    assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
-    // UI updated with calculated energy
-    assert(
-      actions.exists {
-        case Action.SetUIItemValue(item, value) =>
-          item == config.energyTodayItem && value == calculatedEnergy.toInt.toString
-        case _ => false
-      }
-    )
-
-    val expectedActions: Set[Action] = Set(
-      Action.SetUIItemValue(
-        config.energyTodayItem,
-        calculatedEnergy.toInt.toString
+    assertEquals(newState.carCharger.currentPowerWatts, Some(6500f))
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(config.powerItem, "6500")
       )
     )
-    assertEquals(actions, expectedActions)
   }
 
-  test("CarChargerPowerReported resets energy if new day") {
-    val initialEnergy = 10000f
-    val calculatedEnergy = 1000f
+  test(
+    "CarChargerPowerReported preserves energy state and updates current power"
+  ) {
     val yesterday = now
       .atZone(zone)
       .toLocalDate
@@ -102,39 +62,27 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
     val today = yesterday.plusSeconds(3600)
     val initialStateNewDay = stateWithCarCharger(
       currentPowerWatts = Some(6000f),
-      lastAccumulatedEnergyWh = Some(initialEnergy),
+      lastAccumulatedEnergyWh = Some(10000f),
       accumulatedAtDayStartWh = Some(0f),
       lastEnergyUpdate = Some(yesterday)
     )
 
-    val calculatorCalls = mutable.ListBuffer
-      .empty[(Option[Instant], Instant, Int, Float, ZoneId)]
-    val energyCalculator = EnergyCalculatorStub(
-      calculateEnergyTodayStub =
-        (lastChange, timestamp, power, energy, zone) => {
-          calculatorCalls.addOne((lastChange, timestamp, power, energy, zone))
-          calculatedEnergy
-        }
-    )
-
     val event = CarChargerPowerReported(7000f)
-    val processor = CarChargerEnergyProcessor(config, zone, energyCalculator)
+    val processor = CarChargerEnergyProcessor(config, zone)
     val (newState, actions) =
       processor.process(initialStateNewDay, event, today)
 
-    assertEquals(newState.carCharger.lastEnergyUpdate, Some(today))
-    assert(
-      actions.exists {
-        case Action.SetUIItemValue(item, value) =>
-          item == config.energyTodayItem && value == calculatedEnergy.toInt.toString
-        case _ => false
-      }
+    assertEquals(newState.carCharger.currentPowerWatts, Some(7000f))
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(config.powerItem, "7000")
+      )
     )
   }
 
   test("CarChargerPowerReported does nothing for non-power events") {
-    val energyCalculator = EnergyCalculatorStub()
-    val processor = CarChargerEnergyProcessor(config, zone, energyCalculator)
+    val processor = CarChargerEnergyProcessor(config, zone)
     val initialState = stateWithCarCharger()
 
     val (newState, actions) = processor.process(
@@ -199,15 +147,20 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
       now
     )
 
-    assertEquals(newState.carCharger.accumulatedAtDayStartWh, Some(currentTotal))
-    assertEquals(newState.carCharger.lastAccumulatedEnergyWh, Some(currentTotal))
+    assertEquals(
+      newState.carCharger.accumulatedAtDayStartWh,
+      Some(currentTotal)
+    )
+    assertEquals(
+      newState.carCharger.lastAccumulatedEnergyWh,
+      Some(currentTotal)
+    )
     assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
-    assert(
-      actions.exists {
-        case Action.SetUIItemValue(item, value) =>
-          item == config.energyTodayItem && value == "0"
-        case _ => false
-      }
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(config.energyTodayItem, "0")
+      )
     )
   }
 
