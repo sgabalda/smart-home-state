@@ -61,7 +61,7 @@ private[carCharger] object CarChargerEnergyProcessor {
           val updatedAccumulatedAtDayStart: Option[Float] =
             if (isNewDay)
               state.carCharger.lastAccumulatedEnergyWh.orElse(Some(totalWh))
-            else state.carCharger.accumulatedAtDayStartWh
+            else state.carCharger.accumulatedAtDayStartWh.orElse(Some(totalWh))
 
           val energySinceDayStart =
             totalWh - updatedAccumulatedAtDayStart.getOrElse(totalWh)

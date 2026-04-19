@@ -182,6 +182,36 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
   }
 
   test(
+    "CarChargerAccumulatedEnergyReported initializes day-start baseline on first same-day report"
+  ) {
+    val currentTotal = 12000f
+
+    val initialState = stateWithCarCharger(
+      lastEnergyUpdate = Some(now.minusSeconds(3600)),
+      lastAccumulatedEnergyWh = Some(currentTotal),
+      accumulatedAtDayStartWh = None
+    )
+
+    val processor = CarChargerEnergyProcessor(config, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      CarChargerAccumulatedEnergyReported(currentTotal),
+      now
+    )
+
+    assertEquals(newState.carCharger.accumulatedAtDayStartWh, Some(currentTotal))
+    assertEquals(newState.carCharger.lastAccumulatedEnergyWh, Some(currentTotal))
+    assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
+    assert(
+      actions.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.energyTodayItem && value == "0"
+        case _ => false
+      }
+    )
+  }
+
+  test(
     "CarChargerAccumulatedEnergyReported on new day snapshots previous accumulated"
   ) {
     val yesterday = now
