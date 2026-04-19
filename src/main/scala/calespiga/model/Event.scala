@@ -195,6 +195,11 @@ object Event {
     case class CarChargerPowerReported(
         watts: Float
     ) extends CarChargerData
+
+    @InputEventMqtt("carcharger/accumulated")
+    case class CarChargerAccumulatedEnergyReported(
+        totalWh: Float
+    ) extends CarChargerData
   }
 
   object Power {

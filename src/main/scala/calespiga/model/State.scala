@@ -125,8 +125,9 @@ object State {
   case class CarCharger(
       switchStatus: Option[CarChargerSignal.ControllerState] = None,
       currentPowerWatts: Option[Float] = None,
-      energyTodayWh: Float = 0.0f,
-      lastPowerUpdate: Option[java.time.Instant] = None,
+      lastEnergyUpdate: Option[java.time.Instant] = None,
+      lastAccumulatedEnergyWh: Option[Float] = None,
+      accumulatedAtDayStartWh: Option[Float] = None,
       online: Option[OfflineOnlineSignal] = None,
       chargingStatus: Option[CarChargerChargingStatus] = None
   )

@@ -24,24 +24,60 @@ private[carCharger] object CarChargerEnergyProcessor {
       eventData match {
 
         case Event.CarCharger.CarChargerPowerReported(watts) =>
+          val baseEnergyToday: Float = (
+            for {
+              lastAccum <- state.carCharger.lastAccumulatedEnergyWh
+              dayStart <- state.carCharger.accumulatedAtDayStartWh
+            } yield lastAccum - dayStart
+          ).getOrElse(0f)
+
           val newEnergyToday = energyCalculator.calculateEnergyToday(
-            state.carCharger.lastPowerUpdate,
+            state.carCharger.lastEnergyUpdate,
             timestamp,
             state.carCharger.currentPowerWatts.map(_.toInt).getOrElse(0),
-            state.carCharger.energyTodayWh,
+            baseEnergyToday,
             zone
           )
 
-          val newState = state
-            .modify(_.carCharger.lastPowerUpdate)
-            .setTo(Some(timestamp))
-            .modify(_.carCharger.energyTodayWh)
-            .setTo(newEnergyToday)
+          val newState =
+            state.modify(_.carCharger.lastEnergyUpdate).setTo(Some(timestamp))
 
           val actions = Set[Action](
             Action.SetUIItemValue(
               config.energyTodayItem,
               newEnergyToday.toInt.toString
+            )
+          )
+
+          (newState, actions)
+
+        case Event.CarCharger.CarChargerAccumulatedEnergyReported(totalWh) =>
+          val prevLast = state.carCharger.lastEnergyUpdate
+
+          val isNewDay = prevLast.exists(prev =>
+            prev.atZone(zone).toLocalDate != timestamp.atZone(zone).toLocalDate
+          )
+
+          val updatedAccumulatedAtDayStart: Option[Float] =
+            if (isNewDay)
+              state.carCharger.lastAccumulatedEnergyWh.orElse(Some(totalWh))
+            else state.carCharger.accumulatedAtDayStartWh
+
+          val energySinceDayStart =
+            totalWh - updatedAccumulatedAtDayStart.getOrElse(totalWh)
+
+          val newState = state
+            .modify(_.carCharger.lastEnergyUpdate)
+            .setTo(Some(timestamp))
+            .modify(_.carCharger.lastAccumulatedEnergyWh)
+            .setTo(Some(totalWh))
+            .modify(_.carCharger.accumulatedAtDayStartWh)
+            .setTo(updatedAccumulatedAtDayStart)
+
+          val actions = Set[Action](
+            Action.SetUIItemValue(
+              config.energyTodayItem,
+              energySinceDayStart.toInt.toString
             )
           )
 

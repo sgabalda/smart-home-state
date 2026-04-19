@@ -20,17 +20,15 @@ class CarChargerStatusProcessorSuite extends FunSuite {
   private def stateWithCarCharger(
       switchStatus: Option[CarChargerSignal.ControllerState] = None,
       currentPowerWatts: Option[Float] = None,
-      energyTodayWh: Float = 0.0f,
-      lastPowerUpdate: Option[Instant] = None
+      lastEnergyUpdate: Option[Instant] = None
   ): State =
     State()
       .modify(_.carCharger)
       .setTo(
         State.CarCharger(
-          switchStatus,
-          currentPowerWatts,
-          energyTodayWh,
-          lastPowerUpdate
+          switchStatus = switchStatus,
+          currentPowerWatts = currentPowerWatts,
+          lastEnergyUpdate = lastEnergyUpdate
         )
       )
 

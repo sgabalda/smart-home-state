@@ -19,17 +19,19 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
   private def stateWithCarCharger(
       switchStatus: Option[CarChargerSignal.ControllerState] = None,
       currentPowerWatts: Option[Float] = None,
-      energyTodayWh: Float,
-      lastPowerUpdate: Option[Instant] = None
+      lastEnergyUpdate: Option[Instant] = None,
+      lastAccumulatedEnergyWh: Option[Float] = None,
+      accumulatedAtDayStartWh: Option[Float] = None
   ): State =
     State()
       .modify(_.carCharger)
       .setTo(
         State.CarCharger(
-          switchStatus,
-          currentPowerWatts,
-          energyTodayWh,
-          lastPowerUpdate
+          switchStatus = switchStatus,
+          currentPowerWatts = currentPowerWatts,
+          lastEnergyUpdate = lastEnergyUpdate,
+          lastAccumulatedEnergyWh = lastAccumulatedEnergyWh,
+          accumulatedAtDayStartWh = accumulatedAtDayStartWh
         )
       )
 
@@ -40,8 +42,9 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
     val oneHourAgo = now.minusSeconds(secondsAgo)
     val initialState = stateWithCarCharger(
       currentPowerWatts = Some(7000f),
-      energyTodayWh = initialEnergy,
-      lastPowerUpdate = Some(oneHourAgo)
+      lastAccumulatedEnergyWh = Some(initialEnergy),
+      accumulatedAtDayStartWh = Some(0f),
+      lastEnergyUpdate = Some(oneHourAgo)
     )
 
     val calculatorCalls = mutable.ListBuffer
@@ -67,11 +70,14 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
     assertEquals(callEnergy, initialEnergy)
     assertEquals(callZone, zone)
 
-    assertEquals(newState.carCharger.lastPowerUpdate, Some(now))
-    assertEqualsDouble(
-      newState.carCharger.energyTodayWh,
-      calculatedEnergy,
-      0.1f
+    assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
+    // UI updated with calculated energy
+    assert(
+      actions.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.energyTodayItem && value == calculatedEnergy.toInt.toString
+        case _ => false
+      }
     )
 
     val expectedActions: Set[Action] = Set(
@@ -96,8 +102,9 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
     val today = yesterday.plusSeconds(3600)
     val initialStateNewDay = stateWithCarCharger(
       currentPowerWatts = Some(6000f),
-      energyTodayWh = initialEnergy,
-      lastPowerUpdate = Some(yesterday)
+      lastAccumulatedEnergyWh = Some(initialEnergy),
+      accumulatedAtDayStartWh = Some(0f),
+      lastEnergyUpdate = Some(yesterday)
     )
 
     val calculatorCalls = mutable.ListBuffer
@@ -115,13 +122,7 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
     val (newState, actions) =
       processor.process(initialStateNewDay, event, today)
 
-    assertEqualsDouble(
-      newState.carCharger.energyTodayWh,
-      calculatedEnergy,
-      0.1f
-    )
-    assertEquals(newState.carCharger.lastPowerUpdate, Some(today))
-
+    assertEquals(newState.carCharger.lastEnergyUpdate, Some(today))
     assert(
       actions.exists {
         case Action.SetUIItemValue(item, value) =>
@@ -134,7 +135,7 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
   test("CarChargerPowerReported does nothing for non-power events") {
     val energyCalculator = EnergyCalculatorStub()
     val processor = CarChargerEnergyProcessor(config, zone, energyCalculator)
-    val initialState = stateWithCarCharger(energyTodayWh = 500f)
+    val initialState = stateWithCarCharger()
 
     val (newState, actions) = processor.process(
       initialState,
@@ -142,8 +143,87 @@ class CarChargerEnergyProcessorSuite extends FunSuite {
       now
     )
 
-    assertEquals(newState.carCharger.energyTodayWh, 500f)
-    assertEquals(newState.carCharger.lastPowerUpdate, None)
+    assertEquals(newState.carCharger.lastEnergyUpdate, None)
     assertEquals(actions, Set.empty)
+  }
+
+  test(
+    "CarChargerAccumulatedEnergyReported updates accumulated and reports delta"
+  ) {
+    val initialAccumulated = 10000f
+    val dayStartAccumulated = 9900f
+    val currentTotal = 10100f
+
+    val initialState = stateWithCarCharger(
+      lastEnergyUpdate = Some(now.minusSeconds(3600)),
+      lastAccumulatedEnergyWh = Some(initialAccumulated),
+      accumulatedAtDayStartWh = Some(dayStartAccumulated)
+    )
+
+    val processor = CarChargerEnergyProcessor(config, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      CarChargerAccumulatedEnergyReported(currentTotal),
+      now
+    )
+
+    assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
+    assertEquals(
+      newState.carCharger.lastAccumulatedEnergyWh,
+      Some(currentTotal)
+    )
+    assert(
+      actions.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.energyTodayItem && value == (currentTotal - dayStartAccumulated).toInt.toString
+        case _ => false
+      }
+    )
+  }
+
+  test(
+    "CarChargerAccumulatedEnergyReported on new day snapshots previous accumulated"
+  ) {
+    val yesterday = now
+      .atZone(zone)
+      .toLocalDate
+      .minusDays(1)
+      .atTime(java.time.LocalTime.MAX)
+      .atZone(zone)
+      .toInstant
+
+    val lastAccumulated = 5000f
+    val currentTotal = 5010f
+
+    val initialState = stateWithCarCharger(
+      lastEnergyUpdate = Some(yesterday),
+      lastAccumulatedEnergyWh = Some(lastAccumulated),
+      accumulatedAtDayStartWh = None
+    )
+
+    val processor = CarChargerEnergyProcessor(config, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      CarChargerAccumulatedEnergyReported(currentTotal),
+      now
+    )
+
+    // accumulatedAtDayStart should be set from previous lastAccumulatedEnergyWh
+    assertEquals(
+      newState.carCharger.accumulatedAtDayStartWh,
+      Some(lastAccumulated)
+    )
+    assertEquals(
+      newState.carCharger.lastAccumulatedEnergyWh,
+      Some(currentTotal)
+    )
+    assertEquals(newState.carCharger.lastEnergyUpdate, Some(now))
+    assert(
+      actions.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.energyTodayItem && value == (currentTotal - lastAccumulated).toInt.toString
+        case _ => false
+      }
+    )
   }
 }
