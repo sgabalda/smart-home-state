@@ -72,6 +72,8 @@ final case class CarChargerConfig(
     statusItem: String,
     powerItem: String,
     energyTodayItem: String,
+    onlineStatusItem: String,
+    offlineNotification: String,
     id: String
 ) derives ConfigReader
 

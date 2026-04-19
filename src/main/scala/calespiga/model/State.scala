@@ -126,7 +126,8 @@ object State {
       switchStatus: Option[CarChargerSignal.ControllerState] = None,
       currentPowerWatts: Option[Float] = None,
       energyTodayWh: Float = 0.0f,
-      lastPowerUpdate: Option[java.time.Instant] = None
+      lastPowerUpdate: Option[java.time.Instant] = None,
+      online: Option[OfflineOnlineSignal] = None
   )
 
   case class FeatureFlags(

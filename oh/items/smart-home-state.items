@@ -97,6 +97,7 @@ CAR CHARGER
 */
 String CarChargerTitle "Vehicle Elèctric"
 String CarChargerStatusSHS "Estat carregador"
+String CarChargerMicroControladorEstatSHS "Estat microcontrolador carregador"
 Number CarChargerPowerSHS "Potència carregador"
 Number CarChargerEnergiaAvuiSHS "Energia carregada avui"
 /*

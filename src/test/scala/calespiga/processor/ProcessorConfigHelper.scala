@@ -147,6 +147,8 @@ object ProcessorConfigHelper {
     statusItem = "carcharger/statusItem",
     powerItem = "carcharger/powerItem",
     energyTodayItem = "carcharger/energyTodayItem",
+    onlineStatusItem = "carcharger/onlineStatusItem",
+    offlineNotification = "El dispositiu de control del carregador no respon",
     id = "car-charger-processor"
   )
 

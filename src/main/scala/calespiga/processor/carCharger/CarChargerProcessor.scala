@@ -1,6 +1,6 @@
 package calespiga.processor.carCharger
 
-import calespiga.config.CarChargerConfig
+import calespiga.config.{CarChargerConfig, OfflineDetectorConfig}
 import calespiga.processor.SingleProcessor
 import java.time.ZoneId
 
@@ -8,8 +8,15 @@ import java.time.ZoneId
   */
 object CarChargerProcessor {
 
-  def apply(config: CarChargerConfig, zone: ZoneId): SingleProcessor =
-    CarChargerStatusProcessor(config)
+  def apply(
+      config: CarChargerConfig,
+      zone: ZoneId,
+      offlineDetectorConfig: OfflineDetectorConfig
+  ): SingleProcessor =
+    CarChargerOfflineDetector(offlineDetectorConfig, config)
+      .andThen(
+        CarChargerStatusProcessor(config)
+      )
       .andThen(
         CarChargerEnergyProcessor(config, zone)
       )
