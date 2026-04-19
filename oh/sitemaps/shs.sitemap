@@ -105,6 +105,7 @@ sitemap shs label="Ca l'espiga SHS" {
         Frame label="Carregador vehicle" {
             Text item=CarChargerStatusSHS icon="car" label="Estat: [%s]"
             Text item=CarChargerMicroControladorEstatSHS icon="network" label="Estat microcontrolador: [%s]"
+            Text item=CarChargerChargingStatusSHS icon="indicator" label="Connexió: [%s]"
             Text item=CarChargerPowerSHS icon="power" label="Potència: [%.0f W]"
             Text item=CarChargerEnergiaAvuiSHS icon="energy" label="Energia carregada avui: [%,d Wh]"
         }

@@ -72,6 +72,7 @@ final case class CarChargerConfig(
     statusItem: String,
     powerItem: String,
     energyTodayItem: String,
+    chargingStatusItem: String,
     onlineStatusItem: String,
     offlineNotification: String,
     id: String

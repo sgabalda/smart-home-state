@@ -2,6 +2,7 @@ package calespiga.processor.carCharger
 
 import munit.FunSuite
 import calespiga.model.{State, Action, CarChargerSignal}
+import calespiga.model.CarChargerChargingStatus
 import calespiga.model.Event.CarCharger.*
 import java.time.Instant
 import com.softwaremill.quicklens.*
@@ -125,5 +126,151 @@ class CarChargerStatusProcessorSuite extends FunSuite {
     )
     // But power should be updated
     assertEquals(newState.carCharger.currentPowerWatts, Some(5000f))
+  }
+
+  test(
+    "Power 0.0 requires two consecutive readings to set Disabled charging status"
+  ) {
+    val processor = CarChargerStatusProcessor(config)
+
+    val (state1, actions1) = processor.process(
+      stateWithCarCharger(),
+      CarChargerPowerReported(0f),
+      now
+    )
+
+    // first reading updates power but not chargingStatus
+    assertEquals(state1.carCharger.currentPowerWatts, Some(0f))
+    assertEquals(state1.carCharger.chargingStatus, None)
+    assert(
+      actions1.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.powerItem && value == "0"
+        case _ => false
+      }
+    )
+
+    val (state2, actions2) = processor.process(
+      state1,
+      CarChargerPowerReported(0f),
+      now.plusSeconds(1)
+    )
+
+    // second consecutive reading in same bucket sets chargingStatus
+    assertEquals(
+      state2.carCharger.chargingStatus,
+      Some(CarChargerChargingStatus.Disabled)
+    )
+    assert(
+      actions2.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.chargingStatusItem && value == "disabled"
+        case _ => false
+      }
+    )
+  }
+
+  test(
+    "Power equal IDLE_POWER requires two consecutive readings to set Connected charging status"
+  ) {
+    val processor = CarChargerStatusProcessor(config)
+
+    val (state1, actions1) = processor.process(
+      stateWithCarCharger(),
+      CarChargerPowerReported(CarChargerStatusProcessor.IDLE_POWER),
+      now
+    )
+
+    assertEquals(state1.carCharger.chargingStatus, None)
+    assert(
+      actions1.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.powerItem && value == CarChargerStatusProcessor.IDLE_POWER.toInt.toString
+        case _ => false
+      }
+    )
+
+    val (state2, actions2) = processor.process(
+      state1,
+      CarChargerPowerReported(CarChargerStatusProcessor.IDLE_POWER),
+      now.plusSeconds(1)
+    )
+
+    assertEquals(
+      state2.carCharger.chargingStatus,
+      Some(CarChargerChargingStatus.Connected)
+    )
+    assert(
+      actions2.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.chargingStatusItem && value == "connected"
+        case _ => false
+      }
+    )
+  }
+
+  test(
+    "Power equal BLOCKED_POWER requires two consecutive readings to set Blocked charging status"
+  ) {
+    val processor = CarChargerStatusProcessor(config)
+
+    val (state1, _) = processor.process(
+      stateWithCarCharger(),
+      CarChargerPowerReported(CarChargerStatusProcessor.BLOCKED_POWER),
+      now
+    )
+
+    assertEquals(state1.carCharger.chargingStatus, None)
+
+    val (state2, actions2) = processor.process(
+      state1,
+      CarChargerPowerReported(CarChargerStatusProcessor.BLOCKED_POWER),
+      now.plusSeconds(1)
+    )
+
+    assertEquals(
+      state2.carCharger.chargingStatus,
+      Some(CarChargerChargingStatus.Blocked)
+    )
+    assert(
+      actions2.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.chargingStatusItem && value == "blocked"
+        case _ => false
+      }
+    )
+  }
+
+  test(
+    "Power above BLOCKED_POWER requires two consecutive readings to set Charging charging status"
+  ) {
+    val processor = CarChargerStatusProcessor(config)
+    val power = CarChargerStatusProcessor.BLOCKED_POWER + 1.0f
+
+    val (state1, _) = processor.process(
+      stateWithCarCharger(),
+      CarChargerPowerReported(power),
+      now
+    )
+
+    assertEquals(state1.carCharger.chargingStatus, None)
+
+    val (state2, actions2) = processor.process(
+      state1,
+      CarChargerPowerReported(power),
+      now.plusSeconds(1)
+    )
+
+    assertEquals(
+      state2.carCharger.chargingStatus,
+      Some(CarChargerChargingStatus.Charging)
+    )
+    assert(
+      actions2.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.chargingStatusItem && value == "charging"
+        case _ => false
+      }
+    )
   }
 }
