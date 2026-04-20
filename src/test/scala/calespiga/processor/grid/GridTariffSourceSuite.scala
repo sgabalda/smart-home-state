@@ -10,8 +10,8 @@ import java.time.LocalDateTime
 
 class GridTariffSourceSuite extends CatsEffectSuite {
 
-  // TestControl starts at Unix epoch = 1970-01-01T00:00:00Z. We will advance to a known date with a well-defined tariff schedule to test the transitions. 
-  // The schedule is based on the Spanish electricity tariff system, which has three tariffs (Vall, Pla, Pic) that change at specific times of day. 
+  // TestControl starts at Unix epoch = 1970-01-01T00:00:00Z. We will advance to a known date with a well-defined tariff schedule to test the transitions.
+  // The schedule is based on the Spanish electricity tariff system, which has three tariffs (Vall, Pla, Pic) that change at specific times of day.
   // For our tests, we will use the following schedule for the timezone "Europe/Madrid":
   // Tariff transitions from epoch:
   //   Fri 00:00 → Vall (immediately)
@@ -23,7 +23,12 @@ class GridTariffSourceSuite extends CatsEffectSuite {
   //   Sat 00:00 → Vall (after 2h more)
   //   Mon 08:00 → Pla  (after 32h more)
   private val timezone = ZoneId.of("Europe/Madrid")
-  val timezoneOffset = LocalDateTime.of(2026,4,17,0,0).atZone(timezone).toInstant().toEpochMilli().millis // offset from epoch to our test start time
+  val timezoneOffset = LocalDateTime
+    .of(2026, 4, 17, 0, 0)
+    .atZone(timezone)
+    .toInstant()
+    .toEpochMilli()
+    .millis // offset from epoch to our test start time
 
   private def executeWithOffset[A](program: IO[A]): IO[A] =
     TestControl.executeEmbed(IO.sleep(timezoneOffset) *> program)
@@ -55,7 +60,7 @@ class GridTariffSourceSuite extends CatsEffectSuite {
             GridTariff.Pic, // Fri 18:00
             GridTariff.Pla, // Fri 22:00
             GridTariff.Vall, // Sat 00:00
-            GridTariff.Pla  // Mon 08:00
+            GridTariff.Pla // Mon 08:00
           )
         )
       }

@@ -29,11 +29,15 @@ object GridTariffSource {
             now <- IO.realTimeInstant
             next = GridTariff.nextChangeInstant(now, zone)
             delay = math.max(0L, java.time.Duration.between(now, next).toMillis)
-            _ <- logger.info(s"At ${now.atZone(zone)}, next grid tariff change at ${next.atZone(zone)} (in ${delay.millis})")
+            _ <- logger.info(
+              s"At ${now.atZone(zone)}, next grid tariff change at ${next.atZone(zone)} (in ${delay.millis})"
+            )
             _ <- IO.sleep(delay.millis)
             t <- IO.realTimeInstant
             tariff = GridTariff.at(t, zone)
-            _ <- logger.info(s"At ${t.atZone(zone)}, grid tariff changed to $tariff")
+            _ <- logger.info(
+              s"At ${t.atZone(zone)}, grid tariff changed to $tariff"
+            )
           } yield Event.Grid.GridTariffChanged(tariff)
         )
   }
