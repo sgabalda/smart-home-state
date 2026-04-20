@@ -6,33 +6,41 @@ import cats.effect.testkit.TestControl
 import calespiga.model.GridTariff
 import java.time.ZoneId
 import scala.concurrent.duration.*
+import java.time.LocalDateTime
 
 class GridTariffSourceSuite extends CatsEffectSuite {
 
-  // TestControl starts at Unix epoch = 1970-01-01T00:00:00Z = Thursday 00:00 = Vall
+  // TestControl starts at Unix epoch = 1970-01-01T00:00:00Z. We will advance to a known date with a well-defined tariff schedule to test the transitions. 
+  // The schedule is based on the Spanish electricity tariff system, which has three tariffs (Vall, Pla, Pic) that change at specific times of day. 
+  // For our tests, we will use the following schedule for the timezone "Europe/Madrid":
   // Tariff transitions from epoch:
-  //   Thu 00:00 → Vall (immediately)
-  //   Thu 08:00 → Pla  (after 8h)
-  //   Thu 10:00 → Pic  (after 2h more)
-  //   Thu 14:00 → Pla  (after 4h more)
-  //   Thu 18:00 → Pic  (after 4h more)
-  //   Thu 22:00 → Pla  (after 4h more)
-  //   Fri 00:00 → Vall (after 2h more)
-  private val utc = ZoneId.of("UTC")
+  //   Fri 00:00 → Vall (immediately)
+  //   Fri 08:00 → Pla  (after 8h)
+  //   Fri 10:00 → Pic  (after 2h more)
+  //   Fri 14:00 → Pla  (after 4h more)
+  //   Fri 18:00 → Pic  (after 4h more)
+  //   Fri 22:00 → Pla  (after 4h more)
+  //   Sat 00:00 → Vall (after 2h more)
+  //   Mon 08:00 → Pla  (after 32h more)
+  private val timezone = ZoneId.of("Europe/Madrid")
+  val timezoneOffset = LocalDateTime.of(2026,4,17,0,0).atZone(timezone).toInstant().toEpochMilli().millis // offset from epoch to our test start time
+
+  private def executeWithOffset[A](program: IO[A]): IO[A] =
+    TestControl.executeEmbed(IO.sleep(timezoneOffset) *> program)
 
   test("emits current tariff immediately on start") {
-    val program = GridTariffSource(utc).events
+    val program = GridTariffSource(timezone).events
       .take(1)
       .compile
       .lastOrError
       .map(e => assertEquals(e.tariff, GridTariff.Vall))
 
-    TestControl.executeEmbed(program)
+    executeWithOffset(program)
   }
 
   test("emits correct tariff sequence across multiple transitions") {
-    val program = GridTariffSource(utc).events
-      .take(7)
+    val program = GridTariffSource(timezone).events
+      .take(8)
       .map(_.tariff)
       .compile
       .toList
@@ -40,18 +48,19 @@ class GridTariffSourceSuite extends CatsEffectSuite {
         assertEquals(
           tariffs,
           List(
-            GridTariff.Vall, // Thu 00:00
-            GridTariff.Pla, // Thu 08:00
-            GridTariff.Pic, // Thu 10:00
-            GridTariff.Pla, // Thu 14:00
-            GridTariff.Pic, // Thu 18:00
-            GridTariff.Pla, // Thu 22:00
-            GridTariff.Vall // Fri 00:00
+            GridTariff.Vall, // Fri 00:00
+            GridTariff.Pla, // Fri 08:00
+            GridTariff.Pic, // Fri 10:00
+            GridTariff.Pla, // Fri 14:00
+            GridTariff.Pic, // Fri 18:00
+            GridTariff.Pla, // Fri 22:00
+            GridTariff.Vall, // Sat 00:00
+            GridTariff.Pla  // Mon 08:00
           )
         )
       }
 
-    TestControl.executeEmbed(program)
+    executeWithOffset(program)
   }
 
   test("does not emit Pla before the 8-hour transition boundary") {
@@ -60,7 +69,7 @@ class GridTariffSourceSuite extends CatsEffectSuite {
     // just under 8h, confirming no Pla has been emitted, before crossing the boundary.
     val program = for {
       emitted <- Ref.of[IO, List[GridTariff]](List.empty)
-      _ <- GridTariffSource(utc).events
+      _ <- GridTariffSource(timezone).events
         .evalTap(e => emitted.update(_ :+ e.tariff))
         .take(2)
         .compile
@@ -80,13 +89,13 @@ class GridTariffSourceSuite extends CatsEffectSuite {
       assertEquals(after, List(GridTariff.Vall, GridTariff.Pla))
     }
 
-    TestControl.executeEmbed(program)
+    executeWithOffset(program)
   }
 
   test("does not emit Pic before the 10-hour transition boundary") {
     val program = for {
       emitted <- Ref.of[IO, List[GridTariff]](List.empty)
-      _ <- GridTariffSource(utc).events
+      _ <- GridTariffSource(timezone).events
         .evalTap(e => emitted.update(_ :+ e.tariff))
         .take(3)
         .compile
@@ -107,6 +116,6 @@ class GridTariffSourceSuite extends CatsEffectSuite {
       assertEquals(after, List(GridTariff.Vall, GridTariff.Pla, GridTariff.Pic))
     }
 
-    TestControl.executeEmbed(program)
+    executeWithOffset(program)
   }
 }
