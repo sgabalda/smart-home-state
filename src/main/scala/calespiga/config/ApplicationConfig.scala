@@ -54,7 +54,8 @@ final case class ProcessorConfig(
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
     grid: GridConfig,
-    battery: BatteryConfig
+    battery: BatteryConfig,
+    carCharger: CarChargerConfig
 ) derives ConfigReader
 
 final case class BatteryConfig(
@@ -62,6 +63,16 @@ final case class BatteryConfig(
     statusItem: String,
     lowChargeTariffItem: String,
     mediumChargeTariffItem: String,
+    onlineStatusItem: String,
+    offlineNotification: String,
+    id: String
+) derives ConfigReader
+
+final case class CarChargerConfig(
+    statusItem: String,
+    powerItem: String,
+    energyTodayItem: String,
+    chargingStatusItem: String,
     onlineStatusItem: String,
     offlineNotification: String,
     id: String

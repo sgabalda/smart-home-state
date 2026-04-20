@@ -92,6 +92,17 @@ String XarxaBateriaMicroControladorEstatSHS "Estat microcontrolador bateria"
 
 /*
 ----------------------
+CAR CHARGER
+----------------------
+*/
+String CarChargerTitle "Vehicle Elèctric"
+String CarChargerStatusSHS "Estat carregador"
+String CarChargerMicroControladorEstatSHS "Estat microcontrolador carregador"
+String CarChargerChargingStatusSHS "Estat càrrega carregador"
+Number CarChargerPowerSHS "Potència carregador"
+Number CarChargerEnergiaAvuiSHS "Energia carregada avui"
+/*
+----------------------
 SYSTEM 
 ----------------------
 */

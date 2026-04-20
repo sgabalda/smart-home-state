@@ -143,6 +143,16 @@ object ProcessorConfigHelper {
     offlineNotification = "El dispositiu de control de la bateria no respon"
   )
 
+  val carCharger = CarChargerConfig(
+    statusItem = "carcharger/statusItem",
+    powerItem = "carcharger/powerItem",
+    energyTodayItem = "carcharger/energyTodayItem",
+    chargingStatusItem = "carcharger/chargingStatusItem",
+    onlineStatusItem = "carcharger/onlineStatusItem",
+    offlineNotification = "El dispositiu de control del carregador no respon",
+    id = "car-charger-processor"
+  )
+
   val processorConfig: ProcessorConfig = ProcessorConfig(
     temperatureFans = temperatureFansConfig,
     offlineDetector = offlineDetectorConfig,
@@ -152,6 +162,7 @@ object ProcessorConfigHelper {
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,
-    battery = batteryConfig
+    battery = batteryConfig,
+    carCharger = carCharger
   )
 }

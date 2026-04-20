@@ -11,7 +11,8 @@ import calespiga.model.State.{
   Heater,
   PowerManagement,
   InfraredStove,
-  Battery
+  Battery,
+  CarCharger
 }
 
 case class State(
@@ -22,7 +23,8 @@ case class State(
     infraredStove: InfraredStove = InfraredStove(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
-    battery: Battery = Battery()
+    battery: Battery = Battery(),
+    carCharger: CarCharger = CarCharger()
 )
 
 object State {
@@ -118,6 +120,16 @@ object State {
       lowChargeTariff: Option[BatteryChargeTariff] = None,
       mediumChargeTariff: Option[BatteryChargeTariff] = None,
       online: Option[OfflineOnlineSignal] = None
+  )
+
+  case class CarCharger(
+      switchStatus: Option[CarChargerSignal.ControllerState] = None,
+      currentPowerWatts: Option[Float] = None,
+      lastEnergyUpdate: Option[java.time.Instant] = None,
+      lastAccumulatedEnergyWh: Option[Float] = None,
+      accumulatedAtDayStartWh: Option[Float] = None,
+      online: Option[OfflineOnlineSignal] = None,
+      chargingStatus: Option[CarChargerChargingStatus] = None
   )
 
   case class FeatureFlags(

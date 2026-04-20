@@ -10,6 +10,7 @@ import calespiga.processor.power.PowerProcessor
 import calespiga.processor.infraredStove.InfraredStoveProcessor
 import calespiga.processor.grid.{GridConnectionManager, GridProcessor}
 import calespiga.processor.battery.BatteryProcessor
+import calespiga.processor.carCharger.CarChargerProcessor
 
 trait StateProcessor {
   def process(
@@ -80,6 +81,11 @@ object StateProcessor {
       BatteryProcessor(
         config.battery,
         gridManager,
+        config.offlineDetector
+      ).toEffectful,
+      CarChargerProcessor(
+        config.carCharger,
+        zoneId,
         config.offlineDetector
       ).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)

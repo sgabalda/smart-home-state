@@ -183,6 +183,25 @@ object Event {
         extends BatteryData
   }
 
+  object CarCharger {
+    sealed trait CarChargerData extends EventData
+
+    @InputEventMqtt("carcharger/status")
+    case class CarChargerStatusReported(
+        status: CarChargerSignal.ControllerState
+    ) extends CarChargerData
+
+    @InputEventMqtt("carcharger/power")
+    case class CarChargerPowerReported(
+        watts: Float
+    ) extends CarChargerData
+
+    @InputEventMqtt("carcharger/accumulated")
+    case class CarChargerAccumulatedEnergyReported(
+        totalWh: Float
+    ) extends CarChargerData
+  }
+
   object Power {
     sealed trait PowerData extends EventData
 
