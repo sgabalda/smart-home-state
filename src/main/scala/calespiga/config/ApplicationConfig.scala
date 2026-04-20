@@ -5,12 +5,17 @@ import pureconfig.ConfigReader
 import scala.concurrent.duration.FiniteDuration
 
 final case class ApplicationConfig(
+    system: SystemConfig,
     httpServerConfig: HttpServerConfig,
     mqttConfig: MqttConfig,
     uiConfig: UIConfig,
     powerProduction: PowerProductionConfig,
     statePersistenceConfig: StatePersistenceConfig,
     processor: ProcessorConfig
+) derives ConfigReader
+
+final case class SystemConfig(
+    timezone: String
 ) derives ConfigReader
 
 final case class HttpServerConfig(

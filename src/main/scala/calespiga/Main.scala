@@ -144,7 +144,7 @@ object Main extends IOApp.Simple {
           HealthStatusManager.Component.StatePersistence
         )
       )
-      zoneId = ZoneId.systemDefault()
+      zoneId = ZoneId.of(appConfig.system.timezone)
       processor = StateProcessor(appConfig.processor, mqttBlacklist, zoneId)
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
       powerSource <- powerDeps(appConfig.powerProduction, zoneId)
