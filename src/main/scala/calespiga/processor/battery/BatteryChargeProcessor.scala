@@ -85,22 +85,14 @@ private[battery] object BatteryChargeProcessor {
         case Event.Battery.BatteryChargeLowTariffChanged(tariff) =>
           val newState =
             state.modify(_.battery.lowChargeTariff).setTo(Some(tariff))
-          val actions =
-            Set[Action](
-              Action.SetUIItemValue(config.lowChargeTariffItem, tariff.label)
-            )
 
-          updateStateAndReconnect(newState, actions)
+          updateStateAndReconnect(newState, Set.empty)
 
         case Event.Battery.BatteryChargeMediumTariffChanged(tariff) =>
           val newState =
             state.modify(_.battery.mediumChargeTariff).setTo(Some(tariff))
-          val actions =
-            Set[Action](
-              Action.SetUIItemValue(config.mediumChargeTariffItem, tariff.label)
-            )
 
-          updateStateAndReconnect(newState, actions)
+          updateStateAndReconnect(newState, Set.empty)
 
         case Event.Grid.GridTariffChanged(_) =>
           val shouldConnect = shouldChargeBattery(state)

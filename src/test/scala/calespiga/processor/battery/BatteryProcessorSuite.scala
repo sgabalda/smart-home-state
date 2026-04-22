@@ -108,7 +108,7 @@ class BatteryProcessorSuite extends FunSuite {
     )
   }
 
-  test("Battery low tariff change updates state and UI") {
+  test("Battery low tariff change updates state") {
     val manager = new ManagerStub()
     val p = processor(manager)
 
@@ -124,7 +124,27 @@ class BatteryProcessorSuite extends FunSuite {
     )
     assertEquals(
       actions,
-      Set[Action](Action.SetUIItemValue(config.lowChargeTariffItem, "vall"))
+      Set.empty
+    )
+  }
+
+  test("Battery medium tariff change updates state") {
+    val manager = new ManagerStub()
+    val p = processor(manager)
+
+    val (newState, actions) = p.process(
+      baseState,
+      Event.Battery.BatteryChargeMediumTariffChanged(BatteryChargeTariff.Vall),
+      now
+    )
+
+    assertEquals(
+      newState.battery.mediumChargeTariff,
+      Some(BatteryChargeTariff.Vall)
+    )
+    assertEquals(
+      actions,
+      Set.empty
     )
   }
 
@@ -245,24 +265,7 @@ class BatteryProcessorSuite extends FunSuite {
         val (stateAfter, actions) =
           p.process(initialState, event, now)
 
-        val expectedActions = s.status match
-          case BatteryStatus.Low =>
-            Set[Action](
-              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
-            )
-          case BatteryStatus.Medium =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                s.tariff.label
-              )
-            )
-          case BatteryStatus.High =>
-            Set[Action](
-              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
-            )
-
-        assertEquals(actions, expectedActions)
+        assertEquals(actions, Set.empty)
 
         assertManager(manager, s.shouldConnect(gridTariff))
       }
@@ -292,27 +295,7 @@ class BatteryProcessorSuite extends FunSuite {
         val (stateAfter, actions) =
           p.process(initialState, event, now)
 
-        val expectedActions = s.status match
-          case BatteryStatus.Low =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                s.tariff.label
-              )
-            )
-          case BatteryStatus.Medium =>
-            Set[Action](
-              Action.SetUIItemValue(config.lowChargeTariffItem, s.tariff.label)
-            )
-          case BatteryStatus.High =>
-            Set[Action](
-              Action.SetUIItemValue(
-                config.mediumChargeTariffItem,
-                s.tariff.label
-              )
-            )
-
-        assertEquals(actions, expectedActions)
+        assertEquals(actions, Set.empty)
 
         // Key assertion: should NOT connect regardless of tariff logic
         assertManager(manager, shouldConnect = false)
