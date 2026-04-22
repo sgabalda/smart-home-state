@@ -174,11 +174,11 @@ object Event {
     @InputEventMqtt("battery/level/status")
     case class BatteryStatusReported(status: BatteryStatus) extends BatteryData
 
-    @InputEventOHItem("XarxaCarregarBateriaLowSHS")
+    @InputEventOHItem("XarxaBateriaCarregarLowSHS")
     case class BatteryChargeLowTariffChanged(tariff: BatteryChargeTariff)
         extends BatteryData
 
-    @InputEventOHItem("XarxaCarregarBateriaMediumSHS")
+    @InputEventOHItem("XarxaBateriaCarregarMediumSHS")
     case class BatteryChargeMediumTariffChanged(tariff: BatteryChargeTariff)
         extends BatteryData
   }
