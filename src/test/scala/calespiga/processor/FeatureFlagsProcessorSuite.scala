@@ -36,6 +36,9 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       dummyConfig.gridMqttTopic.foreach { topic =>
         assert(blacklist.contains(topic))
       }
+      dummyConfig.carChargerMqttTopic.foreach { topic =>
+        assert(blacklist.contains(topic))
+      }
       assertEquals(
         actions,
         Set[Action](
@@ -49,6 +52,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
           ),
           Action.SetUIItemValue(
             dummyConfig.setGridConnectionEnabledItem,
+            "false"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setCarChargerManagementItem,
             "false"
           )
         )
@@ -67,6 +74,8 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(true)
         .modify(_.featureFlags.gridConnectionEnabled)
         .setTo(true)
+        .modify(_.featureFlags.carChargerManagementEnabled)
+        .setTo(true)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
     } yield {
@@ -84,6 +93,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
           ),
           Action.SetUIItemValue(
             dummyConfig.setGridConnectionEnabledItem,
+            "true"
+          ),
+          Action.SetUIItemValue(
+            dummyConfig.setCarChargerManagementItem,
             "true"
           )
         )

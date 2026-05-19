@@ -79,7 +79,11 @@ final case class CarChargerConfig(
     energyTodayItem: String,
     chargingStatusItem: String,
     onlineStatusItem: String,
+    syncStatusItem: String,
     offlineNotification: String,
+    mqttTopicForCommand: String,
+    resendInterval: FiniteDuration,
+    lastCommandItem: String,
     id: String
 ) derives ConfigReader
 
@@ -192,7 +196,9 @@ final case class FeatureFlagsConfig(
     infraredStoveMqttTopic: Set[String],
     setInfraredStoveEnabledItem: String,
     gridMqttTopic: Set[String],
-    setGridConnectionEnabledItem: String
+    setGridConnectionEnabledItem: String,
+    carChargerMqttTopic: Set[String],
+    setCarChargerManagementItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

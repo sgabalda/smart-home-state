@@ -108,6 +108,16 @@ object InputOHItemsMapper {
 
             case tpe
                 if tpe =:= TypeRepr
+                  .of[calespiga.model.CarChargerSignal.UserCommand] =>
+              val convertedValueExpr = '{ (valueStr: String) =>
+                calespiga.model.CarChargerSignal
+                  .userCommandFromString(valueStr)
+                  .getOrElse(calespiga.model.CarChargerSignal.TurnOff)
+              }
+              getNewExpr(convertedValueExpr)
+
+            case tpe
+                if tpe =:= TypeRepr
                   .of[calespiga.model.FanSignal.UserCommand] =>
               val convertedValueExpr = '{ (valueStr: String) =>
                 calespiga.model.FanSignal

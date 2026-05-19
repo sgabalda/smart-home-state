@@ -86,7 +86,8 @@ object StateProcessor {
       CarChargerProcessor(
         config.carCharger,
         zoneId,
-        config.offlineDetector
+        config.offlineDetector,
+        config.syncDetector
       ).toEffectful,
       FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
     )
