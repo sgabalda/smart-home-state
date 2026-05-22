@@ -11,11 +11,18 @@ object CarChargerProcessor {
   def apply(
       config: CarChargerConfig,
       zone: ZoneId,
-      offlineDetectorConfig: OfflineDetectorConfig
+      offlineDetectorConfig: OfflineDetectorConfig,
+      syncConfig: calespiga.config.SyncDetectorConfig
   ): SingleProcessor =
     CarChargerOfflineDetector(offlineDetectorConfig, config)
       .andThen(
         CarChargerStatusProcessor(config)
+      )
+      .andThen(
+        CarChargerPowerProcessor(config)
+      )
+      .andThen(
+        CarChargerSyncDetector(syncConfig, config.id, config.syncStatusItem)
       )
       .andThen(
         CarChargerEnergyProcessor(config, zone)

@@ -54,6 +54,9 @@ object Event {
     @InputEventOHItem("XarxaEnabledSHS")
     case class SetGridConnectionEnabled(enable: Boolean)
         extends FeatureFlagEvent
+
+    @InputEventOHItem("CarChargerHabilitatsSHS")
+    case class SetCarChargerManagement(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -199,6 +202,11 @@ object Event {
     @InputEventMqtt("cotxe/carrega/energy")
     case class CarChargerAccumulatedEnergyReported(
         totalWh: Float
+    ) extends CarChargerData
+
+    @InputEventOHItem("CarChargerSetSHS")
+    case class CarChargerPowerCommandChanged(
+        command: CarChargerSignal.UserCommand
     ) extends CarChargerData
   }
 

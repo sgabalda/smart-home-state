@@ -124,6 +124,10 @@ object State {
 
   case class CarCharger(
       switchStatus: Option[CarChargerSignal.ControllerState] = None,
+      lastCommandSent: Option[CarChargerSignal.ControllerState] = None,
+      lastCommandReceived: Option[CarChargerSignal.UserCommand] = None,
+      lastChange: Option[java.time.Instant] = None,
+      lastSyncing: Option[java.time.Instant] = None,
       currentPowerWatts: Option[Float] = None,
       lastEnergyUpdate: Option[java.time.Instant] = None,
       lastAccumulatedEnergyWh: Option[Float] = None,
@@ -136,6 +140,7 @@ object State {
       // to be removed when heater is controlled by SHS
       heaterManagementEnabled: Boolean = false,
       infraredStoveEnabled: Boolean = false,
-      gridConnectionEnabled: Boolean = false
+      gridConnectionEnabled: Boolean = false,
+      carChargerManagementEnabled: Boolean = false
   )
 }

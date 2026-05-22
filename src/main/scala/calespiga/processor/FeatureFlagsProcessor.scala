@@ -40,7 +40,11 @@ object FeatureFlagsProcessor {
                 if (!state.featureFlags.gridConnectionEnabled)
                   config.gridMqttTopic
                 else Set.empty
-              bl ++ heaterBl ++ stoveBl ++ gridBl
+              val carChargerBl =
+                if (!state.featureFlags.carChargerManagementEnabled)
+                  config.carChargerMqttTopic
+                else Set.empty
+              bl ++ heaterBl ++ stoveBl ++ gridBl ++ carChargerBl
             }
             .as(
               (
@@ -57,6 +61,10 @@ object FeatureFlagsProcessor {
                   Action.SetUIItemValue(
                     config.setGridConnectionEnabledItem,
                     state.featureFlags.gridConnectionEnabled.toString
+                  ),
+                  Action.SetUIItemValue(
+                    config.setCarChargerManagementItem,
+                    state.featureFlags.carChargerManagementEnabled.toString
                   )
                 )
               )
@@ -96,6 +104,25 @@ object FeatureFlagsProcessor {
               )
             ) <* logger.info(
             "Infrared stove MQTT feature flag set to " + enable
+          )
+
+        case Event.FeatureFlagEvents.SetCarChargerManagement(enable) =>
+          val modifier = if (enable) { (bl: Set[String]) =>
+            bl -- config.carChargerMqttTopic
+          } else { (bl: Set[String]) =>
+            bl ++ config.carChargerMqttTopic
+          }
+          mqttBlacklist
+            .update(modifier)
+            .as(
+              (
+                state
+                  .modify(_.featureFlags.carChargerManagementEnabled)
+                  .setTo(enable),
+                Set.empty
+              )
+            ) <* logger.info(
+            "Car charger MQTT feature flag set to " + enable
           )
 
         case Event.FeatureFlagEvents.SetGridConnectionEnabled(enable) =>

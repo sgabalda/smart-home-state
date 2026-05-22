@@ -97,7 +97,9 @@ object ProcessorConfigHelper {
       Set("infraredStove/topic1", "infraredStove/topic2"),
     setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled",
     gridMqttTopic = Set("grid/topic1", "grid/topic2"),
-    setGridConnectionEnabledItem = "featureFlags/setGridConnectionEnabled"
+    setGridConnectionEnabledItem = "featureFlags/setGridConnectionEnabled",
+    carChargerMqttTopic = Set("cotxe/carrega/set"),
+    setCarChargerManagementItem = "featureFlags/setCarChargerManagement"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
@@ -149,7 +151,11 @@ object ProcessorConfigHelper {
     energyTodayItem = "carcharger/energyTodayItem",
     chargingStatusItem = "carcharger/chargingStatusItem",
     onlineStatusItem = "carcharger/onlineStatusItem",
+    syncStatusItem = "carcharger/syncStatusItem",
     offlineNotification = "El dispositiu de control del carregador no respon",
+    mqttTopicForCommand = "dummy/carcharger/command",
+    resendInterval = 20.seconds,
+    lastCommandItem = "carcharger/lastCommand",
     id = "car-charger-processor"
   )
 
