@@ -128,6 +128,7 @@ object ProcessorConfigHelper {
     statusItem = "grid/status",
     manualSwitchItem = "grid/manualSwitch",
     syncStatusItem = "grid/syncStatus",
+    syncRelayStatusItem = "grid/syncRelayStatus",
     reasonItem = "grid/connectionReason",
     resendInterval = 20.seconds,
     tariffItem = "grid/tariff",

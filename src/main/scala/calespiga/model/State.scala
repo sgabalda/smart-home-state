@@ -103,10 +103,14 @@ object State {
   )
 
   case class Grid(
-      status: Option[GridSignal.ControllerState] = None,
+      statusConnection: Option[GridSignal.ControllerState] =
+        None, // the last status read from the remote grid sensor, used to detect if the grid not connected although the relay may be reporting connected
       lastCommandSent: Option[GridSignal.ControllerState] = None,
+      statusRelay: Option[GridSignal.ControllerState] =
+        None, // the last status received directly from the relay, used to detect if the relay is not responding
+      lastSyncingConnection: Option[java.time.Instant] = None,
+      lastSyncingRelay: Option[java.time.Instant] = None,
       devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
-      lastSyncing: Option[java.time.Instant] = None,
       currentTariff: Option[GridTariff] = None,
       online: Option[OfflineOnlineSignal] = None
   )

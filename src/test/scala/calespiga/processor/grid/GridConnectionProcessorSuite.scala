@@ -62,7 +62,7 @@ class GridConnectionProcessorSuite extends FunSuite {
 
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.grid.status, Some(GridSignal.Connected))
+    assertEquals(newState.grid.statusConnection, Some(GridSignal.Connected))
     assertEquals(
       actions,
       Set[Action](Action.SetUIItemValue(config.statusItem, "on"))
@@ -75,16 +75,32 @@ class GridConnectionProcessorSuite extends FunSuite {
   test("GridConnectionStatusReported with Disconnected sets status to off") {
     val stub = ManagerStub()
     val processor = GridConnectionProcessor(config, stub)
-    val state = State().modify(_.grid.status).setTo(Some(GridSignal.Connected))
+    val state =
+      State().modify(_.grid.statusConnection).setTo(Some(GridSignal.Connected))
     val event = Event.Grid.GridConnectionStatusReported(GridSignal.Disconnected)
 
     val (newState, actions) = processor.process(state, event, now)
 
-    assertEquals(newState.grid.status, Some(GridSignal.Disconnected))
+    assertEquals(newState.grid.statusConnection, Some(GridSignal.Disconnected))
     assertEquals(
       actions,
       Set[Action](Action.SetUIItemValue(config.statusItem, "off"))
     )
+  }
+
+  test("GridRelayStatusReported updates grid relay status and no actions") {
+    val stub = ManagerStub()
+    val processor = GridConnectionProcessor(config, stub)
+    val state = State()
+    val event = Event.Grid.GridRelayStatusReported(GridSignal.Connected)
+
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(newState.grid.statusRelay, Some(GridSignal.Connected))
+    assertEquals(actions, Set.empty[Action])
+    // manager must not be involved for relay status reports
+    assertEquals(stub.requestCalls, Nil)
+    assertEquals(stub.releaseCalls, Nil)
   }
 
   // ── GridManualConnectionChanged ──────────────────────────────────────────────

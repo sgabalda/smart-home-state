@@ -206,6 +206,7 @@ final case class GridConfig(
     statusItem: String,
     manualSwitchItem: String,
     syncStatusItem: String,
+    syncRelayStatusItem: String,
     reasonItem: String,
     resendInterval: FiniteDuration,
     id: String,

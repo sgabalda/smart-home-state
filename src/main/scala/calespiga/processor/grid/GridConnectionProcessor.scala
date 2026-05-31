@@ -23,7 +23,8 @@ private object GridConnectionProcessor {
       case gd: Event.Grid.GridData =>
         gd match {
           case Event.Grid.GridConnectionStatusReported(status) =>
-            val newState = state.modify(_.grid.status).setTo(Some(status))
+            val newState =
+              state.modify(_.grid.statusConnection).setTo(Some(status))
             val actions: Set[Action] = Set(
               Action.SetUIItemValue(
                 config.statusItem,
@@ -37,6 +38,10 @@ private object GridConnectionProcessor {
               manager.requestConnection(GridSignal.Manual, state)
             else
               manager.releaseConnection(GridSignal.Manual, state)
+
+          case Event.Grid.GridRelayStatusReported(status) =>
+            val newState = state.modify(_.grid.statusRelay).setTo(Some(status))
+            (newState, Set.empty)
 
           case _ => (state, Set.empty)
         }

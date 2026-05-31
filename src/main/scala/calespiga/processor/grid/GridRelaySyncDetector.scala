@@ -6,14 +6,14 @@ import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
 import java.time.Instant
 
-private object GridSyncDetector {
+private object GridRelaySyncDetector {
 
   private def field1ToCheck(state: State) = state.grid.lastCommandSent
-  private def field2ToCheck(state: State) = state.grid.statusConnection
+  private def field2ToCheck(state: State) = state.grid.statusRelay
 
-  private def getLastSyncing(state: State) = state.grid.lastSyncingConnection
+  private def getLastSyncing(state: State) = state.grid.lastSyncingRelay
   private def setLastSyncing(state: State, when: Option[Instant]) =
-    state.modify(_.grid.lastSyncingConnection).setTo(when)
+    state.modify(_.grid.lastSyncingRelay).setTo(when)
 
   private val isEventRelevant: Event.EventData => Boolean = {
     case Event.Grid.GridConnectionStatusReported(_) => true

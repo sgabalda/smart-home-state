@@ -19,6 +19,13 @@ object GridProcessor {
       .andThen(GridConnectionProcessor(config, manager))
       .andThen(GridSyncDetector(syncConfig, config.id, config.syncStatusItem))
       .andThen(
+        GridRelaySyncDetector(
+          syncConfig,
+          config.id,
+          config.syncRelayStatusItem
+        )
+      )
+      .andThen(
         GridOfflineDetector(
           offlineConfig,
           config.id,
