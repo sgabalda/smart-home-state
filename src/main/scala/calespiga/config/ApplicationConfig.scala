@@ -197,6 +197,9 @@ final case class FeatureFlagsConfig(
     setInfraredStoveEnabledItem: String,
     gridMqttTopic: Set[String],
     setGridConnectionEnabledItem: String,
+    heaterUiNotification: Set[String],
+    infraredStoveUiNotification: Set[String],
+    gridUiNotification: Set[String],
     carChargerMqttTopic: Set[String],
     setCarChargerManagementItem: String
 ) derives ConfigReader

@@ -98,6 +98,9 @@ object ProcessorConfigHelper {
     setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled",
     gridMqttTopic = Set("grid/topic1", "grid/topic2"),
     setGridConnectionEnabledItem = "featureFlags/setGridConnectionEnabled",
+    heaterUiNotification = Set.empty,
+    infraredStoveUiNotification = Set.empty,
+    gridUiNotification = Set("grid-processor-sync-detector"),
     carChargerMqttTopic = Set("cotxe/carrega/set"),
     setCarChargerManagementItem = "featureFlags/setCarChargerManagement"
   )

@@ -15,6 +15,7 @@ object FeatureFlagsProcessor {
 
   private case class Impl(
       mqttBlacklist: Ref[IO, Set[String]],
+      uiBlacklist: Ref[IO, Set[String]],
       config: FeatureFlagsConfig
   ) extends EffectfulProcessor {
 
@@ -45,6 +46,23 @@ object FeatureFlagsProcessor {
                   config.carChargerMqttTopic
                 else Set.empty
               bl ++ heaterBl ++ stoveBl ++ gridBl ++ carChargerBl
+            }
+            .flatMap { _ =>
+              uiBlacklist.update { bl =>
+                val heaterBl =
+                  if (!state.featureFlags.heaterManagementEnabled)
+                    config.heaterUiNotification
+                  else Set.empty
+                val stoveBl =
+                  if (!state.featureFlags.infraredStoveEnabled)
+                    config.infraredStoveUiNotification
+                  else Set.empty
+                val gridBl =
+                  if (!state.featureFlags.gridConnectionEnabled)
+                    config.gridUiNotification
+                  else Set.empty
+                bl ++ heaterBl ++ stoveBl ++ gridBl
+              }
             }
             .as(
               (
@@ -133,6 +151,12 @@ object FeatureFlagsProcessor {
           }
           mqttBlacklist
             .update(modifier)
+            .flatMap(_ =>
+              uiBlacklist.update { bl =>
+                if (enable) bl -- config.gridUiNotification
+                else bl ++ config.gridUiNotification
+              }
+            )
             .as(
               (
                 state
@@ -154,6 +178,7 @@ object FeatureFlagsProcessor {
 
   def apply(
       mqttBlacklist: Ref[IO, Set[String]],
+      uiBlacklist: Ref[IO, Set[String]],
       config: FeatureFlagsConfig
-  ): EffectfulProcessor = Impl(mqttBlacklist, config)
+  ): EffectfulProcessor = Impl(mqttBlacklist, uiBlacklist, config)
 }

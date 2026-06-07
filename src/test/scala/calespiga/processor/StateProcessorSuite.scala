@@ -70,6 +70,8 @@ class StateProcessorSuite extends CatsEffectSuite {
         .allButPower(
           config = ProcessorConfigHelper.processorConfig,
           mqttBlacklist = mqttBlacklist,
+          uiBlacklist =
+            mqttBlacklist, // uiBlacklist is not used in this test, we can pass the same Ref
           zoneId = ZoneId.systemDefault()
         )
         .flatMap(_.dynamicPowerConsumer)

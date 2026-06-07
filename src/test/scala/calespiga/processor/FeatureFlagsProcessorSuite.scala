@@ -19,7 +19,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(false)
@@ -29,6 +34,7 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(false)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
+      uiBlacklist <- uiBlacklistRef.get
     } yield {
       dummyConfig.heaterMqttTopic.foreach { topic =>
         assert(blacklist.contains(topic))
@@ -38,6 +44,9 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       }
       dummyConfig.carChargerMqttTopic.foreach { topic =>
         assert(blacklist.contains(topic))
+      }
+      dummyConfig.gridUiNotification.foreach { id =>
+        assert(uiBlacklist.contains(id))
       }
       assertEquals(
         actions,
@@ -66,7 +75,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   test("StartupEvent with feature flags true does not add blacklist items") {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(true)
@@ -78,8 +92,10 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         .setTo(true)
       (_, actions) <- processor.process(state, startupEvent, now)
       blacklist <- blacklistRef.get
+      uiBlacklist <- uiBlacklistRef.get
     } yield {
       assertEquals(blacklist, Set.empty)
+      assertEquals(uiBlacklist, Set.empty)
       assertEquals(
         actions,
         Set[Action](
@@ -109,7 +125,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State().modify(_.featureFlags.heaterManagementEnabled).setTo(true)
       (newState, _) <- processor.process(
         state,
@@ -132,7 +153,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       blacklistRef <- Ref.of[IO, Set[String]](
         dummyConfig.heaterMqttTopic
       )
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.heaterManagementEnabled)
         .setTo(false)
@@ -155,7 +181,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.infraredStoveEnabled)
         .setTo(true)
@@ -180,7 +211,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       blacklistRef <- Ref.of[IO, Set[String]](
         dummyConfig.infraredStoveMqttTopic
       )
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.infraredStoveEnabled)
         .setTo(false)
@@ -203,7 +239,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   ) {
     for {
       blacklistRef <- Ref.of[IO, Set[String]](Set.empty)
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](Set.empty)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.gridConnectionEnabled)
         .setTo(true)
@@ -213,9 +254,13 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         now
       )
       blacklist <- blacklistRef.get
+      uiBlacklist <- uiBlacklistRef.get
     } yield {
       dummyConfig.gridMqttTopic.foreach { topic =>
         assert(blacklist.contains(topic))
+      }
+      dummyConfig.gridUiNotification.foreach { id =>
+        assert(uiBlacklist.contains(id))
       }
       assertEquals(newState.featureFlags.gridConnectionEnabled, false)
     }
@@ -228,7 +273,12 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
       blacklistRef <- Ref.of[IO, Set[String]](
         dummyConfig.gridMqttTopic
       )
-      processor = FeatureFlagsProcessor(blacklistRef, dummyConfig)
+      uiBlacklistRef <- Ref.of[IO, Set[String]](dummyConfig.gridUiNotification)
+      processor = FeatureFlagsProcessor(
+        blacklistRef,
+        uiBlacklistRef,
+        dummyConfig
+      )
       state = State()
         .modify(_.featureFlags.gridConnectionEnabled)
         .setTo(false)
@@ -238,9 +288,13 @@ class FeatureFlagsProcessorSuite extends CatsEffectSuite {
         now
       )
       blacklist <- blacklistRef.get
+      uiBlacklist <- uiBlacklistRef.get
     } yield {
       dummyConfig.gridMqttTopic.foreach { topic =>
         assert(!blacklist.contains(topic))
+      }
+      dummyConfig.gridUiNotification.foreach { id =>
+        assert(!uiBlacklist.contains(id))
       }
       assertEquals(newState.featureFlags.gridConnectionEnabled, true)
     }

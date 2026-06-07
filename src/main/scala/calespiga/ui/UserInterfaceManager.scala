@@ -55,7 +55,8 @@ object UserInterfaceManager {
       openhabApiClient: APIClient,
       itemsConverter: OpenHabItemsConverter,
       uiConfig: UIConfig,
-      sentMessages: Ref[IO, Map[String, Instant]]
+      sentMessages: Ref[IO, Map[String, Instant]],
+      uiBlacklist: Ref[IO, Set[String]]
   ) extends UserInterfaceManager {
 
     override def updateUIItem(item: String, value: String): IO[Unit] =
@@ -67,27 +68,35 @@ object UserInterfaceManager {
         repeatInterval: Option[FiniteDuration]
     ): IO[Unit] =
       for {
-        now <- IO.realTimeInstant
-        repeatIntervalValue = repeatInterval.getOrElse(
-          uiConfig.defaultRepeatInterval
-        )
-        shouldSend <- sentMessages.modify { sent =>
-          sent.get(id) match {
-            case None =>
-              (sent + (id -> now), true)
-            case Some(lastSent) =>
-              if (
-                now.isAfter(lastSent.plusMillis(repeatIntervalValue.toMillis))
-              ) {
-                (sent + (id -> now), true)
-              } else {
-                (sent, false)
+        blocked <- uiBlacklist.get.map(_.contains(id))
+        _ <-
+          if (blocked) IO.unit
+          else
+            for {
+              now <- IO.realTimeInstant
+              repeatIntervalValue = repeatInterval.getOrElse(
+                uiConfig.defaultRepeatInterval
+              )
+              shouldSend <- sentMessages.modify { sent =>
+                sent.get(id) match {
+                  case None =>
+                    (sent + (id -> now), true)
+                  case Some(lastSent) =>
+                    if (
+                      now.isAfter(
+                        lastSent.plusMillis(repeatIntervalValue.toMillis)
+                      )
+                    ) {
+                      (sent + (id -> now), true)
+                    } else {
+                      (sent, false)
+                    }
+                }
               }
-          }
-        }
-        _ <- openhabApiClient
-          .changeItem(uiConfig.notificationsItem, message)
-          .whenA(shouldSend)
+              _ <- openhabApiClient
+                .changeItem(uiConfig.notificationsItem, message)
+                .whenA(shouldSend)
+            } yield ()
       } yield ()
 
     override def userInputEventsStream
@@ -134,10 +143,17 @@ object UserInterfaceManager {
   def apply(
       openhabApiClient: APIClient,
       uiConfig: UIConfig,
-      itemsConverter: OpenHabItemsConverter = openHabItems
+      itemsConverter: OpenHabItemsConverter = openHabItems,
+      uiBlacklist: Ref[IO, Set[String]]
   ): IO[UserInterfaceManager] =
     Ref.of[IO, Map[String, Instant]](Map.empty).map { sentMessages =>
-      Impl(openhabApiClient, itemsConverter, uiConfig, sentMessages)
+      Impl(
+        openhabApiClient,
+        itemsConverter,
+        uiConfig,
+        sentMessages,
+        uiBlacklist
+      )
     }
 
 }
