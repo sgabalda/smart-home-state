@@ -17,12 +17,20 @@ object GridProcessor {
   ): SingleProcessor =
     GridTariffProcessor(config)
       .andThen(GridConnectionProcessor(config, manager))
-      .andThen(GridSyncDetector(syncConfig, config.id, config.syncStatusItem))
+      .andThen(
+        GridSyncDetector(
+          syncConfig,
+          config.id,
+          config.syncStatusItem,
+          config.syncNotification
+        )
+      )
       .andThen(
         GridRelaySyncDetector(
           syncConfig,
           config.id,
-          config.syncRelayStatusItem
+          config.syncRelayStatusItem,
+          config.syncRelayNotification
         )
       )
       .andThen(

@@ -212,7 +212,9 @@ final case class GridConfig(
     id: String,
     tariffItem: String,
     onlineStatusItem: String,
-    offlineNotification: String
+    offlineNotification: String,
+    syncNotification: String,
+    syncRelayNotification: String
 ) derives ConfigReader
 
 final case class PowerProductionConfig(

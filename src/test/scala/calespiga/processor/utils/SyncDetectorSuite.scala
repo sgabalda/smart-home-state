@@ -42,6 +42,19 @@ class SyncDetectorSuite extends FunSuite {
     isEventRelevant
   )
 
+  val message = "Component offline"
+  val detectorWithMsg = SyncDetector(
+    config,
+    id,
+    field1ToCheck,
+    field2ToCheck,
+    getLastSyncing,
+    setLastSyncing,
+    statusItem,
+    isEventRelevant,
+    Some(message)
+  )
+
   val dummyEvent = Event.Temperature.BatteryTemperatureMeasured(0.0)
 
   test(
@@ -126,5 +139,53 @@ class SyncDetectorSuite extends FunSuite {
     val (newState, actions) = detector.process(state, anotherEvent, now)
     assertEquals(newState, state)
     assertEquals(actions, Set.empty)
+  }
+
+  test(
+    "Not in sync with messageOffline: schedules delayed NON_SYNC and notification"
+  ) {
+    val state = State().copy(heater =
+      State.Heater(
+        status = Some(HeaterSignal.Power500),
+        lastCommandSent = Some(HeaterSignal.Power1000),
+        lastSyncing = None
+      )
+    )
+    val (newState, actions) = detectorWithMsg.process(state, dummyEvent, now)
+    assertEquals(newState.heater.lastSyncing, Some(now))
+    val expectedActions = Set(
+      Action.SetUIItemValue(statusItem, config.syncingText),
+      Action.Delayed(
+        id + SyncDetector.ID_SUFFIX,
+        Action.SetUIItemValue(statusItem, config.nonSyncText),
+        config.timeoutDuration
+      ),
+      Action.Delayed(
+        id + SyncDetector.ID_SUFFIX + "-notification",
+        Action.SendNotification(id + SyncDetector.ID_SUFFIX, message, None),
+        config.timeoutDuration
+      )
+    )
+    assertEquals(actions, expectedActions)
+  }
+
+  test(
+    "Already in sync with prior syncing time and messageOffline: clears lastSyncing and cancels notification"
+  ) {
+    val state = State().copy(heater =
+      State.Heater(
+        status = Some(HeaterSignal.Power500),
+        lastCommandSent = Some(HeaterSignal.Power500),
+        lastSyncing = Some(now)
+      )
+    )
+    val (newState, actions) = detectorWithMsg.process(state, dummyEvent, now)
+    assertEquals(newState.heater.lastSyncing, None)
+    val expectedActions = Set(
+      Action.SetUIItemValue(statusItem, config.syncText),
+      Action.Cancel(id + SyncDetector.ID_SUFFIX),
+      Action.Cancel(id + SyncDetector.ID_SUFFIX + "-notification")
+    )
+    assertEquals(actions, expectedActions)
   }
 }

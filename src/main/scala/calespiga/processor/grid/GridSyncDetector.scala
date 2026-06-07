@@ -26,7 +26,8 @@ private object GridSyncDetector {
   def apply(
       syncConfig: SyncDetectorConfig,
       id: String,
-      statusItem: String
+      statusItem: String,
+      messageOffline: String
   ): SyncDetector =
     SyncDetector(
       syncConfig,
@@ -36,6 +37,7 @@ private object GridSyncDetector {
       getLastSyncing,
       setLastSyncing,
       statusItem,
-      isEventRelevant
+      isEventRelevant,
+      Some(messageOffline)
     )
 }
