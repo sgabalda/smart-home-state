@@ -8,6 +8,8 @@ import java.time.Instant
 
 private object GridRelaySyncDetector {
 
+  private val ID_MODIFIER = "relay"
+
   private def field1ToCheck(state: State) = state.grid.lastCommandSent
   private def field2ToCheck(state: State) = state.grid.statusRelay
 
@@ -31,7 +33,7 @@ private object GridRelaySyncDetector {
   ): SyncDetector =
     SyncDetector(
       syncConfig,
-      id,
+      s"$id-$ID_MODIFIER",
       field1ToCheck,
       field2ToCheck,
       getLastSyncing,

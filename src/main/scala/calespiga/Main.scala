@@ -112,6 +112,7 @@ object Main extends IOApp.Simple {
         inputTopicsManager.inputTopicsConversions
       )
       mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
+      uiBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
       openHabApiClient <- APIClient(
         appConfig.uiConfig.openHabConfig,
@@ -124,7 +125,8 @@ object Main extends IOApp.Simple {
       )
       userInterfaceManager <- UserInterfaceManager(
         openHabApiClient,
-        appConfig.uiConfig
+        appConfig.uiConfig,
+        uiBlacklist = uiBlacklist
       ).toResource
       feedbackQueue <- Queue.unbounded[IO, FeedbackEventData].toResource
       directExecutor = DirectExecutor(
@@ -145,7 +147,12 @@ object Main extends IOApp.Simple {
         )
       )
       zoneId = ZoneId.of(appConfig.system.timezone)
-      processor = StateProcessor(appConfig.processor, mqttBlacklist, zoneId)
+      processor = StateProcessor(
+        appConfig.processor,
+        mqttBlacklist,
+        uiBlacklist,
+        zoneId
+      )
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
       powerSource <- powerDeps(appConfig.powerProduction, zoneId)
       tariffSource = GridTariffSource(zoneId)

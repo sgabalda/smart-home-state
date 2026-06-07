@@ -31,9 +31,11 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
         changeItemStub =
           (item: String, value: String) => called.set(Some((item, value)))
       )
+      uiBlack <- IO.ref[Set[String]](Set.empty)
       sut <- UserInterfaceManager(
         apiClient,
-        uiConfig
+        uiConfig,
+        uiBlacklist = uiBlack
       )
       _ <- sut.sendNotification(notificationId, message, None)
       calledValue <- called.get
@@ -59,9 +61,11 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       apiClient = ApiClientStub(
         changeItemStub = (_: String, _: String) => called.update(_ + 1)
       )
+      uiBlack <- IO.ref[Set[String]](Set.empty)
       sut <- UserInterfaceManager(
         apiClient,
-        uiConfig
+        uiConfig,
+        uiBlacklist = uiBlack
       )
       _ <- sut.sendNotification(notificationId, message, Some(repeatInterval))
       calledValue1 <- called.get
@@ -100,9 +104,11 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       apiClient = ApiClientStub(
         changeItemStub = (_: String, _: String) => called.update(_ + 1)
       )
+      uiBlack <- IO.ref[Set[String]](Set.empty)
       sut <- UserInterfaceManager(
         apiClient,
-        uiConfig
+        uiConfig,
+        uiBlacklist = uiBlack
       )
       _ <- sut.sendNotification(notificationId, message, Some(repeatInterval))
       calledValue1 <- called.get
@@ -144,9 +150,11 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       apiClient = ApiClientStub(
         changeItemStub = (_: String, _: String) => called.update(_ + 1)
       )
+      uiBlack <- IO.ref[Set[String]](Set.empty)
       sut <- UserInterfaceManager(
         apiClient,
-        uiConfig
+        uiConfig,
+        uiBlacklist = uiBlack
       )
       _ <- sut.sendNotification(notificationId, message, None)
       calledValue1 <- called.get
@@ -184,7 +192,8 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
         itemChangesStub =
           _ => Stream.eval(called.set(true)).flatMap(_ => Stream.empty)
       )
-      sut <- UserInterfaceManager(apiClient, uiConfig)
+      uiBlack <- IO.ref[Set[String]](Set.empty)
+      sut <- UserInterfaceManager(apiClient, uiConfig, uiBlacklist = uiBlack)
       _ <- sut.userInputEventsStream.compile.drain
       calledValue <- called.get
     } yield {
@@ -199,7 +208,8 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
       itemChangesStub = _ => Stream(Left(error))
     )
     for {
-      sut <- UserInterfaceManager(apiClient, uiConfig)
+      uiBlack <- IO.ref[Set[String]](Set.empty)
+      sut <- UserInterfaceManager(apiClient, uiConfig, uiBlacklist = uiBlack)
       last <- sut.userInputEventsStream.compile.last
     } yield {
       assertEquals(
@@ -219,7 +229,8 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
     )
     val itemsConverter: UserInterfaceManager.OpenHabItemsConverter = Map()
     for {
-      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
+      uiBlack <- IO.ref[Set[String]](Set.empty)
+      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter, uiBlack)
       last <- sut.userInputEventsStream.compile.last
     } yield {
       last match {
@@ -243,7 +254,8 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
     val itemsConverter: UserInterfaceManager.OpenHabItemsConverter =
       Map("TestItem" -> (_ => Left(error)))
     for {
-      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
+      uiBlack <- IO.ref[Set[String]](Set.empty)
+      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter, uiBlack)
       last <- sut.userInputEventsStream.compile.last
     } yield {
       assertEquals(
@@ -266,7 +278,8 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
     val itemsConverter: UserInterfaceManager.OpenHabItemsConverter =
       Map("TestItem" -> (_ => Right(resultEventData)))
     for {
-      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter)
+      uiBlack <- IO.ref[Set[String]](Set.empty)
+      sut <- UserInterfaceManager(apiClient, uiConfig, itemsConverter, uiBlack)
       last <- sut.userInputEventsStream.compile.last
     } yield {
       last match {
@@ -279,6 +292,31 @@ class UserInterfaceManagerSuite extends CatsEffectSuite {
           () // Test passed
         case _ => fail("The event was not propagated")
       }
+    }
+  }
+
+  test(
+    "sendNotification should NOT call the APIClient when id is blacklisted"
+  ) {
+    val notificationId = "BlockedNotification"
+    val message = "Should not be sent"
+
+    for {
+      called <- IO.ref[Option[(String, String)]](None)
+      apiClient = ApiClientStub(
+        changeItemStub =
+          (item: String, value: String) => called.set(Some((item, value)))
+      )
+      uiBlack <- IO.ref[Set[String]](Set(notificationId))
+      sut <- UserInterfaceManager(
+        apiClient,
+        uiConfig,
+        uiBlacklist = uiBlack
+      )
+      _ <- sut.sendNotification(notificationId, message, None)
+      calledValue <- called.get
+    } yield {
+      assertEquals(calledValue, None)
     }
   }
 

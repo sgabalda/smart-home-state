@@ -50,6 +50,7 @@ object StateProcessor {
   private[processor] def allButPower(
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
+      uiBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
   ): List[EffectfulProcessor] = {
     val gridManager = GridConnectionManager(config.grid)
@@ -89,17 +90,19 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
+      FeatureFlagsProcessor(mqttBlacklist, uiBlacklist, config.featureFlags)
     )
   }
 
   def apply(
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
+      uiBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
   ): StateProcessor = {
 
-    val allButPowerProcessors = allButPower(config, mqttBlacklist, zoneId)
+    val allButPowerProcessors =
+      allButPower(config, mqttBlacklist, uiBlacklist, zoneId)
 
     val power = PowerProcessor(
       config.power,
