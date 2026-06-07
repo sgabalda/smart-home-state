@@ -163,6 +163,11 @@ object Event {
         status: GridSignal.ControllerState
     ) extends GridData
 
+    @InputEventMqtt("grid/connection/action")
+    case class GridRelayStatusReported(
+        status: GridSignal.ControllerState
+    ) extends GridData
+
     @InputEventOHItem("XarxaManualConnexioSHS")
     case class GridManualConnectionChanged(
         connect: Boolean
