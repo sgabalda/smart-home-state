@@ -76,8 +76,8 @@ class DirectExecutorSuite extends CatsEffectSuite {
         updateUIItemStub = (_: String, _: String) => IO.unit
       )
     ).flatMap(_.execute(Set(action)).map {
-      case some :: _ => fail("The error was not propagated")
-      case Nil       => // No error, as expected
+      case _ :: _ => fail("The error was not propagated")
+      case Nil    => // No error, as expected
     })
   }
 
@@ -136,8 +136,8 @@ class DirectExecutorSuite extends CatsEffectSuite {
         actionToMqttStub = (_: Action.SendMqttStringMessage) => IO.unit
       )
     ).flatMap(_.execute(Set(action)).map {
-      case some :: _ => fail("The error was not propagated")
-      case Nil       => // No error, as expected
+      case _ :: _ => fail("The error was not propagated")
+      case Nil    => // No error, as expected
     })
   }
 

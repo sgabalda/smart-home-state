@@ -100,7 +100,7 @@ class ScheduledExecutorSuite extends CatsEffectSuite {
 
       // Advance time by 100ms to complete the second action (150ms total from start)
       _ <- IO.sleep(100.millis)
-      executedActionsAfterSecond <- executedActions.get
+      _ <- executedActions.get
 
       // Advance time by additional 100ms to ensure first action would have executed if not cancelled (250ms total)
       _ <- IO.sleep(100.millis)

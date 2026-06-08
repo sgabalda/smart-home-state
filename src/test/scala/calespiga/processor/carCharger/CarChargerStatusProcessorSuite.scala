@@ -111,7 +111,7 @@ class CarChargerStatusProcessorSuite extends FunSuite {
     val processor = CarChargerStatusProcessor(config)
     val initialState = stateWithCarCharger()
 
-    val (newState, actions) = processor.process(
+    val (newState, _) = processor.process(
       initialState,
       CarChargerPowerReported(5000f),
       now

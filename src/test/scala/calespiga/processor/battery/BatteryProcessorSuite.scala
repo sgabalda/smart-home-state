@@ -262,7 +262,7 @@ class BatteryProcessorSuite extends FunSuite {
             // High ignores tariff but we still test behavior consistency
             Event.Battery.BatteryChargeLowTariffChanged(s.tariff)
 
-        val (stateAfter, actions) =
+        val (_, actions) =
           p.process(initialState, event, now)
 
         assertEquals(actions, Set.empty)
@@ -292,7 +292,7 @@ class BatteryProcessorSuite extends FunSuite {
           case BatteryStatus.High =>
             Event.Battery.BatteryChargeMediumTariffChanged(s.tariff)
 
-        val (stateAfter, actions) =
+        val (_, actions) =
           p.process(initialState, event, now)
 
         assertEquals(actions, Set.empty)
