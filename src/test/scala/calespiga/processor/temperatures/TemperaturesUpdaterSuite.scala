@@ -96,7 +96,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     val temp = 4.0
     val state = State()
     val event = Event.Temperature.BatteryTemperatureMeasured(temp)
-    val (newState, actions) = updater.process(state, event, now)
+    val (_, actions) = updater.process(state, event, now)
     assert(actions.find {
       case Action.SendNotification(id, msg, repeat)
           if id.endsWith(
@@ -116,7 +116,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     val temp = 44.0
     val state = State()
     val event = Event.Temperature.BatteryTemperatureMeasured(temp)
-    val (newState, actions) = updater.process(state, event, now)
+    val (_, actions) = updater.process(state, event, now)
     assert(actions.find {
       case Action.SendNotification(id, msg, repeat)
           if id.endsWith(
@@ -135,7 +135,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     val temp = 4.0
     val state = State()
     val event = Event.Temperature.ElectronicsTemperatureMeasured(temp)
-    val (newState, actions) = updater.process(state, event, now)
+    val (_, actions) = updater.process(state, event, now)
     assert(actions.find {
       case Action.SendNotification(id, msg, repeat)
           if id.endsWith(
@@ -155,7 +155,7 @@ class TemperaturesUpdaterSuite extends FunSuite {
     val temp = 44.0
     val state = State()
     val event = Event.Temperature.ElectronicsTemperatureMeasured(temp)
-    val (newState, actions) = updater.process(state, event, now)
+    val (_, actions) = updater.process(state, event, now)
     assert(actions.find {
       case Action.SendNotification(id, msg, repeat)
           if id.endsWith(

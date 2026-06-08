@@ -58,7 +58,7 @@ class StateProcessorSuite extends CatsEffectSuite {
     val stateProcessor = StateProcessor(processor1, processor2)
 
     stateProcessor.process(initialState, Event(now, event)).map {
-      case (finalState, actions) =>
+      case (finalState, _) =>
         // State should reflect both changes, in order
         assertEquals(finalState.temperatures.batteriesTemperature, Some(15d))
     }

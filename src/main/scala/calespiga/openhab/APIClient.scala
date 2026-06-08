@@ -148,7 +148,7 @@ object APIClient {
         .body(value)
         .send(webSocketBackend)
         .flatMap {
-          case Response(Right(successBody), code, _, _, _, _) =>
+          case Response(Right(_), code, _, _, _, _) =>
             healthRestApi.setHealthy *>
               logger.debug(s"Changed item $item to value $value")
           case Response(Left(error), code, _, _, _, _) =>

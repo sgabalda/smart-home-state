@@ -139,7 +139,7 @@ object SyncDetector {
                 Action.SetUIItemValue(statusItem, config.syncText),
                 Action.Cancel(idUiUpdate)
               ) ++ (messageOffline match {
-                case Some(message) =>
+                case Some(_) =>
                   Set(Action.Cancel(idNotification))
                 case None =>
                   // do nothing as the action was not set

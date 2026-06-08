@@ -35,7 +35,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerDiscarded,
       linesPower
     )
-    val (newState, actions) = processor.process(state, event, now)
+    val (newState, _) = processor.process(state, event, now)
 
     assertEquals(
       newState.powerManagement.production.powerAvailable,
@@ -75,7 +75,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerDiscarded,
       linesPower
     )
-    val (newState, actions) = processor.process(state, event, now)
+    val (newState, _) = processor.process(state, event, now)
 
     assertEquals(
       newState.powerManagement.production.powerAvailable,
@@ -107,7 +107,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerDiscarded,
       linesPower
     )
-    val (newState, actions) = processor.process(state, event, now)
+    val (_, actions) = processor.process(state, event, now)
 
     assert(
       actions.contains(
@@ -169,7 +169,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerDiscarded,
       linesPower
     )
-    val (newState, actions) = processor.process(state, event, now)
+    val (_, actions) = processor.process(state, event, now)
 
     val delayedAction = actions.find {
       case Action.Delayed(id, _, delay)
@@ -200,7 +200,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerDiscarded,
       linesPower
     )
-    val (newState, actions) = processor.process(state, event, now)
+    val (_, actions) = processor.process(state, event, now)
 
     val delayedAction = actions.find {
       case Action.Delayed(id, _, _)
