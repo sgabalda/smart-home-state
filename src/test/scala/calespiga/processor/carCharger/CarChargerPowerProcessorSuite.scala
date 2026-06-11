@@ -64,16 +64,16 @@ class CarChargerPowerProcessorSuite extends FunSuite {
   }
 
   test(
-    "CarChargerPowerCommandChanged SetAutomatic sends Off to microcontroller"
+    "CarChargerPowerCommandChanged SetAutomaticFV sends Off to microcontroller"
   ) {
     val initialState = stateWithCarCharger()
-    val event = CarChargerPowerCommandChanged(CarChargerSignal.SetAutomatic)
+    val event = CarChargerPowerCommandChanged(CarChargerSignal.SetAutomaticFV)
     val processor = CarChargerPowerProcessor(config)
     val (newState, actions) = processor.process(initialState, event, now)
 
     assertEquals(
       newState.carCharger.lastCommandReceived,
-      Some(CarChargerSignal.SetAutomatic)
+      Some(CarChargerSignal.SetAutomaticFV)
     )
     assertEquals(
       newState.carCharger.lastCommandSent,

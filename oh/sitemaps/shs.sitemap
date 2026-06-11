@@ -104,7 +104,7 @@ sitemap shs label="Ca l'espiga SHS" {
     Text item=CarChargerTitle label="Vehicle Elèctric" icon="electric_car"
     {
         Frame label="Carregador vehicle" {
-            Selection item=CarChargerSetSHS icon="switch" mappings=["off"="Off","on"="On","automatic"="Automàtic"]
+            Selection item=CarChargerSetSHS icon="switch" mappings=["off"="Off","on"="On","automatic_fv"="Automàtic FV"]
             Text item=CarChargerStatusSHS icon="car" label="Estat: [%s]"
             Text item=CarChargerSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
             Text item=CarChargerMicroControladorEstatSHS icon="network" label="Estat microcontrolador: [%s]"
