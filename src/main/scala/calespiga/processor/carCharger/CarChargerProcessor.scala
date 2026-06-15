@@ -14,6 +14,9 @@ object CarChargerProcessor {
       offlineDetectorConfig: OfflineDetectorConfig,
       syncConfig: calespiga.config.SyncDetectorConfig
   ): SingleProcessor =
+    val carChargerSyncDetector =
+      CarChargerSyncDetector(syncConfig, config.id, config.syncStatusItem)
+
     CarChargerOfflineDetector(offlineDetectorConfig, config)
       .andThen(
         CarChargerStatusProcessor(config)
@@ -22,7 +25,10 @@ object CarChargerProcessor {
         CarChargerPowerProcessor(config)
       )
       .andThen(
-        CarChargerSyncDetector(syncConfig, config.id, config.syncStatusItem)
+        carChargerSyncDetector
+      )
+      .withDynamicConsumer(
+        CarChargerDynamicPowerConsumer(config, carChargerSyncDetector)
       )
       .andThen(
         CarChargerEnergyProcessor(config, zone)

@@ -63,6 +63,7 @@ String PotenciaEstatLecturesSHS "Estat lectures FV"
 
 Number CalentadorPrioritatConsumSHS "Calentador"
 Number EstufaInfrarrojosPrioritatConsumSHS "Est. Infrarrojos"
+Number CarChargerPrioritatConsumSHS "Carregador VE"
 
 /*
 ----------------------

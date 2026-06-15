@@ -72,8 +72,9 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=PotenciaDinamicaFVSHS icon="power" label="Potència dinàmica FV: [%.0f W]"
         }
         Frame label="Dispositius" {
-            Setpoint item=CalentadorPrioritatConsumSHS icon="heater_display" label="Prioritat calentador [%d]" minValue=1 maxValue=2 step=1
-            Setpoint item=EstufaInfrarrojosPrioritatConsumSHS icon="heater_display" label="Prioritat estufa infrarrojos [%d]" minValue=1 maxValue=2 step=1
+            Setpoint item=CalentadorPrioritatConsumSHS icon="heater_display" label="Prioritat calentador [%d]" minValue=1 maxValue=3 step=1
+            Setpoint item=EstufaInfrarrojosPrioritatConsumSHS icon="heater_display" label="Prioritat estufa infrarrojos [%d]" minValue=1 maxValue=3 step=1
+            Setpoint item=CarChargerPrioritatConsumSHS icon="electric_car" label="Prioritat carregador VE [%d]" minValue=1 maxValue=3 step=1
         }
 
     }
