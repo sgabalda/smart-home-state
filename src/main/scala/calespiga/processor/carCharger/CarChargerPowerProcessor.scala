@@ -3,7 +3,6 @@ package calespiga.processor.carCharger
 import calespiga.config.CarChargerConfig
 import calespiga.model.{State, Action, Event}
 import calespiga.processor.SingleProcessor
-import calespiga.processor.utils.CommandActions
 import com.softwaremill.quicklens.*
 import java.time.Instant
 
@@ -12,13 +11,7 @@ private[carCharger] object CarChargerPowerProcessor {
   private final case class Impl(config: CarChargerConfig)
       extends SingleProcessor {
 
-    private val actions =
-      CommandActions[calespiga.model.CarChargerSignal.ControllerState](
-        config.mqttTopicForCommand,
-        config.id,
-        config.resendInterval,
-        calespiga.model.CarChargerSignal.controllerStateToString
-      )
+    private val actions = Actions(config)
 
     private def getDefaultCommandToSend(
         status: calespiga.model.CarChargerSignal.UserCommand
@@ -28,7 +21,7 @@ private[carCharger] object CarChargerPowerProcessor {
           calespiga.model.CarChargerSignal.Off
         case calespiga.model.CarChargerSignal.TurnOn =>
           calespiga.model.CarChargerSignal.On
-        case calespiga.model.CarChargerSignal.SetAutomatic =>
+        case calespiga.model.CarChargerSignal.SetAutomaticFV =>
           calespiga.model.CarChargerSignal.Off
 
     override def process(

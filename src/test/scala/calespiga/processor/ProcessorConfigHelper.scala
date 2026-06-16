@@ -162,7 +162,10 @@ object ProcessorConfigHelper {
     mqttTopicForCommand = "dummy/carcharger/command",
     resendInterval = 20.seconds,
     lastCommandItem = "carcharger/lastCommand",
-    id = "car-charger-processor"
+    id = "car-charger-processor",
+    syncTimeoutForDynamicPower = 50.seconds,
+    dynamicConsumerCode = "car-charger-consumer-code",
+    chargerPowerWatts = 2100f
   )
 
   val processorConfig: ProcessorConfig = ProcessorConfig(

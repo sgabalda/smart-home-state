@@ -84,7 +84,10 @@ final case class CarChargerConfig(
     mqttTopicForCommand: String,
     resendInterval: FiniteDuration,
     lastCommandItem: String,
-    id: String
+    id: String,
+    syncTimeoutForDynamicPower: FiniteDuration,
+    dynamicConsumerCode: String,
+    chargerPowerWatts: Float
 ) derives ConfigReader
 
 final case class PowerProcessorConfig(

@@ -38,7 +38,7 @@ object CarChargerSignal {
   sealed trait UserCommand
   case object TurnOff extends UserCommand
   case object TurnOn extends UserCommand
-  case object SetAutomatic extends UserCommand
+  case object SetAutomaticFV extends UserCommand
 
   implicit val userCommandEncoder: Encoder[UserCommand] = Encoder.instance {
     c => Json.fromString(userCommandToString(c))
@@ -50,16 +50,16 @@ object CarChargerSignal {
     }
 
   def userCommandToString(cmd: UserCommand): String = cmd match
-    case TurnOff      => "off"
-    case TurnOn       => "on"
-    case SetAutomatic => "automatic"
+    case TurnOff        => "off"
+    case TurnOn         => "on"
+    case SetAutomaticFV => "automatic_fv"
 
   def userCommandFromString(str: String): Either[String, UserCommand] =
     str.toLowerCase match
-      case "off"       => Right(TurnOff)
-      case "on"        => Right(TurnOn)
-      case "automatic" => Right(SetAutomatic)
-      case other       => Left(s"Invalid CarChargerSignal.UserCommand: $other")
+      case "off"          => Right(TurnOff)
+      case "on"           => Right(TurnOn)
+      case "automatic_fv" => Right(SetAutomaticFV)
+      case other => Left(s"Invalid CarChargerSignal.UserCommand: $other")
 
   given Schema[UserCommand] = Schema.string
 }
