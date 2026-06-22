@@ -24,7 +24,7 @@ object Dependencies {
 
     val pureconfig = "0.17.10"
 
-    val quicklens = "1.9.12"
+    val quicklens = "1.9.15"
 
     val sttp = "4.0.25"
 
