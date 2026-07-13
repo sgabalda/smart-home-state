@@ -112,6 +112,7 @@ object State {
       lastSyncingRelay: Option[java.time.Instant] = None,
       devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
       currentTariff: Option[GridTariff] = None,
+      availablePower: Option[Float] = None,
       online: Option[OfflineOnlineSignal] = None
   )
   object Grid:

@@ -138,7 +138,8 @@ object ProcessorConfigHelper {
     onlineStatusItem = "grid/onlineStatus",
     offlineNotification = "El dispositiu de control de la xarxa no respon",
     syncNotification = "El dispositiu de control de la xarxa no respon",
-    syncRelayNotification = "El dispositiu de control de la xarxa no respon"
+    syncRelayNotification = "El dispositiu de control de la xarxa no respon",
+    availablePower = 3000.0f
   )
 
   val batteryConfig: BatteryConfig = BatteryConfig(
