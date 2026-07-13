@@ -220,7 +220,8 @@ final case class GridConfig(
     onlineStatusItem: String,
     offlineNotification: String,
     syncNotification: String,
-    syncRelayNotification: String
+    syncRelayNotification: String,
+    availablePower: Float // as there is the same power currently available for all the grid tariffs, we can configure it here
 ) derives ConfigReader
 
 final case class PowerProductionConfig(
