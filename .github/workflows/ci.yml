@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-sbt-
 
       - name: Check code formatting
-        run: sbt scalafmtSbtCheck scalafmtCheckAll
+        run: sbt ";scalafmtSbtCheck;scalafmtCheckAll"
 
       - name: Check compilation
         run: sbt compile
