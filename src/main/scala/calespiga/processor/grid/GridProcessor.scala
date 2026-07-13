@@ -16,6 +16,7 @@ object GridProcessor {
       offlineConfig: OfflineDetectorConfig
   ): SingleProcessor =
     GridTariffProcessor(config)
+      .andThen(GridAvailablePowerProcessor(config))
       .andThen(GridConnectionProcessor(config, manager))
       .andThen(
         GridSyncDetector(

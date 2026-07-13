@@ -11,6 +11,7 @@ import java.time.Instant
 import scala.collection.mutable.ListBuffer
 import calespiga.processor.power.dynamic.Power
 import calespiga.processor.ProcessorConfigHelper
+import com.softwaremill.quicklens.*
 
 class DynamicPowerProcessorSuite extends FunSuite {
 
@@ -347,7 +348,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val processor =
       DynamicPowerProcessor(orderer, Set(consumer1), processorConfig)
 
-    val state = State()
+    val state = State().modify(_.grid.availablePower).setTo(Some(60f))
     val powerDiscarded = 30f
     val event = Event.Power.PowerProductionReported(
       powerAvailable = 100f,
@@ -360,8 +361,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     assertEquals(
       powerOffered(0),
-      Power.ofFv(50f),
-      "Total dynamic power should be powerDiscarded (30) + currentlyUsedDynamicPower (20)"
+      Power.ofFv(50f) + Power.ofGrid(60f),
+      "Total dynamic power should include the configured grid power and the consumer's current usage"
     )
   }
 
