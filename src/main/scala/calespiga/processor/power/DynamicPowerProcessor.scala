@@ -110,6 +110,20 @@ object DynamicPowerProcessor {
 
         processDynamicPower(state, timestamp, unusedFvPower, unusedGridPower)
 
+      case Event.Grid.GridTariffChanged(_) =>
+        val unusedFvPower = Power.ofFv(
+          state.powerManagement.production.powerDiscarded.getOrElse(0f)
+        )
+        val unusedGridPower = state.grid.availablePower
+          .map(Power.ofGrid)
+          .getOrElse(Power.zero)
+
+        processDynamicPower(state, timestamp, unusedFvPower, unusedGridPower)
+
+      // In the future, when there are measurements of the used grid power,
+      // a new event can be created to notify the dynamic power processor that the available grid power
+      // has changed and it should recalculate the power distribution.
+
       case _ =>
         (state, Set.empty)
 

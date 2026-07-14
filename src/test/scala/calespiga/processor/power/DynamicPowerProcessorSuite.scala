@@ -1,7 +1,7 @@
 package calespiga.processor.power
 
 import munit.FunSuite
-import calespiga.model.{State, Action, Event}
+import calespiga.model.{State, Action, Event, GridTariff}
 import calespiga.processor.power.dynamic.{
   DynamicConsumerOrdererStub,
   DynamicPowerConsumerStub
@@ -363,6 +363,77 @@ class DynamicPowerProcessorSuite extends FunSuite {
       powerOffered(0),
       Power.ofFv(50f) + Power.ofGrid(60f),
       "Total dynamic power should include the configured grid power and the consumer's current usage"
+    )
+  }
+
+  test(
+    "DynamicPowerProcessor recalculates dynamic power on GridTariffChanged event"
+  ) {
+    val powerOffered = ListBuffer.empty[Power]
+
+    val consumer = DynamicPowerConsumerStub(
+      currentlyUsedDynamicPowerStub = (_, _) => Power.ofFv(0f),
+      usePowerStub = (state, power, _) => {
+        powerOffered += power
+        DynamicPowerResult(state, Set.empty, Power.ofFv(10f))
+      }
+    )
+
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq(consumer)
+    )
+
+    val processor =
+      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+
+    val state = State()
+      .modify(_.powerManagement.production.powerDiscarded)
+      .setTo(Some(30f))
+      .modify(_.grid.availablePower)
+      .setTo(Some(60f))
+
+    val event = Event.Grid.GridTariffChanged(GridTariff.Pla)
+
+    val (_, _) = processor.process(state, event, now)
+
+    assertEquals(
+      powerOffered.toList,
+      List(Power.ofFv(30f) + Power.ofGrid(60f)),
+      "Grid tariff changes should trigger the same dynamic-power calculation as power production events"
+    )
+  }
+
+  test(
+    "DynamicPowerProcessor handles GridTariffChanged with no consumers by emitting only the total action"
+  ) {
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq.empty
+    )
+
+    val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
+
+    val state = State()
+      .modify(_.powerManagement.production.powerDiscarded)
+      .setTo(Some(25f))
+
+    val event = Event.Grid.GridTariffChanged(GridTariff.Pla)
+
+    val (finalState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      finalState,
+      state,
+      "State should remain unchanged when there are no consumers"
+    )
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(
+          processorConfig.dynamicFVPowerUsedItem,
+          "0.0"
+        )
+      ),
+      "Grid tariff changes should still emit the total dynamic power action"
     )
   }
 
