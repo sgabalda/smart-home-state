@@ -5,6 +5,7 @@ import calespiga.model.{State, Event}
 import java.time.Instant
 import com.softwaremill.quicklens.*
 import calespiga.model.Action
+import calespiga.model.Event.Power.PowerStatusReported
 
 class DynamicPowerPriorityProcessorSuite extends FunSuite {
 
@@ -211,11 +212,16 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
   ) {
     val initialConsumers = Seq("consumer1", consumerCode, "consumer3")
     val state = stateWithConsumers(initialConsumers)
-    val event = Event.Power.PowerProductionReported(
-      powerAvailable = 100f,
-      powerProduced = 50f,
-      powerDiscarded = 30f,
-      linesPower = List.empty
+    val event = Event.Power.PowerStatusReported(
+      Some(
+        PowerStatusReported.PowerProductionReported(
+          powerAvailable = 100f,
+          powerProduced = 50f,
+          powerDiscarded = 30f,
+          linesPower = List.empty
+        )
+      ),
+      PowerStatusReported.PowerGridConsumptionReported(powerConsumed = 0f)
     )
 
     val (newState, actions) = processor.process(state, event, now)

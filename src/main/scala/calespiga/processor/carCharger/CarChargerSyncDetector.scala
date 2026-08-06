@@ -23,7 +23,7 @@ private object CarChargerSyncDetector {
     case Event.CarCharger.CarChargerStatusReported(_)      => true
     case Event.CarCharger.CarChargerPowerReported(_)       => true
     case Event.System.StartupEvent                         => true
-    case _: Event.Power.PowerProductionReported            => true
+    case _: Event.Power.PowerStatusReported                => true
     case _                                                 => false
   }
 

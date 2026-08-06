@@ -2,7 +2,7 @@ package calespiga.processor.power
 
 import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
-import calespiga.model.Event.Power.PowerProductionReported
+import calespiga.model.Event.Power.PowerStatusReported
 import calespiga.model.{State, Action, Event}
 import java.time.Instant
 import calespiga.config.PowerAvailableProcessorConfig
@@ -127,11 +127,16 @@ object PowerAvailableProcessor {
                   STATUS_TEMPORARY_ERROR
                 )
             )
-      case PowerProductionReported(
-            powerAvailable,
-            powerProduced,
-            powerDiscarded,
-            linesPower
+      case PowerStatusReported(
+            Some(
+              PowerStatusReported.PowerProductionReported(
+                powerAvailable,
+                powerProduced,
+                powerDiscarded,
+                linesPower
+              )
+            ),
+            _
           ) =>
         val newState = state
           .modify(_.powerManagement.production.powerAvailable)

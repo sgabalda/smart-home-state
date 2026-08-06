@@ -3,7 +3,7 @@ package calespiga.processor.power
 import calespiga.processor.SingleProcessor
 import calespiga.model.State
 import calespiga.model.Event
-import calespiga.model.Event.Power.PowerProductionReported
+import calespiga.model.Event.Power.PowerStatusReported
 import java.time.Instant
 import calespiga.model.Action
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
@@ -102,9 +102,13 @@ object DynamicPowerProcessor {
               }
         )
 
-      case PowerProductionReported(_, _, powerDiscarded, _) =>
-        val unusedFvPower = Power.ofFv(powerDiscarded)
+      case PowerStatusReported(production, gridConsumption) =>
+        val unusedFvPower =
+          production.map(_.powerDiscarded).map(Power.ofFv).getOrElse(Power.zero)
         val unusedGridPower = state.grid.availablePower
+          .map(
+            _ - gridConsumption.powerConsumed
+          ) // remove, of all grid available power, the power consumed from grid
           .map(Power.ofGrid)
           .getOrElse(Power.zero)
 

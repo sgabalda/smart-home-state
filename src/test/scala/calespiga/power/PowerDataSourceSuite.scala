@@ -5,15 +5,15 @@ import cats.effect.testkit.TestControl
 import munit.CatsEffectSuite
 import scala.concurrent.duration._
 import calespiga.config.PowerProductionSourceConfig
-import calespiga.model.Event.Power.{PowerProductionReported}
+import calespiga.model.Event.Power.{PowerStatusReported}
 import calespiga.ErrorManager
 import calespiga.model.Event.Power.PowerProductionReadingError
 
-class PowerProductionSourceSuite extends CatsEffectSuite {
+class PowerDataSourceSuite extends CatsEffectSuite {
 
   case class StubProvider(
       effectsQueue: Ref[IO, List[IO[PowerProductionData]]]
-  ) extends PowerProductionSource.PowerProductionOnRequestProvider {
+  ) extends PowerDataSource.PowerProductionOnRequestProvider {
     override def getCurrentPowerData: IO[PowerProductionData] =
       effectsQueue.modify {
         case head :: tail => (tail, head)
@@ -24,8 +24,8 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
 
   val testConfig = PowerProductionSourceConfig(
     pollingInterval = 15.seconds,
-    fvStartingHour = 6,
-    fvEndingHour = 21
+    fvStartingHour = 0,
+    fvEndingHour = 23
   )
   val testZoneId = java.time.ZoneId.of("GMT+0")
 
@@ -37,7 +37,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](effects)
       stubProvider = StubProvider(effectsQueue)
 
-      count <- PowerProductionSource(
+      count <- PowerDataSource(
         testConfig,
         stubProvider,
         testZoneId
@@ -62,7 +62,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(
+      results <- PowerDataSource(
         testConfig,
         stubProvider,
         testZoneId
@@ -72,9 +72,37 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
         .toList
 
       expected = List(
-        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
-        Right(PowerProductionReported(200.0, 75.0, 15.0, List.empty)),
-        Right(PowerProductionReported(150.0, 60.0, 12.0, List.empty))
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            100.0,
+            50.0,
+            10.0,
+            List.empty
+          )
+        ),
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            200.0,
+            75.0,
+            15.0,
+            List.empty
+          )
+        ),
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            150.0,
+            60.0,
+            12.0,
+            List.empty
+          )
+        )
+      ).map(
+        _.map(p =>
+          PowerStatusReported(
+            Some(p),
+            PowerStatusReported.PowerGridConsumptionReported(0.0f)
+          )
+        )
       )
     } yield assertEquals(results, expected)
 
@@ -92,7 +120,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      result <- PowerProductionSource(
+      result <- PowerDataSource(
         testConfig,
         stubProvider,
         testZoneId
@@ -128,7 +156,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(
+      results <- PowerDataSource(
         testConfig,
         stubProvider,
         testZoneId
@@ -144,8 +172,29 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
             ErrorManager.Error.PowerInputError(error)
           )
         ),
-        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
-        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            100.0,
+            50.0,
+            10.0,
+            List.empty
+          )
+        ),
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            100.0,
+            50.0,
+            10.0,
+            List.empty
+          )
+        )
+      ).map(
+        _.map(p =>
+          PowerStatusReported(
+            Some(p),
+            PowerStatusReported.PowerGridConsumptionReported(0.0f)
+          )
+        )
       )
     } yield assertEquals(results, expected)
 
@@ -167,7 +216,7 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(
+      results <- PowerDataSource(
         testConfig,
         stubProvider,
         testZoneId
@@ -189,8 +238,29 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
             ErrorManager.Error.PowerInputError(error)
           )
         ),
-        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty)),
-        Right(PowerProductionReported(100.0, 50.0, 10.0, List.empty))
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            100.0,
+            50.0,
+            10.0,
+            List.empty
+          )
+        ),
+        Right(
+          PowerStatusReported.PowerProductionReported(
+            100.0,
+            50.0,
+            10.0,
+            List.empty
+          )
+        )
+      ).map(
+        _.map(p =>
+          PowerStatusReported(
+            Some(p),
+            PowerStatusReported.PowerGridConsumptionReported(0.0f)
+          )
+        )
       )
     } yield assertEquals(results, expected)
 
@@ -214,18 +284,25 @@ class PowerProductionSourceSuite extends CatsEffectSuite {
       )
       stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerProductionSource(
+      results <- PowerDataSource(
         outsideHoursConfig,
         stubProvider,
         testZoneId
       ).getEnergyProductionInfo
-        .interruptAfter(300.millis)
+        .take(3)
         .compile
         .toList
 
     } yield assertEquals(
       results,
-      List.empty,
+      List.fill(3)(
+        Right(
+          PowerStatusReported(
+            None,
+            PowerStatusReported.PowerGridConsumptionReported(0.0f)
+          )
+        )
+      ),
       "No elements should be emitted outside configured hours"
     )
 
