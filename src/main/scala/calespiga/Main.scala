@@ -19,7 +19,7 @@ import cats.effect.{IO, IOApp, ResourceIO}
 import fs2.Stream
 import cats.effect.Ref
 import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
-import calespiga.power.PowerProductionSource
+import calespiga.power.PowerDataSource
 import calespiga.processor.grid.GridTariffSource
 import calespiga.config.PowerProductionConfig
 import java.time.ZoneId
@@ -40,7 +40,7 @@ object Main extends IOApp.Simple {
   private def buildInputStream(
       mqttInputProcessor: MqttToEventInputProcessor,
       userInterfaceManager: UserInterfaceManager,
-      powerProductionSource: PowerProductionSource,
+      powerDataSource: PowerDataSource,
       gridTariffSource: GridTariffSource,
       feedbackQueue: Queue[IO, FeedbackEventData],
       errorManager: ErrorManager
@@ -52,7 +52,7 @@ object Main extends IOApp.Simple {
           userInterfaceManager.userInputEventsStream
         )
         .merge(
-          powerProductionSource.getEnergyProductionInfo
+          powerDataSource.getEnergyProductionInfo
         )
         .merge(
           gridTariffSource.events.map(Right(_))
@@ -77,13 +77,13 @@ object Main extends IOApp.Simple {
   private def powerDeps(
       config: PowerProductionConfig,
       zoneId: ZoneId
-  ): ResourceIO[PowerProductionSource] =
+  ): ResourceIO[PowerDataSource] =
     for {
       sunnyBoy <- SunnyBoyAPIClient(
         config.sunnyBoy,
         SunnyBoyDecoder(config.sunnyBoy)
       )
-    } yield PowerProductionSource(
+    } yield PowerDataSource(
       config.powerProductionSource,
       sunnyBoy,
       zoneId

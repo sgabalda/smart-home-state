@@ -19,6 +19,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
   val processorConfig = ProcessorConfigHelper.dynamicPowerProcessorConfig
 
+  private def powerStatusEvent(
+      powerAvailable: Float,
+      powerProduced: Float,
+      powerDiscarded: Float,
+      linesPower: List[Float]
+  ): Event.Power.PowerStatusReported =
+    Event.Power.PowerStatusReported(
+      Some(
+        Event.Power.PowerStatusReported.PowerProductionReported(
+          powerAvailable,
+          powerProduced,
+          powerDiscarded,
+          linesPower
+        )
+      ),
+      Event.Power.PowerStatusReported.PowerGridConsumptionReported(0f)
+    )
+
   test(
     "DynamicPowerProcessor respects consumer ordering from DynamicConsumerOrderer"
   ) {
@@ -55,7 +73,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = 30f,
@@ -110,7 +128,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val state = State()
     val powerDiscarded = 30f
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = powerDiscarded,
@@ -180,7 +198,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val state = State()
     val powerDiscarded = 25f
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = powerDiscarded,
@@ -231,7 +249,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = 30f,
@@ -287,7 +305,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = 30f,
@@ -350,7 +368,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
 
     val state = State().modify(_.grid.availablePower).setTo(Some(60f))
     val powerDiscarded = 30f
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = powerDiscarded,
@@ -376,7 +394,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
 
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
       powerDiscarded = 30f,

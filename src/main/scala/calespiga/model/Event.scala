@@ -218,11 +218,21 @@ object Event {
   object Power {
     sealed trait PowerData extends EventData
 
-    case class PowerProductionReported(
-        powerAvailable: Float,
-        powerProduced: Float,
-        powerDiscarded: Float,
-        linesPower: List[Float]
+    object PowerStatusReported {
+      case class PowerProductionReported(
+          powerAvailable: Float,
+          powerProduced: Float,
+          powerDiscarded: Float,
+          linesPower: List[Float]
+      )
+
+      case class PowerGridConsumptionReported(
+          powerConsumed: Float
+      )
+    }
+    case class PowerStatusReported(
+        production: Option[PowerStatusReported.PowerProductionReported],
+        gridConsumption: PowerStatusReported.PowerGridConsumptionReported
     ) extends PowerData
 
     case object PowerProductionReadingError extends PowerData

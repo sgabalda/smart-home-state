@@ -21,6 +21,24 @@ class PowerAvailableProcessorSuite extends FunSuite {
     PowerAvailableProcessor(dummyConfig, java.time.ZoneId.of("UTC"))
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
+  private def powerStatusEvent(
+      powerAvailable: Float,
+      powerProduced: Float,
+      powerDiscarded: Float,
+      linesPower: List[Float]
+  ): Event.Power.PowerStatusReported =
+    Event.Power.PowerStatusReported(
+      Some(
+        Event.Power.PowerStatusReported.PowerProductionReported(
+          powerAvailable,
+          powerProduced,
+          powerDiscarded,
+          linesPower
+        )
+      ),
+      Event.Power.PowerStatusReported.PowerGridConsumptionReported(0f)
+    )
+
   test(
     "PowerProductionReported updates state with all power values and timestamp"
   ) {
@@ -29,7 +47,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val powerDiscarded = 25.2f
     val linesPower = List(10.0f, 20.0f, 30.0f)
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
@@ -69,7 +87,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       .modify(_.powerManagement.production.lastProducedPower)
       .setTo(Some(previousTimestamp))
 
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
@@ -101,7 +119,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val powerDiscarded = 25.2f
     val linesPower = List.empty[Float]
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
@@ -163,7 +181,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val powerDiscarded = 25.2f
     val linesPower = List.empty[Float]
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
@@ -194,7 +212,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val powerDiscarded = 0.0f
     val linesPower = List.empty[Float]
     val state = State()
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
@@ -443,7 +461,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
     val powerProduced = 75.3f
     val powerDiscarded = 25.2f
     val linesPower = List.empty[Float]
-    val event = Event.Power.PowerProductionReported(
+    val event = powerStatusEvent(
       powerAvailable,
       powerProduced,
       powerDiscarded,
