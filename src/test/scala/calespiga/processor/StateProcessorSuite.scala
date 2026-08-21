@@ -5,6 +5,7 @@ import cats.effect.IO
 import com.softwaremill.quicklens.*
 import java.time.ZoneId
 import cats.effect.Ref
+import calespiga.processor.grid.GridConnectionManagerStub
 
 class StateProcessorSuite extends CatsEffectSuite {
   import calespiga.model.{State, Action, Event}
@@ -72,7 +73,8 @@ class StateProcessorSuite extends CatsEffectSuite {
           mqttBlacklist = mqttBlacklist,
           uiBlacklist =
             mqttBlacklist, // uiBlacklist is not used in this test, we can pass the same Ref
-          zoneId = ZoneId.systemDefault()
+          zoneId = ZoneId.systemDefault(),
+          gridManager = new GridConnectionManagerStub()
         )
         .flatMap(_.dynamicPowerConsumer)
         .toList

@@ -58,13 +58,16 @@ class GridConnectionManagerSuite extends FunSuite {
   ) {
     val state = State()
       .modify(_.grid.devicesRequestedConnection)
-      .setTo(Set(GridSignal.Car))
+      .setTo(Set(GridSignal.DynamicPower))
     val (newState, actions) =
       manager.requestConnection(GridSignal.Batteries, state)
 
     assertEquals(
       newState.grid.devicesRequestedConnection,
-      Set[GridSignal.ActorsConnecting](GridSignal.Car, GridSignal.Batteries)
+      Set[GridSignal.ActorsConnecting](
+        GridSignal.DynamicPower,
+        GridSignal.Batteries
+      )
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Connected))
     assertEquals(actions, expectedActions(GridSignal.Connected, newState))
@@ -92,13 +95,13 @@ class GridConnectionManagerSuite extends FunSuite {
   ) {
     val state = State()
       .modify(_.grid.devicesRequestedConnection)
-      .setTo(Set(GridSignal.Manual, GridSignal.Car))
+      .setTo(Set(GridSignal.Manual, GridSignal.DynamicPower))
     val (newState, actions) =
       manager.releaseConnection(GridSignal.Manual, state)
 
     assertEquals(
       newState.grid.devicesRequestedConnection,
-      Set[GridSignal.ActorsConnecting](GridSignal.Car)
+      Set[GridSignal.ActorsConnecting](GridSignal.DynamicPower)
     )
     assertEquals(newState.grid.lastCommandSent, Some(GridSignal.Connected))
     assertEquals(actions, expectedActions(GridSignal.Connected, newState))
@@ -108,7 +111,8 @@ class GridConnectionManagerSuite extends FunSuite {
     "releaseConnection on absent actor leaves state unchanged and sends Disconnected"
   ) {
     val state = State()
-    val (newState, actions) = manager.releaseConnection(GridSignal.Car, state)
+    val (newState, actions) =
+      manager.releaseConnection(GridSignal.DynamicPower, state)
 
     assertEquals(
       newState.grid.devicesRequestedConnection,

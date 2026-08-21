@@ -10,14 +10,30 @@ import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
 import calespiga.config.DynamicPowerProcessorConfig
+import calespiga.processor.grid.GridConnectionManager
+import calespiga.model.GridSignal
 import calespiga.model.Event.System.StartupEvent
 
 object DynamicPowerProcessor {
 
+  private object NoopGridConnectionManager
+      extends calespiga.processor.grid.GridConnectionManager {
+    override def requestConnection(
+        actor: calespiga.model.GridSignal.ActorsConnecting,
+        state: State
+    ) = (state, Set.empty)
+    override def releaseConnection(
+        actor: calespiga.model.GridSignal.ActorsConnecting,
+        state: State
+    ) = (state, Set.empty)
+    override def applyConnection(state: State) = (state, Set.empty)
+  }
+
   private final case class Impl(
       consumerOrderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
-      config: DynamicPowerProcessorConfig
+      config: DynamicPowerProcessorConfig,
+      manager: GridConnectionManager
   ) extends SingleProcessor {
 
     private def processDynamicPower(
@@ -25,7 +41,7 @@ object DynamicPowerProcessor {
         timestamp: Instant,
         unusedFvPower: Power,
         unusedGridPower: Power
-    ): (State, Set[Action]) =
+    ): (State, Set[Action], Power) =
       val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 
       val dynamicUsedPower = orderedConsumers
@@ -45,7 +61,7 @@ object DynamicPowerProcessor {
       // we can in the future save the power assigned to each consumer and at the end
       // display it in an UI item or similar
 
-      orderedConsumers.foldLeft(
+      val foldResult = orderedConsumers.foldLeft(
         (state, Set.empty[Action], totalDynamicPower, Power.zero)
       ) {
         case (
@@ -69,16 +85,18 @@ object DynamicPowerProcessor {
               currentPowerUsed + result.powerUsed
             )
           }
-      } match {
-        case (finalState, finalActions, _, totalDynamicPowerUsed) =>
-          (
-            finalState,
-            finalActions + Action.SetUIItemValue(
-              config.dynamicFVPowerUsedItem,
-              totalDynamicPowerUsed.fv.toString
-            )
-          )
       }
+
+      val (finalState, finalActions, _, totalDynamicPowerUsed) = foldResult
+
+      (
+        finalState,
+        finalActions + Action.SetUIItemValue(
+          config.dynamicFVPowerUsedItem,
+          totalDynamicPowerUsed.fv.toString
+        ),
+        totalDynamicPowerUsed
+      )
 
     override def process(
         state: State,
@@ -112,7 +130,17 @@ object DynamicPowerProcessor {
           .map(Power.ofGrid)
           .getOrElse(Power.zero)
 
-        processDynamicPower(state, timestamp, unusedFvPower, unusedGridPower)
+        val (stateAfter, actions, totalDynamicUsed) =
+          processDynamicPower(state, timestamp, unusedFvPower, unusedGridPower)
+
+        if (totalDynamicUsed.grid > 0) then
+          val (s, mgrActs) =
+            manager.requestConnection(GridSignal.DynamicPower, stateAfter)
+          (s, actions ++ mgrActs)
+        else
+          val (s, mgrActs) =
+            manager.releaseConnection(GridSignal.DynamicPower, stateAfter)
+          (s, actions ++ mgrActs)
 
       case _ =>
         (state, Set.empty)
@@ -122,7 +150,16 @@ object DynamicPowerProcessor {
   def apply(
       consumerOrderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
+      config: DynamicPowerProcessorConfig,
+      manager: GridConnectionManager
+  ): SingleProcessor = Impl(consumerOrderer, consumers, config, manager)
+
+  // Backwards-compatible overload used in tests and simple instantiations
+  def apply(
+      consumerOrderer: DynamicConsumerOrderer,
+      consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig
-  ): SingleProcessor = Impl(consumerOrderer, consumers, config)
+  ): SingleProcessor =
+    Impl(consumerOrderer, consumers, config, NoopGridConnectionManager)
 
 }
