@@ -7,7 +7,7 @@ object GridSignal {
 
   sealed trait ActorsConnecting
   case object Manual extends ActorsConnecting
-  case object Car extends ActorsConnecting
+  case object DynamicPower extends ActorsConnecting
   case object Batteries extends ActorsConnecting
 
   sealed trait ControllerState
@@ -47,15 +47,15 @@ object GridSignal {
 
   implicit val actorsConnectingEncoder: Encoder[ActorsConnecting] =
     Encoder.instance {
-      case Manual    => Json.fromString("manual")
-      case Car       => Json.fromString("car")
-      case Batteries => Json.fromString("batteries")
+      case Manual       => Json.fromString("manual")
+      case DynamicPower => Json.fromString("dynamic")
+      case Batteries    => Json.fromString("batteries")
     }
 
   implicit val actorsConnectingDecoder: Decoder[ActorsConnecting] =
     Decoder.decodeString.emap {
       case "manual"    => Right(Manual)
-      case "car"       => Right(Car)
+      case "dynamic"   => Right(DynamicPower)
       case "batteries" => Right(Batteries)
       case other       => Left(s"Invalid GridSignal.ActorsConnecting: $other")
     }

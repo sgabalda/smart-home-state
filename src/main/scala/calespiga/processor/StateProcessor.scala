@@ -51,10 +51,9 @@ object StateProcessor {
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
       uiBlacklist: Ref[IO, Set[String]],
-      zoneId: ZoneId
+      zoneId: ZoneId,
+      gridManager: GridConnectionManager
   ): List[EffectfulProcessor] = {
-    val gridManager = GridConnectionManager(config.grid)
-
     List(
       TemperaturesProcessor(
         config.temperatureFans,
@@ -101,13 +100,16 @@ object StateProcessor {
       zoneId: ZoneId
   ): StateProcessor = {
 
+    val gridManager = GridConnectionManager(config.grid)
+
     val allButPowerProcessors =
-      allButPower(config, mqttBlacklist, uiBlacklist, zoneId)
+      allButPower(config, mqttBlacklist, uiBlacklist, zoneId, gridManager)
 
     val power = PowerProcessor(
       config.power,
       zoneId,
-      allButPowerProcessors.flatMap(_.dynamicPowerConsumer).toSet
+      allButPowerProcessors.flatMap(_.dynamicPowerConsumer).toSet,
+      gridManager
     )
 
     this.apply(

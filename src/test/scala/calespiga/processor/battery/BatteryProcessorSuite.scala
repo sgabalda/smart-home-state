@@ -5,7 +5,7 @@ import calespiga.model._
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 import java.time.Instant
-import calespiga.processor.grid.GridConnectionManager
+import calespiga.processor.grid.GridConnectionManagerStub
 
 class BatteryProcessorSuite extends FunSuite {
 
@@ -16,31 +16,7 @@ class BatteryProcessorSuite extends FunSuite {
   // Test infrastructure
   // ======================
 
-  private class ManagerStub extends GridConnectionManager {
-    var requestCalls: List[GridSignal.ActorsConnecting] = Nil
-    var releaseCalls: List[GridSignal.ActorsConnecting] = Nil
-
-    override def requestConnection(
-        actor: GridSignal.ActorsConnecting,
-        state: State
-    ): (State, Set[Action]) = {
-      requestCalls = requestCalls :+ actor
-      (state, Set.empty)
-    }
-
-    override def releaseConnection(
-        actor: GridSignal.ActorsConnecting,
-        state: State
-    ): (State, Set[Action]) = {
-      releaseCalls = releaseCalls :+ actor
-      (state, Set.empty)
-    }
-
-    override def applyConnection(state: State): (State, Set[Action]) =
-      (state, Set.empty)
-  }
-
-  private def processor(manager: ManagerStub) =
+  private def processor(manager: GridConnectionManagerStub) =
     BatteryChargeProcessor(config, manager)
 
   private def baseState =
@@ -79,7 +55,10 @@ class BatteryProcessorSuite extends FunSuite {
           .modify(_.battery.mediumChargeTariff)
           .setTo(None)
 
-  private def assertManager(manager: ManagerStub, shouldConnect: Boolean) =
+  private def assertManager(
+      manager: GridConnectionManagerStub,
+      shouldConnect: Boolean
+  ) =
     if shouldConnect then
       assertEquals(manager.requestCalls, List(GridSignal.Batteries))
       assertEquals(manager.releaseCalls, Nil)
@@ -92,7 +71,7 @@ class BatteryProcessorSuite extends FunSuite {
   // ======================
 
   test("Battery status reported updates state and UI") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val (newState, actions) = p.process(
@@ -109,7 +88,7 @@ class BatteryProcessorSuite extends FunSuite {
   }
 
   test("Battery low tariff change updates state") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val (newState, actions) = p.process(
@@ -129,7 +108,7 @@ class BatteryProcessorSuite extends FunSuite {
   }
 
   test("Battery medium tariff change updates state") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val (newState, actions) = p.process(
@@ -188,7 +167,7 @@ class BatteryProcessorSuite extends FunSuite {
         s"Grid change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
       ) {
 
-        val manager = new ManagerStub()
+        val manager = new GridConnectionManagerStub()
         val p = processor(manager)
 
         val initialState =
@@ -214,7 +193,7 @@ class BatteryProcessorSuite extends FunSuite {
     scenarios.foreach { s =>
       test(s"Status change: tariff=$gridTariff newStatus=${s.status}") {
 
-        val manager = new ManagerStub()
+        val manager = new GridConnectionManagerStub()
         val p = processor(manager)
 
         val initialState =
@@ -247,7 +226,7 @@ class BatteryProcessorSuite extends FunSuite {
         s"Relevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
       ) {
 
-        val manager = new ManagerStub()
+        val manager = new GridConnectionManagerStub()
         val p = processor(manager)
 
         val initialState =
@@ -278,7 +257,7 @@ class BatteryProcessorSuite extends FunSuite {
         s"Irrelevant tariff change: tariff=$gridTariff status=${s.status} config=${s.tariff}"
       ) {
 
-        val manager = new ManagerStub()
+        val manager = new GridConnectionManagerStub()
         val p = processor(manager)
 
         val initialState =
@@ -308,7 +287,7 @@ class BatteryProcessorSuite extends FunSuite {
   // ======================
 
   test("Startup event restores UI state") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val initialState = State()
@@ -332,7 +311,7 @@ class BatteryProcessorSuite extends FunSuite {
   }
 
   test("Startup event with empty state produces no actions") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val (_, actions) = p.process(State(), Event.System.StartupEvent, now)
@@ -341,7 +320,7 @@ class BatteryProcessorSuite extends FunSuite {
   }
 
   test("No grid tariff means no connection") {
-    val manager = new ManagerStub()
+    val manager = new GridConnectionManagerStub()
     val p = processor(manager)
 
     val state =

@@ -12,13 +12,15 @@ object PowerProcessor {
   def apply(
       config: PowerProcessorConfig,
       zoneId: ZoneId,
-      dynamicConsumers: Set[DynamicPowerConsumer]
+      dynamicConsumers: Set[DynamicPowerConsumer],
+      manager: calespiga.processor.grid.GridConnectionManager
   ): SingleProcessor =
     PowerAvailableProcessor(config.powerAvailable, zoneId).andThen(
       DynamicPowerProcessor(
         DynamicConsumerOrderer(),
         dynamicConsumers,
-        config.dynamicPower
+        config.dynamicPower,
+        manager
       ).andThen(DynamicPowerPriorityProcessor())
     )
 }

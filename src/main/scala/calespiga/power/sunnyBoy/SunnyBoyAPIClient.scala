@@ -1,7 +1,7 @@
 package calespiga.power.sunnyBoy
 
 import cats.effect.{IO, Resource}
-import calespiga.power.PowerProductionSource.*
+import calespiga.power.PowerDataSource.*
 import calespiga.config.SunnyBoyConfig
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.Logger
