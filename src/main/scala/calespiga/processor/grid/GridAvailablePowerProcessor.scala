@@ -21,6 +21,8 @@ private object GridAvailablePowerProcessor {
         timestamp: Instant
     ): (State, Set[Action]) = eventData match {
 
+      // NOTE: no need to update the available power on system startup, as the grid source will always emit the current tariff event on startup, which will be handled below and will update the available power in the state.
+
       case Event.Grid.GridTariffChanged(tariff) =>
         // in the future, if we have different power available for each tariff,
         // we can update the state with the new available power here

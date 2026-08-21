@@ -42,7 +42,9 @@ object PowerDataSource {
 
     private def getPowerGridConsumption: IO[Float] = IO.pure(
       0.0f
-    ) // Placeholder for actual grid consumption retrieval logic in the future
+    ) // Placeholder for actual grid consumption retrieval logic in the future. For the moment,
+    // as there is no sensor to measure the grid consumption, we will return 0.0f always.
+    // This will be updated in the future when a sensor is available to measure the grid consumption.
     override def getEnergyProductionInfo
         : Stream[IO, Either[ErrorManager.Error, PowerData]] =
       Stream
