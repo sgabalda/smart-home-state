@@ -262,6 +262,13 @@ object Event {
         override val consumerUniqueCode: String =
           "EstufaInfrarrojosPrioritatConsumSHS"
       }
+      @InputEventOHItem("CarChargerPrioritatConsumSHS")
+      case class CarChargerPowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerConsumerPriorityChanged {
+        override val consumerUniqueCode: String =
+          "CarChargerPrioritatConsumSHS"
+      }
     }
   }
 }

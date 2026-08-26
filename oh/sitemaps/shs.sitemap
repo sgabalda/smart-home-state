@@ -73,7 +73,7 @@ sitemap shs label="Ca l'espiga SHS" {
         }
         Frame label="Dispositius" {
             Setpoint item=CalentadorPrioritatConsumSHS icon="heater_display" label="Prioritat calentador [%d]" minValue=1 maxValue=3 step=1
-            Setpoint item=EstufaInfrarrojosPrioritatConsumSHS icon="heater_display" label="Prioritat estufa infrarrojos [%d]" minValue=1 maxValue=3 step=1
+            Setpoint item=EstufaInfrarrojosPrioritatConsumSHS icon="radiator" label="Prioritat estufa infrarrojos [%d]" minValue=1 maxValue=3 step=1
             Setpoint item=CarChargerPrioritatConsumSHS icon="electric_car" label="Prioritat carregador VE [%d]" minValue=1 maxValue=3 step=1
         }
 
@@ -105,7 +105,7 @@ sitemap shs label="Ca l'espiga SHS" {
     Text item=CarChargerTitle label="Vehicle Elèctric" icon="electric_car"
     {
         Frame label="Carregador vehicle" {
-            Selection item=CarChargerSetSHS icon="switch" mappings=["off"="Off","on"="On","automatic_fv"="Automàtic FV"]
+            Selection item=CarChargerSetSHS icon="switch" mappings=["off"="Off","on"="On","automatic_fv"="Automàtic FV","automatic_grid"="Automàtic xarxa"]
             Text item=CarChargerStatusSHS icon="car" label="Estat: [%s]"
             Text item=CarChargerSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
             Text item=CarChargerMicroControladorEstatSHS icon="network" label="Estat microcontrolador: [%s]"
