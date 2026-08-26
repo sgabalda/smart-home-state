@@ -1,12 +1,12 @@
 package calespiga.processor.carCharger
 
 import munit.FunSuite
-import calespiga.model.{State, Action, CarChargerSignal}
+import calespiga.model.{Action, CarChargerSignal}
 import calespiga.processor.power.dynamic.Power
-import com.softwaremill.quicklens.*
 import calespiga.processor.utils.SyncDetectorStub
 import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
+import CarChargerTestHelper.stateWithCarCharger
 
 class CarChargerDynamicPowerConsumerSuite extends FunSuite {
 
@@ -15,30 +15,6 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
   private val now = Instant.parse("2024-01-15T10:00:00Z")
   private val consumer =
     CarChargerDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
-
-  private def stateWithCarCharger(
-      switchStatus: Option[CarChargerSignal.ControllerState] = None,
-      lastCommandSent: Option[CarChargerSignal.ControllerState] = None,
-      lastCommandReceived: Option[CarChargerSignal.UserCommand] = None,
-      currentPowerWatts: Option[Float] = None
-  ): State =
-    State()
-      .modify(_.carCharger)
-      .setTo(
-        State.CarCharger(
-          switchStatus = switchStatus,
-          lastCommandSent = lastCommandSent,
-          lastCommandReceived = lastCommandReceived,
-          lastChange = None,
-          lastSyncing = None,
-          currentPowerWatts = currentPowerWatts,
-          lastEnergyUpdate = None,
-          lastAccumulatedEnergyWh = None,
-          accumulatedAtDayStartWh = None,
-          online = None,
-          chargingStatus = None
-        )
-      )
 
   // ============================================================
   // currentlyUsedDynamicPower tests

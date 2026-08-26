@@ -7,31 +7,13 @@ import java.time.Instant
 import java.time.ZoneId
 import com.softwaremill.quicklens.*
 import calespiga.processor.ProcessorConfigHelper
+import CarChargerTestHelper.stateWithCarCharger
 
 class CarChargerEnergyProcessorSuite extends FunSuite {
 
   private val now = Instant.parse("2024-01-15T10:00:00Z")
   private val zone: ZoneId = ZoneId.of("UTC")
   private val config = ProcessorConfigHelper.carCharger
-
-  private def stateWithCarCharger(
-      switchStatus: Option[CarChargerSignal.ControllerState] = None,
-      currentPowerWatts: Option[Float] = None,
-      lastEnergyUpdate: Option[Instant] = None,
-      lastAccumulatedEnergyWh: Option[Float] = None,
-      accumulatedAtDayStartWh: Option[Float] = None
-  ): State =
-    State()
-      .modify(_.carCharger)
-      .setTo(
-        State.CarCharger(
-          switchStatus = switchStatus,
-          currentPowerWatts = currentPowerWatts,
-          lastEnergyUpdate = lastEnergyUpdate,
-          lastAccumulatedEnergyWh = lastAccumulatedEnergyWh,
-          accumulatedAtDayStartWh = accumulatedAtDayStartWh
-        )
-      )
 
   test("CarChargerEnergyProcessor does nothing for non-energy events") {
     val processor = CarChargerEnergyProcessor(config, zone)
