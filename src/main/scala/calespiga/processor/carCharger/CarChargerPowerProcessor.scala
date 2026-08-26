@@ -23,6 +23,8 @@ private[carCharger] object CarChargerPowerProcessor {
           calespiga.model.CarChargerSignal.On
         case calespiga.model.CarChargerSignal.SetAutomaticFV =>
           calespiga.model.CarChargerSignal.Off
+        case calespiga.model.CarChargerSignal.SetAutomaticGrid =>
+          calespiga.model.CarChargerSignal.Off
 
     override def process(
         state: State,

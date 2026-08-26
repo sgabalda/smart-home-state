@@ -92,6 +92,46 @@ class CarChargerPowerProcessorSuite extends FunSuite {
     assertEquals(actions, expectedActions)
   }
 
+  test(
+    "CarChargerPowerCommandChanged SetAutomaticGrid sends Off to microcontroller"
+  ) {
+    val initialState = stateWithCarCharger()
+    val event = CarChargerPowerCommandChanged(CarChargerSignal.SetAutomaticGrid)
+    val processor = CarChargerPowerProcessor(config)
+    val (newState, actions) = processor.process(initialState, event, now)
+
+    assertEquals(
+      newState.carCharger.lastCommandReceived,
+      Some(CarChargerSignal.SetAutomaticGrid)
+    )
+    assertEquals(
+      newState.carCharger.lastCommandSent,
+      Some(CarChargerSignal.Off)
+    )
+
+    val expectedActions = Set(
+      Action.SendMqttStringMessage(config.mqttTopicForCommand, "off"),
+      Action.Periodic(
+        config.id + CommandActions.COMMAND_ACTION_SUFFIX,
+        Action.SendMqttStringMessage(config.mqttTopicForCommand, "off"),
+        config.resendInterval
+      )
+    )
+
+    assertEquals(actions, expectedActions)
+  }
+
+  test("SetAutomaticGrid converts to and from its command string") {
+    assertEquals(
+      CarChargerSignal.userCommandToString(CarChargerSignal.SetAutomaticGrid),
+      "automatic_grid"
+    )
+    assertEquals(
+      CarChargerSignal.userCommandFromString("automatic_grid"),
+      Right(CarChargerSignal.SetAutomaticGrid)
+    )
+  }
+
   test("StartupEvent sends last user command or Off if none") {
     val initialState =
       stateWithCarCharger(lastCommandReceived = Some(CarChargerSignal.TurnOff))

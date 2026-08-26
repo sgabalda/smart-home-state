@@ -39,6 +39,7 @@ object CarChargerSignal {
   case object TurnOff extends UserCommand
   case object TurnOn extends UserCommand
   case object SetAutomaticFV extends UserCommand
+  case object SetAutomaticGrid extends UserCommand
 
   implicit val userCommandEncoder: Encoder[UserCommand] = Encoder.instance {
     c => Json.fromString(userCommandToString(c))
@@ -53,12 +54,14 @@ object CarChargerSignal {
     case TurnOff        => "off"
     case TurnOn         => "on"
     case SetAutomaticFV => "automatic_fv"
+    case SetAutomaticGrid => "automatic_grid"
 
   def userCommandFromString(str: String): Either[String, UserCommand] =
     str.toLowerCase match
       case "off"          => Right(TurnOff)
       case "on"           => Right(TurnOn)
       case "automatic_fv" => Right(SetAutomaticFV)
+      case "automatic_grid" => Right(SetAutomaticGrid)
       case other => Left(s"Invalid CarChargerSignal.UserCommand: $other")
 
   given Schema[UserCommand] = Schema.string
