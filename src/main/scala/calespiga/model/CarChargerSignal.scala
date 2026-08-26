@@ -51,16 +51,16 @@ object CarChargerSignal {
     }
 
   def userCommandToString(cmd: UserCommand): String = cmd match
-    case TurnOff        => "off"
-    case TurnOn         => "on"
-    case SetAutomaticFV => "automatic_fv"
+    case TurnOff          => "off"
+    case TurnOn           => "on"
+    case SetAutomaticFV   => "automatic_fv"
     case SetAutomaticGrid => "automatic_grid"
 
   def userCommandFromString(str: String): Either[String, UserCommand] =
     str.toLowerCase match
-      case "off"          => Right(TurnOff)
-      case "on"           => Right(TurnOn)
-      case "automatic_fv" => Right(SetAutomaticFV)
+      case "off"            => Right(TurnOff)
+      case "on"             => Right(TurnOn)
+      case "automatic_fv"   => Right(SetAutomaticFV)
       case "automatic_grid" => Right(SetAutomaticGrid)
       case other => Left(s"Invalid CarChargerSignal.UserCommand: $other")
 
