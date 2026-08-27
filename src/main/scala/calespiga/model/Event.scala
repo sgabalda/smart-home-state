@@ -213,6 +213,11 @@ object Event {
     case class CarChargerPowerCommandChanged(
         command: CarChargerSignal.UserCommand
     ) extends CarChargerData
+
+    @InputEventOHItem("CarChargerMaxGridTariffSHS")
+    case class CarChargerMaxGridTariffChanged(
+        tariff: BatteryChargeTariff
+    ) extends CarChargerData
   }
 
   object Power {

@@ -136,6 +136,7 @@ object State {
       currentPowerWatts: Option[Float] = None,
       currentDynamicFVPower: Option[Float] = None,
       currentDynamicGridPower: Option[Float] = None,
+      maxGridTariff: Option[BatteryChargeTariff] = None,
       lastEnergyUpdate: Option[java.time.Instant] = None,
       lastAccumulatedEnergyWh: Option[Float] = None,
       accumulatedAtDayStartWh: Option[Float] = None,

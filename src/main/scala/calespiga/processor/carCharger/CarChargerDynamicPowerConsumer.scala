@@ -11,8 +11,21 @@ import calespiga.config.CarChargerConfig
 import calespiga.processor.utils.SyncDetector
 import calespiga.model.CarChargerChargingStatus
 import java.time.Instant
+import calespiga.model.{BatteryChargeTariff, GridTariff}
 
 object CarChargerDynamicPowerConsumer {
+
+  private def gridTariffAllowed(state: State): Boolean =
+    state.carCharger.maxGridTariff.forall {
+      case BatteryChargeTariff.AllTariffs => true
+      case BatteryChargeTariff.PlaAndVall =>
+        state.grid.currentTariff.exists(t =>
+          t == GridTariff.Pla || t == GridTariff.Vall
+        )
+      case BatteryChargeTariff.Vall =>
+        state.grid.currentTariff.contains(GridTariff.Vall)
+      case BatteryChargeTariff.NoneCharge => false
+    }
 
   private case class Impl(
       config: CarChargerConfig,
@@ -79,7 +92,9 @@ object CarChargerDynamicPowerConsumer {
                   if (isAutomaticFV)
                     powerToUse.fv >= config.chargerPowerWatts
                   else
-                    powerToUse.fv + powerToUse.grid >= config.chargerPowerWatts
+                    powerToUse.fv +
+                      (if gridTariffAllowed(state) then powerToUse.grid
+                       else 0f) >= config.chargerPowerWatts
                 if (enoughPower) CarChargerSignal.On
                 else CarChargerSignal.Off
 
@@ -96,7 +111,11 @@ object CarChargerDynamicPowerConsumer {
                 case _ => Power.ofFv(config.chargerPowerWatts)
             else
               val fvPower = powerToUse.fv.min(config.chargerPowerWatts)
-              Power(fvPower, config.chargerPowerWatts - fvPower)
+              val gridPower = config.chargerPowerWatts - fvPower
+              Power(
+                fvPower,
+                if gridTariffAllowed(state) then gridPower else 0f
+              )
 
           val newState = state
             .modify(_.carCharger.lastCommandSent)

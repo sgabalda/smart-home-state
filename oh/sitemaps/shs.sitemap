@@ -106,6 +106,7 @@ sitemap shs label="Ca l'espiga SHS" {
     {
         Frame label="Carregador vehicle" {
             Selection item=CarChargerSetSHS icon="switch" mappings=["off"="Off","on"="On","automatic_fv"="Automàtic FV","automatic_grid"="Automàtic xarxa"]
+            Selection item=CarChargerMaxGridTariffSHS icon="energy" label="Màxima tarifa xarxa: [%s]" mappings=["vall"="Vall","pla + vall"="Pla + Vall","all tariffs"="Totes"]
             Text item=CarChargerStatusSHS icon="car" label="Estat: [%s]"
             Text item=CarChargerSincronitzacioSHS icon="time" label="Sincronitzacio [%s]"
             Text item=CarChargerMicroControladorEstatSHS icon="network" label="Estat microcontrolador: [%s]"

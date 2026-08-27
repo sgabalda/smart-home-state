@@ -1,10 +1,16 @@
 package calespiga.processor.carCharger
 
 import munit.FunSuite
-import calespiga.model.{Action, CarChargerSignal}
+import calespiga.model.{
+  Action,
+  BatteryChargeTariff,
+  CarChargerSignal,
+  GridTariff
+}
 import calespiga.processor.power.dynamic.Power
 import calespiga.processor.utils.SyncDetectorStub
 import java.time.Instant
+import com.softwaremill.quicklens.*
 import calespiga.processor.ProcessorConfigHelper
 import CarChargerTestHelper.stateWithCarCharger
 
@@ -332,6 +338,34 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
     )
     assertEquals(result.powerUsed, Power(fvPower, 500f))
     assertEquals(result.state.carCharger.currentDynamicFVPower, Some(fvPower))
+    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+  }
+
+  test("usePower: grid mode excludes grid power above the configured tariff") {
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
+      maxGridTariff = Some(BatteryChargeTariff.PlaAndVall)
+    )
+      .modify(_.grid.currentTariff)
+      .setTo(Some(GridTariff.Pic))
+
+    val result = consumer.usePower(state, Power(1600f, 1000f), now)
+
+    assertEquals(result.powerUsed, Power.zero)
+    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+  }
+
+  test("usePower: grid mode accepts the configured tariff") {
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
+      maxGridTariff = Some(BatteryChargeTariff.PlaAndVall)
+    )
+      .modify(_.grid.currentTariff)
+      .setTo(Some(GridTariff.Pla))
+
+    val result = consumer.usePower(state, Power(1600f, 500f), now)
+
+    assertEquals(result.powerUsed, Power(1600f, 500f))
     assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
   }
 
