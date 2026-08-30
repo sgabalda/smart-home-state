@@ -78,6 +78,7 @@ final case class CarChargerConfig(
     powerItem: String,
     energyTodayItem: String,
     chargingStatusItem: String,
+    maxGridTariffItem: String,
     onlineStatusItem: String,
     syncStatusItem: String,
     offlineNotification: String,

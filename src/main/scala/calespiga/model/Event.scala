@@ -213,6 +213,11 @@ object Event {
     case class CarChargerPowerCommandChanged(
         command: CarChargerSignal.UserCommand
     ) extends CarChargerData
+
+    @InputEventOHItem("CarChargerMaxGridTariffSHS")
+    case class CarChargerMaxGridTariffChanged(
+        tariff: BatteryChargeTariff
+    ) extends CarChargerData
   }
 
   object Power {
@@ -261,6 +266,13 @@ object Event {
       ) extends DynamicPowerConsumerPriorityChanged {
         override val consumerUniqueCode: String =
           "EstufaInfrarrojosPrioritatConsumSHS"
+      }
+      @InputEventOHItem("CarChargerPrioritatConsumSHS")
+      case class CarChargerPowerPriorityChanged(
+          priority: Int
+      ) extends DynamicPowerConsumerPriorityChanged {
+        override val consumerUniqueCode: String =
+          "CarChargerPrioritatConsumSHS"
       }
     }
   }

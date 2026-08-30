@@ -100,6 +100,7 @@ CAR CHARGER
 String CarChargerTitle "Vehicle Elèctric"
 String CarChargerStatusSHS "Estat carregador"
 String CarChargerSetSHS "Mode carregador"
+String CarChargerMaxGridTariffSHS "Màxima tarifa xarxa carregador"
 String CarChargerMicroControladorEstatSHS "Estat microcontrolador carregador"
 String CarChargerSincronitzacioSHS "Estat sincronització carregador"
 String CarChargerChargingStatusSHS "Estat càrrega carregador"

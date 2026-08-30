@@ -25,6 +25,9 @@ object CarChargerProcessor {
         CarChargerPowerProcessor(config)
       )
       .andThen(
+        CarChargerGridTariffProcessor(config)
+      )
+      .andThen(
         carChargerSyncDetector
       )
       .withDynamicConsumer(

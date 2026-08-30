@@ -326,4 +326,26 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
     )
     assertEquals(actions, Set.empty, "No actions should be generated")
   }
+
+  test("CarChargerPowerPriorityChanged uses the configured consumer code") {
+    val carChargerCode =
+      Event.Power.DynamicPower
+        .CarChargerPowerPriorityChanged(1)
+        .consumerUniqueCode
+    val initialConsumers = Seq("consumer1", carChargerCode, "consumer3")
+    val state = stateWithConsumers(initialConsumers)
+    val event =
+      Event.Power.DynamicPower.CarChargerPowerPriorityChanged(priority = 1)
+
+    val (newState, actions) = processor.process(state, event, now)
+
+    assertEquals(
+      newState.powerManagement.dynamic.consumersOrder,
+      Seq(carChargerCode, "consumer1", "consumer3")
+    )
+    assertEquals(
+      actions,
+      Set[Action](Action.SetUIItemValue(item = "consumer1", value = "2"))
+    )
+  }
 }

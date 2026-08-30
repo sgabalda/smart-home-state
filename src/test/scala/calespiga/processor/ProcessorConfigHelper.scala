@@ -157,6 +157,7 @@ object ProcessorConfigHelper {
     powerItem = "carcharger/powerItem",
     energyTodayItem = "carcharger/energyTodayItem",
     chargingStatusItem = "carcharger/chargingStatusItem",
+    maxGridTariffItem = "carcharger/maxGridTariffItem",
     onlineStatusItem = "carcharger/onlineStatusItem",
     syncStatusItem = "carcharger/syncStatusItem",
     offlineNotification = "El dispositiu de control del carregador no respon",

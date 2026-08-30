@@ -1,12 +1,12 @@
 package calespiga.processor.carCharger
 
 import munit.FunSuite
-import calespiga.model.{State, Action, CarChargerSignal}
+import calespiga.model.{Action, CarChargerSignal}
 import calespiga.model.CarChargerChargingStatus
 import calespiga.model.Event.CarCharger.*
 import java.time.Instant
-import com.softwaremill.quicklens.*
 import calespiga.processor.ProcessorConfigHelper
+import CarChargerTestHelper.stateWithCarCharger
 
 class CarChargerStatusProcessorSuite extends FunSuite {
 
@@ -16,21 +16,6 @@ class CarChargerStatusProcessorSuite extends FunSuite {
   // ======================
   // Test infrastructure
   // ======================
-
-  private def stateWithCarCharger(
-      switchStatus: Option[CarChargerSignal.ControllerState] = None,
-      currentPowerWatts: Option[Float] = None,
-      lastEnergyUpdate: Option[Instant] = None
-  ): State =
-    State()
-      .modify(_.carCharger)
-      .setTo(
-        State.CarCharger(
-          switchStatus = switchStatus,
-          currentPowerWatts = currentPowerWatts,
-          lastEnergyUpdate = lastEnergyUpdate
-        )
-      )
 
   // ======================
   // CarChargerStatusProcessor Tests
