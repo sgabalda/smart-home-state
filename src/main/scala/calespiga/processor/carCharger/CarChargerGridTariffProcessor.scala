@@ -6,6 +6,24 @@ import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
 import java.time.Instant
 
+/** Processor for managing the maximum grid tariff configuration for car charger
+  * charging.
+  *
+  * The car charger's `automatic_grid` mode allows charging using both solar FV
+  * and grid power. This processor manages the user-configured tariff preference
+  * (maxGridTariff).
+  *
+  * **Default Behavior**: When maxGridTariff is None (default state), the car
+  * charger will NOT charge in automatic_grid mode because gridTariffAllowed()
+  * requires an explicit tariff preference to be set. Users must set a tariff
+  * preference via the UI before grid charging will function:
+  *   - "vall" - allow charging only during valley/night tariff
+  *   - "pla + vall" - allow charging during off-peak and valley tariffs
+  *   - "all tariffs" - allow charging anytime when power is available
+  *
+  * This ensures grid charging is not accidentally enabled for expensive peak
+  * hours.
+  */
 private[carCharger] object CarChargerGridTariffProcessor {
 
   private final case class Impl(config: CarChargerConfig)

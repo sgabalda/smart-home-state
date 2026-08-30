@@ -15,6 +15,20 @@ import calespiga.model.{BatteryChargeTariff, GridTariff}
 
 object CarChargerDynamicPowerConsumer {
 
+  /** Determines if the current grid tariff is allowed for charging based on the
+    * configured maximum tariff.
+    *
+    * The logic is:
+    *   - If maxGridTariff is None: all tariffs are allowed (default permissive
+    *     behavior)
+    *   - AllTariffs: always allow
+    *   - PlaAndVall: allow only Pla (off-peak) or Vall (valley/night) tariffs
+    *   - Vall: allow only Vall (valley/night) tariff
+    *   - NoneCharge: never allow (user explicitly blocked grid charging)
+    *
+    * This ensures the car charger respects user-configured tariff preferences,
+    * preventing charging during expensive peak hours.
+    */
   private def gridTariffAllowed(state: State): Boolean =
     state.carCharger.maxGridTariff.forall {
       case BatteryChargeTariff.AllTariffs => true

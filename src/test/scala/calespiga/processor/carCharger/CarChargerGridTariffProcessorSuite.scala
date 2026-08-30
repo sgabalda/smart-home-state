@@ -42,4 +42,34 @@ class CarChargerGridTariffProcessorSuite extends FunSuite {
       Set[Action](Action.SetUIItemValue(item, "vall"))
     )
   }
+
+  test("ignores unrelated events without modification") {
+    val initialState = State()
+      .modify(_.carCharger.maxGridTariff)
+      .setTo(Some(BatteryChargeTariff.PlaAndVall))
+
+    // Test various unrelated events that should not modify state or generate actions
+    val powerEvent = Event.CarCharger.CarChargerPowerReported(1500f)
+    val (stateAfterPower, actionsAfterPower) =
+      processor.process(initialState, powerEvent, now)
+
+    assertEquals(
+      stateAfterPower.carCharger.maxGridTariff,
+      initialState.carCharger.maxGridTariff
+    )
+    assertEquals(actionsAfterPower, Set.empty)
+
+    // Test with another unrelated event
+    val statusEvent = Event.CarCharger.CarChargerStatusReported(
+      calespiga.model.CarChargerSignal.On
+    )
+    val (stateAfterStatus, actionsAfterStatus) =
+      processor.process(initialState, statusEvent, now)
+
+    assertEquals(
+      stateAfterStatus.carCharger.maxGridTariff,
+      initialState.carCharger.maxGridTariff
+    )
+    assertEquals(actionsAfterStatus, Set.empty)
+  }
 }
