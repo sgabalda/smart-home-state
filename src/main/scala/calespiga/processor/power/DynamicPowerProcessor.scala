@@ -1,6 +1,6 @@
 package calespiga.processor.power
 
-import calespiga.processor.SingleProcessor
+import calespiga.processor.EffectfulProcessor
 import calespiga.model.State
 import calespiga.model.Event
 import calespiga.model.Event.Power.PowerStatusReported
@@ -13,28 +13,20 @@ import calespiga.config.DynamicPowerProcessorConfig
 import calespiga.processor.grid.GridConnectionManager
 import calespiga.model.GridSignal
 import calespiga.model.Event.System.StartupEvent
+import cats.effect.IO
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 object DynamicPowerProcessor {
 
-  private object NoopGridConnectionManager
-      extends calespiga.processor.grid.GridConnectionManager {
-    override def requestConnection(
-        actor: calespiga.model.GridSignal.ActorsConnecting,
-        state: State
-    ) = (state, Set.empty)
-    override def releaseConnection(
-        actor: calespiga.model.GridSignal.ActorsConnecting,
-        state: State
-    ) = (state, Set.empty)
-    override def applyConnection(state: State) = (state, Set.empty)
-  }
+  private given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   private final case class Impl(
       consumerOrderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig,
       manager: GridConnectionManager
-  ) extends SingleProcessor {
+  ) extends EffectfulProcessor {
 
     private def processDynamicPower(
         state: State,
@@ -102,13 +94,13 @@ object DynamicPowerProcessor {
         state: State,
         eventData: Event.EventData,
         timestamp: Instant
-    ): (State, Set[Action]) = eventData match
+    ): IO[(State, Set[Action])] = eventData match
       case StartupEvent =>
         val stateWithConsumers = consumerOrderer.addMissingConsumersToState(
           state,
           consumers
         )
-        (
+        IO.pure(
           stateWithConsumers,
           Set(Action.SetUIItemValue(config.dynamicFVPowerUsedItem, "0")) ++
             stateWithConsumers.powerManagement.dynamic.consumersOrder.zipWithIndex
@@ -130,20 +122,35 @@ object DynamicPowerProcessor {
           .map(Power.ofGrid)
           .getOrElse(Power.zero)
 
-        val (stateAfter, actions, totalDynamicUsed) =
-          processDynamicPower(state, timestamp, unusedFvPower, unusedGridPower)
-
-        if (totalDynamicUsed.grid > 0) then
-          val (s, mgrActs) =
-            manager.requestConnection(GridSignal.DynamicPower, stateAfter)
-          (s, actions ++ mgrActs)
-        else
-          val (s, mgrActs) =
-            manager.releaseConnection(GridSignal.DynamicPower, stateAfter)
-          (s, actions ++ mgrActs)
+        for {
+          _ <- logger.info(
+            s"Starting a dynamic power cycle: unusedFvPower: $unusedFvPower, unusedGridPower: $unusedGridPower"
+          )
+          (stateAfter, actions, totalDynamicUsed) =
+            processDynamicPower(
+              state,
+              timestamp,
+              unusedFvPower,
+              unusedGridPower
+            )
+          _ <- logger.info(s"Current dynamic power usage: $totalDynamicUsed")
+          (s, mgrActs) <-
+            if (totalDynamicUsed.grid > 0) then
+              logger
+                .info("Requesting connection to grid")
+                .as(
+                  manager.requestConnection(GridSignal.DynamicPower, stateAfter)
+                )
+            else
+              logger
+                .info("Releasing connection to grid")
+                .as(
+                  manager.releaseConnection(GridSignal.DynamicPower, stateAfter)
+                )
+        } yield (s, actions ++ mgrActs)
 
       case _ =>
-        (state, Set.empty)
+        IO.pure((state, Set.empty))
 
   }
 
@@ -152,14 +159,6 @@ object DynamicPowerProcessor {
       consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig,
       manager: GridConnectionManager
-  ): SingleProcessor = Impl(consumerOrderer, consumers, config, manager)
-
-  // Backwards-compatible overload used in tests and simple instantiations
-  def apply(
-      consumerOrderer: DynamicConsumerOrderer,
-      consumers: Set[DynamicPowerConsumer],
-      config: DynamicPowerProcessorConfig
-  ): SingleProcessor =
-    Impl(consumerOrderer, consumers, config, NoopGridConnectionManager)
+  ): EffectfulProcessor = Impl(consumerOrderer, consumers, config, manager)
 
 }

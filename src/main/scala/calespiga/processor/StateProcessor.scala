@@ -113,7 +113,7 @@ object StateProcessor {
     )
 
     this.apply(
-      (allButPowerProcessors :+ power.toEffectful)*
+      (allButPowerProcessors :+ power)*
     )
 
   }
