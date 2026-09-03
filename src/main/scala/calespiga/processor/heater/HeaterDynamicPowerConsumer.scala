@@ -10,6 +10,7 @@ import com.softwaremill.quicklens.*
 import calespiga.config.HeaterConfig
 import calespiga.processor.utils.SyncDetector
 import java.time.Instant
+import cats.effect.IO
 
 object HeaterDynamicPowerConsumer {
 
@@ -22,24 +23,29 @@ object HeaterDynamicPowerConsumer {
 
     override def uniqueCode: String = config.dynamicConsumerCode
 
-    override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
+    override def currentlyUsedDynamicPower(
+        state: State,
+        now: Instant
+    ): IO[Power] =
 
-      if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
-        heaterSyncDetector.checkIfInSync(state) match
-          case SyncDetector.NotInSync(since)
-              if now.isAfter(
-                since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
-              ) =>
-            Power.zero
-          case _ =>
-            state.heater.status match {
-              case Some(HeaterSignal.Power500)  => Power.ofFv(500f)
-              case Some(HeaterSignal.Power1000) => Power.ofFv(1000f)
-              case Some(HeaterSignal.Power2000) => Power.ofFv(2000f)
-              case _                            => Power.zero
-            }
-      } else {
-        Power.zero
+      IO.pure {
+        if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
+          heaterSyncDetector.checkIfInSync(state) match
+            case SyncDetector.NotInSync(since)
+                if now.isAfter(
+                  since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+                ) =>
+              Power.zero
+            case _ =>
+              state.heater.status match {
+                case Some(HeaterSignal.Power500)  => Power.ofFv(500f)
+                case Some(HeaterSignal.Power1000) => Power.ofFv(1000f)
+                case Some(HeaterSignal.Power2000) => Power.ofFv(2000f)
+                case _                            => Power.zero
+              }
+        } else {
+          Power.zero
+        }
       }
 
     override def usePower(

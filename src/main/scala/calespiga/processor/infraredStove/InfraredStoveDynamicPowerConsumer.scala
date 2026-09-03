@@ -10,6 +10,7 @@ import com.softwaremill.quicklens.*
 import calespiga.config.InfraredStoveConfig
 import calespiga.processor.utils.SyncDetector
 import java.time.Instant
+import cats.effect.IO
 
 private object InfraredStoveDynamicPowerConsumer {
 
@@ -22,23 +23,27 @@ private object InfraredStoveDynamicPowerConsumer {
 
     override def uniqueCode: String = config.dynamicConsumerCode
 
-    override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
-
-      if (state.infraredStove.lastCommandReceived.contains(SetAutomatic)) {
-        infraredStoveSyncDetector.checkIfInSync(state) match
-          case SyncDetector.NotInSync(since)
-              if now.isAfter(
-                since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
-              ) =>
-            Power.zero
-          case _ =>
-            state.infraredStove.status match {
-              case Some(InfraredStoveSignal.Power600)  => Power.ofFv(600f)
-              case Some(InfraredStoveSignal.Power1200) => Power.ofFv(1200f)
-              case _                                   => Power.zero
-            }
-      } else {
-        Power.zero
+    override def currentlyUsedDynamicPower(
+        state: State,
+        now: Instant
+    ): IO[Power] =
+      IO.pure {
+        if (state.infraredStove.lastCommandReceived.contains(SetAutomatic)) {
+          infraredStoveSyncDetector.checkIfInSync(state) match
+            case SyncDetector.NotInSync(since)
+                if now.isAfter(
+                  since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+                ) =>
+              Power.zero
+            case _ =>
+              state.infraredStove.status match {
+                case Some(InfraredStoveSignal.Power600)  => Power.ofFv(600f)
+                case Some(InfraredStoveSignal.Power1200) => Power.ofFv(1200f)
+                case _                                   => Power.zero
+              }
+        } else {
+          Power.zero
+        }
       }
 
     override def usePower(

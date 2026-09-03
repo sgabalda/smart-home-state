@@ -13,6 +13,7 @@ import java.time.Instant
 import com.softwaremill.quicklens.*
 import calespiga.processor.ProcessorConfigHelper
 import CarChargerTestHelper.stateWithCarCharger
+import cats.effect.IO
 
 class CarChargerDynamicPowerConsumerSuite extends FunSuite {
 
@@ -21,6 +22,12 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
   private val now = Instant.parse("2024-01-15T10:00:00Z")
   private val consumer =
     CarChargerDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
+
+  private def assertEquals(actual: IO[Power], expected: Power): IO[Unit] = {
+    actual.map { actualPower =>
+      assertEquals(actualPower, expected)
+    }
+  }
 
   // ============================================================
   // currentlyUsedDynamicPower tests

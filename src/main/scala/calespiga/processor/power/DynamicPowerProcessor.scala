@@ -16,6 +16,7 @@ import calespiga.model.Event.System.StartupEvent
 import cats.effect.IO
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import cats.implicits.*
 
 object DynamicPowerProcessor {
 
@@ -40,9 +41,9 @@ object DynamicPowerProcessor {
         _ <- logger.info(
           s"Processing dynamic power for consumers in this order: ${orderedConsumers.map(_.uniqueCode).mkString(", ")}"
         )
-        dynamicUsedPower = orderedConsumers
-          .map(_.currentlyUsedDynamicPower(state, timestamp))
-          .fold(Power.zero)(_ + _)
+        dynamicUsedPower <- orderedConsumers
+          .traverse(_.currentlyUsedDynamicPower(state, timestamp))
+          .map(_.fold(Power.zero)(_ + _))
 
         // as currently the available grid power is fixed and not measured,
         // to be consistent we need to take out the grid power used by the dynamic consumers from the available grid power,

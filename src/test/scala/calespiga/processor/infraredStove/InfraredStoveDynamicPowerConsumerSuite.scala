@@ -51,7 +51,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -64,7 +64,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -76,7 +76,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -89,7 +89,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(600f))
+    result.map(assertEquals(_, Power.ofFv(600f)))
   }
 
   test(
@@ -102,7 +102,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(1200f))
+    result.map(assertEquals(_, Power.ofFv(1200f)))
   }
 
   test(
@@ -115,7 +115,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -128,7 +128,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -151,10 +151,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.zero,
-      "Should return zero power when not in sync beyond timeout"
+    result.map(
+      assertEquals(
+        _,
+        Power.zero,
+        "Should return zero power when not in sync beyond timeout"
+      )
     )
   }
 
@@ -176,10 +178,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.ofFv(1200f),
-      "Should return normal power when NotInSyncNow"
+    result.map(
+      assertEquals(
+        _,
+        Power.ofFv(1200f),
+        "Should return normal power when NotInSyncNow"
+      )
     )
   }
 
@@ -203,10 +207,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.ofFv(600f),
-      "Should return normal power when not in sync within timeout"
+    result.map(
+      assertEquals(
+        _,
+        Power.ofFv(600f),
+        "Should return normal power when not in sync within timeout"
+      )
     )
   }
 

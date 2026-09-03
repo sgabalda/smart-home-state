@@ -5,6 +5,7 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.model.Action
 import calespiga.processor.power.dynamic.Power
 import java.time.Instant
+import cats.effect.IO
 
 trait DynamicPowerConsumer {
 
@@ -26,7 +27,7 @@ trait DynamicPowerConsumer {
     * @return
     *   the amount of dynamic power currently used
     */
-  def currentlyUsedDynamicPower(state: State, now: Instant): Power
+  def currentlyUsedDynamicPower(state: State, now: Instant): IO[Power]
 
   /** Applies the given amount of dynamic power for this consumer
     *

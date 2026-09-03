@@ -12,6 +12,7 @@ import calespiga.processor.utils.SyncDetector
 import calespiga.model.CarChargerChargingStatus
 import java.time.Instant
 import calespiga.model.{BatteryChargeTariff, GridTariff}
+import cats.effect.IO
 
 object CarChargerDynamicPowerConsumer {
 
@@ -50,38 +51,43 @@ object CarChargerDynamicPowerConsumer {
 
     override def uniqueCode: String = config.dynamicConsumerCode
 
-    override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
-      state.carCharger.lastCommandReceived match
-        case Some(SetAutomaticFV) =>
-          carChargerSyncDetector.checkIfInSync(state) match
-            case calespiga.processor.utils.SyncDetector.NotInSync(since)
-                if now.isAfter(
-                  since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
-                ) =>
-              Power.zero
-            case _ =>
-              state.carCharger.switchStatus match
-                case Some(CarChargerSignal.On) =>
-                  state.carCharger.currentPowerWatts
-                    .map(p => Power.ofFv(p))
-                    .getOrElse(Power.ofFv(config.chargerPowerWatts))
-                case _ => Power.zero
-        case Some(SetAutomaticGrid) =>
-          carChargerSyncDetector.checkIfInSync(state) match
-            case calespiga.processor.utils.SyncDetector.NotInSync(since)
-                if now.isAfter(
-                  since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
-                ) =>
-              Power.zero
-            case _ =>
-              state.carCharger.switchStatus match
-                case Some(CarChargerSignal.On) =>
-                  Power(
-                    state.carCharger.currentDynamicFVPower.getOrElse(0f),
-                    state.carCharger.currentDynamicGridPower.getOrElse(0f)
-                  )
-                case _ => Power.zero
-        case _ => Power.zero
+    override def currentlyUsedDynamicPower(
+        state: State,
+        now: Instant
+    ): IO[Power] =
+      IO.pure {
+        state.carCharger.lastCommandReceived match
+          case Some(SetAutomaticFV) =>
+            carChargerSyncDetector.checkIfInSync(state) match
+              case calespiga.processor.utils.SyncDetector.NotInSync(since)
+                  if now.isAfter(
+                    since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+                  ) =>
+                Power.zero
+              case _ =>
+                state.carCharger.switchStatus match
+                  case Some(CarChargerSignal.On) =>
+                    state.carCharger.currentPowerWatts
+                      .map(p => Power.ofFv(p))
+                      .getOrElse(Power.ofFv(config.chargerPowerWatts))
+                  case _ => Power.zero
+          case Some(SetAutomaticGrid) =>
+            carChargerSyncDetector.checkIfInSync(state) match
+              case calespiga.processor.utils.SyncDetector.NotInSync(since)
+                  if now.isAfter(
+                    since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+                  ) =>
+                Power.zero
+              case _ =>
+                state.carCharger.switchStatus match
+                  case Some(CarChargerSignal.On) =>
+                    Power(
+                      state.carCharger.currentDynamicFVPower.getOrElse(0f),
+                      state.carCharger.currentDynamicGridPower.getOrElse(0f)
+                    )
+                  case _ => Power.zero
+          case _ => Power.zero
+      }
 
     override def usePower(
         state: State,

@@ -3,6 +3,7 @@ package calespiga.processor.power.dynamic
 import munit.FunSuite
 import calespiga.model.State
 import com.softwaremill.quicklens.*
+import cats.effect.IO
 
 class DynamicConsumerOrdererSuite extends FunSuite {
 
@@ -13,7 +14,7 @@ class DynamicConsumerOrdererSuite extends FunSuite {
       override def currentlyUsedDynamicPower(
           state: State,
           now: java.time.Instant
-      ): Power = Power.zero
+      ): IO[Power] = IO.pure(Power.zero)
       override def usePower(
           state: State,
           powerToUse: Power,

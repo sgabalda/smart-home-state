@@ -9,6 +9,7 @@ import calespiga.processor.utils.SyncDetectorStub
 import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
+import cats.effect.IO
 
 class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
@@ -17,6 +18,22 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val consumer =
     HeaterDynamicPowerConsumer(dummyConfig, SyncDetectorStub())
+
+  private def assertEquals(actual: IO[Power], expected: Power): IO[Unit] = {
+    actual.map { actualPower =>
+      assertEquals(actualPower, expected)
+    }
+  }
+
+  private def assertEquals(
+      actual: IO[Power],
+      expected: Power,
+      message: String
+  ): IO[Unit] = {
+    actual.map { actualPower =>
+      assertEquals(actualPower, expected, message)
+    }
+  }
 
   private def stateWithHeater(
       status: Option[HeaterSignal.ControllerState] = None,
