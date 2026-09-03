@@ -33,55 +33,65 @@ object DynamicPowerProcessor {
         timestamp: Instant,
         unusedFvPower: Power,
         unusedGridPower: Power
-    ): (State, Set[Action], Power) =
+    ): IO[(State, Set[Action], Power)] =
       val orderedConsumers = consumerOrderer.orderConsumers(state, consumers)
 
-      val dynamicUsedPower = orderedConsumers
-        .map(_.currentlyUsedDynamicPower(state, timestamp))
-        .fold(Power.zero)(_ + _)
+      for {
+        _ <- logger.info(
+          s"Processing dynamic power for consumers in this order: ${orderedConsumers.map(_.uniqueCode).mkString(", ")}"
+        )
+        dynamicUsedPower = orderedConsumers
+          .map(_.currentlyUsedDynamicPower(state, timestamp))
+          .fold(Power.zero)(_ + _)
 
-      // as currently the available grid power is fixed and not measured,
-      // to be consistent we need to take out the grid power used by the dynamic consumers from the available grid power,
-      // otherwise we could be using more power than the available one.
-      // when the available grid power is measured, we can remove this and just use the measured available grid power that should eb in the state
-      val adjustedAvailableGridPower =
-        Power.ofGrid((unusedGridPower - dynamicUsedPower).grid)
+        // as currently the available grid power is fixed and not measured,
+        // to be consistent we need to take out the grid power used by the dynamic consumers from the available grid power,
+        // otherwise we could be using more power than the available one.
+        // when the available grid power is measured, we can remove this and just use the measured available grid power that should eb in the state
+        adjustedAvailableGridPower = Power.ofGrid(
+          (unusedGridPower - dynamicUsedPower).grid
+        )
 
-      val totalDynamicPower = unusedFvPower + adjustedAvailableGridPower +
-        dynamicUsedPower
+        totalDynamicPower =
+          unusedFvPower + adjustedAvailableGridPower + dynamicUsedPower
 
-      // we can in the future save the power assigned to each consumer and at the end
-      // display it in an UI item or similar
+        _ <- logger.info(
+          s"Total dynamic power available: $totalDynamicPower (unusedFvPower: $unusedFvPower, adjustedAvailableGridPower: $adjustedAvailableGridPower, dynamicUsedPower: $dynamicUsedPower)"
+        )
 
-      val foldResult = orderedConsumers.foldLeft(
-        (state, Set.empty[Action], totalDynamicPower, Power.zero)
-      ) {
-        case (
-              (
-                currentState,
-                currentActions,
-                remainingPower,
-                currentPowerUsed
-              ),
-              consumer
-            ) =>
-          if (remainingPower <= Power.zero) {
-            (currentState, currentActions, Power.zero, currentPowerUsed)
-          } else {
-            val result =
-              consumer.usePower(currentState, remainingPower, timestamp)
-            (
-              result.state,
-              currentActions ++ result.actions,
-              remainingPower - result.powerUsed,
-              currentPowerUsed + result.powerUsed
-            )
+        // we can in the future save the power assigned to each consumer and at the end
+        // display it in an UI item or similar
+
+        (finalState, finalActions, remainingPower, totalDynamicPowerUsed) =
+          orderedConsumers.foldLeft(
+            (state, Set.empty[Action], totalDynamicPower, Power.zero)
+          ) {
+            case (
+                  (
+                    currentState,
+                    currentActions,
+                    remainingPower,
+                    currentPowerUsed
+                  ),
+                  consumer
+                ) =>
+              if (remainingPower <= Power.zero) {
+                (currentState, currentActions, Power.zero, currentPowerUsed)
+              } else {
+                val result =
+                  consumer.usePower(currentState, remainingPower, timestamp)
+                (
+                  result.state,
+                  currentActions ++ result.actions,
+                  remainingPower - result.powerUsed,
+                  currentPowerUsed + result.powerUsed
+                )
+              }
           }
-      }
-
-      val (finalState, finalActions, _, totalDynamicPowerUsed) = foldResult
-
-      (
+        _ <- logger.info(
+          s"Dynamic power processing completed. Total dynamic power used: $totalDynamicPowerUsed, remaining power: $remainingPower"
+        )
+      } yield (
         finalState,
         finalActions + Action.SetUIItemValue(
           config.dynamicFVPowerUsedItem,
@@ -126,7 +136,7 @@ object DynamicPowerProcessor {
           _ <- logger.info(
             s"Starting a dynamic power cycle: unusedFvPower: $unusedFvPower, unusedGridPower: $unusedGridPower"
           )
-          (stateAfter, actions, totalDynamicUsed) =
+          (stateAfter, actions, totalDynamicUsed) <-
             processDynamicPower(
               state,
               timestamp,
