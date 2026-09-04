@@ -28,7 +28,7 @@ object DynamicPowerConsumerStub {
         state: State,
         powerToUse: Power,
         now: Instant
-    ): DynamicPowerResult =
-      usePowerStub(state, powerToUse, now)
+    ): IO[DynamicPowerResult] =
+      IO.pure(usePowerStub(state, powerToUse, now))
   }
 }

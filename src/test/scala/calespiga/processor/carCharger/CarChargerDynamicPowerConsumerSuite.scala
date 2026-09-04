@@ -191,9 +191,11 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.usePower(state, Power.ofFv(3000f), now)
 
-    assertEquals(result.actions, Set.empty)
-    assertEquals(result.powerUsed, Power.zero)
-    assertEquals(result.state, resultState)
+    result.map { result =>
+      assertEquals(result.actions, Set.empty)
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state, resultState)
+    }
   }
 
   test(
@@ -204,26 +206,27 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.On)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
+      assertEquals(
+        result.state.carCharger.currentDynamicFVPower,
+        Some(dummyConfig.chargerPowerWatts)
+      )
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
 
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.On)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
-    assertEquals(
-      result.state.carCharger.currentDynamicFVPower,
-      Some(dummyConfig.chargerPowerWatts)
-    )
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assert(result.actions.nonEmpty)
+      assertEquals(result.actions.size, 2)
 
-    assert(result.actions.nonEmpty)
-    assertEquals(result.actions.size, 2)
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
-    assertEquals(mqttAction.message, "on")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
+      assertEquals(mqttAction.message, "on")
+    }
   }
 
   test(
@@ -234,22 +237,23 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
 
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.Off)
-    )
-    assertEquals(result.powerUsed, Power.zero)
-    assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assert(result.actions.nonEmpty)
+      assertEquals(result.actions.size, 2)
 
-    assert(result.actions.nonEmpty)
-    assertEquals(result.actions.size, 2)
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "off")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "off")
+    }
   }
 
   test("usePower: sets On at boundary when power == chargerPowerWatts") {
@@ -259,17 +263,18 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumer.usePower(state, Power.ofFv(dummyConfig.chargerPowerWatts), now)
-
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.On)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
-    assertEquals(
-      result.state.carCharger.currentDynamicFVPower,
-      Some(dummyConfig.chargerPowerWatts)
-    )
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.On)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
+      assertEquals(
+        result.state.carCharger.currentDynamicFVPower,
+        Some(dummyConfig.chargerPowerWatts)
+      )
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    }
   }
 
   test("usePower: sets Off and uses zero power when NotInSync beyond timeout") {
@@ -287,21 +292,22 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(3000f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assert(result.actions.nonEmpty)
+      assertEquals(result.actions.size, 2)
 
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.Off)
-    )
-    assertEquals(result.powerUsed, Power.zero)
-    assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
-    assert(result.actions.nonEmpty)
-    assertEquals(result.actions.size, 2)
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "off")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "off")
+    }
   }
 
   test("usePower: grid mode uses FV power first") {
@@ -314,17 +320,18 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
       Power.ofFv(dummyConfig.chargerPowerWatts + 500f),
       now
     )
-
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.On)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
-    assertEquals(
-      result.state.carCharger.currentDynamicFVPower,
-      Some(dummyConfig.chargerPowerWatts)
-    )
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.On)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
+      assertEquals(
+        result.state.carCharger.currentDynamicFVPower,
+        Some(dummyConfig.chargerPowerWatts)
+      )
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    }
   }
 
   test("usePower: grid mode fills the remaining power from the grid") {
@@ -338,14 +345,15 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
       Power(fvPower, 500f),
       now
     )
-
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.On)
-    )
-    assertEquals(result.powerUsed, Power(fvPower, 500f))
-    assertEquals(result.state.carCharger.currentDynamicFVPower, Some(fvPower))
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.On)
+      )
+      assertEquals(result.powerUsed, Power(fvPower, 500f))
+      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(fvPower))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+    }
   }
 
   test("usePower: grid mode excludes grid power above the configured tariff") {
@@ -357,9 +365,10 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
       .setTo(Some(GridTariff.Pic))
 
     val result = consumer.usePower(state, Power(1600f, 1000f), now)
-
-    assertEquals(result.powerUsed, Power.zero)
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    result.map { result =>
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    }
   }
 
   test("usePower: grid mode accepts the configured tariff") {
@@ -371,9 +380,10 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
       .setTo(Some(GridTariff.Pla))
 
     val result = consumer.usePower(state, Power(1600f, 500f), now)
-
-    assertEquals(result.powerUsed, Power(1600f, 500f))
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+    result.map { result =>
+      assertEquals(result.powerUsed, Power(1600f, 500f))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+    }
   }
 
   test(
@@ -388,14 +398,15 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
       Power(dummyConfig.chargerPowerWatts - 500f, 499f),
       now
     )
-
-    assertEquals(
-      result.state.carCharger.lastCommandSent,
-      Some(CarChargerSignal.Off)
-    )
-    assertEquals(result.powerUsed, Power.zero)
-    assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-    assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+    }
   }
 
 }

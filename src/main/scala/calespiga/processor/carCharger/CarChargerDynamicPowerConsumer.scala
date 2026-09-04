@@ -93,7 +93,7 @@ object CarChargerDynamicPowerConsumer {
         state: State,
         powerToUse: Power,
         now: Instant
-    ): DynamicPowerResult =
+    ): IO[DynamicPowerResult] =
       state.carCharger.lastCommandReceived match
         case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
           val isAutomaticFV = state.carCharger.lastCommandReceived.contains(
@@ -145,10 +145,12 @@ object CarChargerDynamicPowerConsumer {
             .modify(_.carCharger.currentDynamicGridPower)
             .setTo(Some(powerUsed.grid))
 
-          DynamicPowerResult(
-            newState,
-            actions.commandActionWithResend(desiredControllerState),
-            powerUsed
+          IO.pure(
+            DynamicPowerResult(
+              newState,
+              actions.commandActionWithResend(desiredControllerState),
+              powerUsed
+            )
           )
 
         case _ =>
@@ -159,7 +161,7 @@ object CarChargerDynamicPowerConsumer {
             .setTo(None)
 
           // car charger is not in automatic mode, do not use dynamic power
-          DynamicPowerResult(newState, Set.empty, Power.zero)
+          IO.pure(DynamicPowerResult(newState, Set.empty, Power.zero))
 
   }
 

@@ -45,7 +45,7 @@ trait DynamicPowerConsumer {
       state: State,
       powerToUse: Power,
       now: Instant
-  ): DynamicPowerResult
+  ): IO[DynamicPowerResult]
 }
 
 object DynamicPowerConsumer {

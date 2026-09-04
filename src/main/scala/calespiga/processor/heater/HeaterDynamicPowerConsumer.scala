@@ -52,14 +52,14 @@ object HeaterDynamicPowerConsumer {
         state: State,
         powerToUse: Power,
         now: Instant
-    ): DynamicPowerResult =
+    ): IO[DynamicPowerResult] =
       if (
         state.heater.lastCommandReceived.getOrElse(
           HeaterSignal.TurnOff
         ) != SetAutomatic
       ) {
         // heater is not in automatic mode, do not use dynamic power
-        DynamicPowerResult(state, Set.empty, Power.zero)
+        IO.pure(DynamicPowerResult(state, Set.empty, Power.zero))
       } else {
         val desiredPowerLevel = heaterSyncDetector.checkIfInSync(state) match {
           case SyncDetector.NotInSync(since)
@@ -86,10 +86,12 @@ object HeaterDynamicPowerConsumer {
             case _                      => Power.zero
           }
 
-        DynamicPowerResult(
-          newState,
-          actions.commandActionWithResend(desiredPowerLevel),
-          powerUsed
+        IO.pure(
+          DynamicPowerResult(
+            newState,
+            actions.commandActionWithResend(desiredPowerLevel),
+            powerUsed
+          )
         )
       }
 

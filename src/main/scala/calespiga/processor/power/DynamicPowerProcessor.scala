@@ -63,8 +63,8 @@ object DynamicPowerProcessor {
         // we can in the future save the power assigned to each consumer and at the end
         // display it in an UI item or similar
 
-        (finalState, finalActions, remainingPower, totalDynamicPowerUsed) =
-          orderedConsumers.foldLeft(
+        (finalState, finalActions, remainingPower, totalDynamicPowerUsed) <-
+          orderedConsumers.foldM(
             (state, Set.empty[Action], totalDynamicPower, Power.zero)
           ) {
             case (
@@ -77,16 +77,20 @@ object DynamicPowerProcessor {
                   consumer
                 ) =>
               if (remainingPower <= Power.zero) {
-                (currentState, currentActions, Power.zero, currentPowerUsed)
-              } else {
-                val result =
-                  consumer.usePower(currentState, remainingPower, timestamp)
-                (
-                  result.state,
-                  currentActions ++ result.actions,
-                  remainingPower - result.powerUsed,
-                  currentPowerUsed + result.powerUsed
+                IO.pure(
+                  (currentState, currentActions, Power.zero, currentPowerUsed)
                 )
+              } else {
+
+                consumer.usePower(currentState, remainingPower, timestamp).map {
+                  result =>
+                    (
+                      result.state,
+                      currentActions ++ result.actions,
+                      remainingPower - result.powerUsed,
+                      currentPowerUsed + result.powerUsed
+                    )
+                }
               }
           }
         _ <- logger.info(

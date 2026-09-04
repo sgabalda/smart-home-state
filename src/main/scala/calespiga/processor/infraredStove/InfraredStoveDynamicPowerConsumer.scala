@@ -50,14 +50,14 @@ private object InfraredStoveDynamicPowerConsumer {
         state: State,
         powerToUse: Power,
         now: Instant
-    ): DynamicPowerResult =
+    ): IO[DynamicPowerResult] =
       if (
         state.infraredStove.lastCommandReceived.getOrElse(
           InfraredStoveSignal.TurnOff
         ) != SetAutomatic
       ) {
         // infrared stove is not in automatic mode, do not use dynamic power
-        DynamicPowerResult(state, Set.empty, Power.zero)
+        IO.pure(DynamicPowerResult(state, Set.empty, Power.zero))
       } else {
         val desiredPowerLevel =
           infraredStoveSyncDetector.checkIfInSync(state) match {
@@ -83,10 +83,12 @@ private object InfraredStoveDynamicPowerConsumer {
             case _                             => Power.zero
           }
 
-        DynamicPowerResult(
-          newState,
-          actions.commandActionWithResend(desiredPowerLevel),
-          powerUsed
+        IO.pure(
+          DynamicPowerResult(
+            newState,
+            actions.commandActionWithResend(desiredPowerLevel),
+            powerUsed
+          )
         )
       }
 

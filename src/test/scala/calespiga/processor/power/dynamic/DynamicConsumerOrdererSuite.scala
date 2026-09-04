@@ -19,8 +19,10 @@ class DynamicConsumerOrdererSuite extends FunSuite {
           state: State,
           powerToUse: Power,
           now: java.time.Instant
-      ): DynamicPowerConsumer.DynamicPowerResult =
-        DynamicPowerConsumer.DynamicPowerResult(state, Set.empty, Power.zero)
+      ): IO[DynamicPowerConsumer.DynamicPowerResult] =
+        IO.pure(
+          DynamicPowerConsumer.DynamicPowerResult(state, Set.empty, Power.zero)
+        )
     }
   }
 

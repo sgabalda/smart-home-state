@@ -253,13 +253,15 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
 
-    assertEquals(result.state, state, "State should remain unchanged")
-    assertEquals(result.actions, Set.empty, "No actions should be returned")
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+    result.map { result =>
+      assertEquals(result.state, state, "State should remain unchanged")
+      assertEquals(result.actions, Set.empty, "No actions should be returned")
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
+    }
   }
 
   test(
@@ -269,13 +271,15 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
 
-    assertEquals(result.state, state, "State should remain unchanged")
-    assertEquals(result.actions, Set.empty, "No actions should be returned")
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+    result.map { result =>
+      assertEquals(result.state, state, "State should remain unchanged")
+      assertEquals(result.actions, Set.empty, "No actions should be returned")
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
+    }
   }
 
   test(
@@ -287,43 +291,45 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power2000),
-      "lastCommandSent should be Power2000"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(2000f),
-      "Power used should be 2000"
-    )
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power2000),
+        "lastCommandSent should be Power2000"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(2000f),
+        "Power used should be 2000"
+      )
+      // Check that actions are returned
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    // Check that actions are returned
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
+      // Verify one is immediate MQTT and one is periodic
+      val mqttActions = result.actions.collect {
+        case a: Action.SendMqttStringMessage => a
+      }
+      val periodicActions = result.actions.collect { case a: Action.Periodic =>
+        a
+      }
 
-    // Verify one is immediate MQTT and one is periodic
-    val mqttActions = result.actions.collect {
-      case a: Action.SendMqttStringMessage => a
+      assertEquals(mqttActions.size, 1, "Should have one MQTT action")
+      assertEquals(periodicActions.size, 1, "Should have one periodic action")
+
+      val mqttAction = mqttActions.head
+      assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
+      assertEquals(mqttAction.message, "2000")
+
+      val periodicAction = periodicActions.head
+      assertEquals(
+        periodicAction.id,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
+        "Periodic action ID should match"
+      )
+      assertEquals(periodicAction.period, dummyConfig.resendInterval)
     }
-    val periodicActions = result.actions.collect { case a: Action.Periodic =>
-      a
-    }
 
-    assertEquals(mqttActions.size, 1, "Should have one MQTT action")
-    assertEquals(periodicActions.size, 1, "Should have one periodic action")
-
-    val mqttAction = mqttActions.head
-    assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
-    assertEquals(mqttAction.message, "2000")
-
-    val periodicAction = periodicActions.head
-    assertEquals(
-      periodicAction.id,
-      dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
-      "Periodic action ID should match"
-    )
-    assertEquals(periodicAction.period, dummyConfig.resendInterval)
   }
 
   test(
@@ -335,24 +341,26 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
-      "lastCommandSent should be Power1000"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(1000f),
-      "Power used should be 1000"
-    )
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power1000),
+        "lastCommandSent should be Power1000"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(1000f),
+        "Power used should be 1000"
+      )
 
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "1000")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "1000")
+    }
   }
 
   test(
@@ -363,25 +371,26 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(750f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power500),
+        "lastCommandSent should be Power500"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(500f),
+        "Power used should be 500"
+      )
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power500),
-      "lastCommandSent should be Power500"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(500f),
-      "Power used should be 500"
-    )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "500")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "500")
+    }
   }
 
   test(
@@ -392,25 +401,26 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(300f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Off),
+        "lastCommandSent should be Off"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off),
-      "lastCommandSent should be Off"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "0")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "0")
+    }
   }
 
   test(
@@ -421,12 +431,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(2000f), now)
-
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(1000f))
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power1000)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(1000f))
+    }
   }
 
   test(
@@ -437,12 +448,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(1000f), now)
-
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power500)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(500f))
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power500)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(500f))
+    }
   }
 
   test(
@@ -453,12 +465,13 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(500f), now)
-
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off)
-    )
-    assertEquals(result.powerUsed, Power.zero)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+    }
   }
 
   test(
@@ -471,22 +484,23 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
-
-    assertEquals(
-      result.state.heater.status,
-      Some(HeaterSignal.Power500),
-      "Status should remain unchanged"
-    )
-    assertEquals(
-      result.state.heater.lastCommandReceived,
-      Some(HeaterSignal.SetAutomatic),
-      "lastCommandReceived should remain unchanged"
-    )
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
-      "Only lastCommandSent should be updated"
-    )
+    result.map { result =>
+      assertEquals(
+        result.state.heater.status,
+        Some(HeaterSignal.Power500),
+        "Status should remain unchanged"
+      )
+      assertEquals(
+        result.state.heater.lastCommandReceived,
+        Some(HeaterSignal.SetAutomatic),
+        "lastCommandReceived should remain unchanged"
+      )
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power1000),
+        "Only lastCommandSent should be updated"
+      )
+    }
   }
 
   test(
@@ -508,24 +522,25 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Off),
+        "Should set Off when not in sync beyond timeout"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Should use zero power when not in sync beyond timeout"
+      )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Off),
-      "Should set Off when not in sync beyond timeout"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Should use zero power when not in sync beyond timeout"
-    )
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "0", "Should send Off command")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "0", "Should send Off command")
+    }
   }
 
   test(
@@ -545,22 +560,23 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power2000),
+        "Should set Power2000 when NotInSyncNow"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(2000f),
+        "Should use normal power when NotInSyncNow"
+      )
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power2000),
-      "Should set Power2000 when NotInSyncNow"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(2000f),
-      "Should use normal power when NotInSyncNow"
-    )
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "2000")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "2000")
+    }
   }
 
   test(
@@ -582,21 +598,22 @@ class HeaterDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(1500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.heater.lastCommandSent,
+        Some(HeaterSignal.Power1000),
+        "Should set Power1000 when not in sync within timeout"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(1000f),
+        "Should use normal power when not in sync within timeout"
+      )
 
-    assertEquals(
-      result.state.heater.lastCommandSent,
-      Some(HeaterSignal.Power1000),
-      "Should set Power1000 when not in sync within timeout"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(1000f),
-      "Should use normal power when not in sync within timeout"
-    )
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "1000")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "1000")
+    }
   }
 }
