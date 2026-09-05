@@ -4,6 +4,7 @@ import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.processor.power.dynamic.Power
 import java.time.Instant
+import cats.effect.IO
 
 object DynamicPowerConsumerStub {
 
@@ -17,14 +18,17 @@ object DynamicPowerConsumerStub {
 
     override def uniqueCode: String = code
 
-    override def currentlyUsedDynamicPower(state: State, now: Instant): Power =
-      currentlyUsedDynamicPowerStub(state, now)
+    override def currentlyUsedDynamicPower(
+        state: State,
+        now: Instant
+    ): IO[Power] =
+      IO.pure(currentlyUsedDynamicPowerStub(state, now))
 
     override def usePower(
         state: State,
         powerToUse: Power,
         now: Instant
-    ): DynamicPowerResult =
-      usePowerStub(state, powerToUse, now)
+    ): IO[DynamicPowerResult] =
+      IO.pure(usePowerStub(state, powerToUse, now))
   }
 }

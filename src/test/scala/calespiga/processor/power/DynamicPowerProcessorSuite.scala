@@ -1,11 +1,14 @@
 package calespiga.processor.power
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{State, Action, Event}
 import calespiga.processor.power.dynamic.{
-  DynamicConsumerOrdererStub,
-  DynamicPowerConsumerStub
+  DynamicConsumerOrderer,
+  DynamicPowerConsumer,
+  DynamicPowerConsumerStub,
+  DynamicConsumerOrdererStub
 }
+import calespiga.config.DynamicPowerProcessorConfig
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import java.time.Instant
 import scala.collection.mutable.ListBuffer
@@ -13,11 +16,31 @@ import calespiga.processor.power.dynamic.Power
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 
-class DynamicPowerProcessorSuite extends FunSuite {
+class DynamicPowerProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.parse("2023-08-17T10:00:00Z")
 
   val processorConfig = ProcessorConfigHelper.dynamicPowerProcessorConfig
+
+  private object NoopGridConnectionManager
+      extends calespiga.processor.grid.GridConnectionManager {
+    override def requestConnection(
+        actor: calespiga.model.GridSignal.ActorsConnecting,
+        state: State
+    ) = (state, Set.empty)
+    override def releaseConnection(
+        actor: calespiga.model.GridSignal.ActorsConnecting,
+        state: State
+    ) = (state, Set.empty)
+    override def applyConnection(state: State) = (state, Set.empty)
+  }
+
+  private def getDynamicPowerProcessor(
+      orderer: DynamicConsumerOrderer,
+      consumers: Set[DynamicPowerConsumer],
+      config: DynamicPowerProcessorConfig
+  ) =
+    DynamicPowerProcessor(orderer, consumers, config, NoopGridConnectionManager)
 
   private def powerStatusEvent(
       powerAvailable: Float,
@@ -66,7 +89,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
         (_, _) => Seq(trackingConsumer2, trackingConsumer1, trackingConsumer3)
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       ordererWithTracking,
       Set(trackingConsumer1, trackingConsumer2, trackingConsumer3),
       processorConfig
@@ -80,13 +103,15 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (_, _) = processor.process(state, event, now)
-
-    assertEquals(
-      callOrder.toList,
-      List("consumer2", "consumer1", "consumer3"),
-      "Consumers should be called in the order returned by DynamicConsumerOrderer"
-    )
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          callOrder.toList,
+          List("consumer2", "consumer1", "consumer3"),
+          "Consumers should be called in the order returned by DynamicConsumerOrderer"
+        )
+      )
   }
 
   test(
@@ -120,7 +145,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq(consumer1, consumer2, consumer3)
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       orderer,
       Set(consumer1, consumer2, consumer3),
       processorConfig
@@ -135,28 +160,35 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (_, _) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map(_ => {
 
-    // Total dynamic power = powerDiscarded + currentlyUsedDynamicPower from all consumers
-    // = 30 + 10 + 5 + 0 = 45
-    val totalDynamicPower = Power.ofFv(45f)
+        // Total dynamic power = powerDiscarded + currentlyUsedDynamicPower from all consumers
+        // = 30 + 10 + 5 + 0 = 45
+        val totalDynamicPower = Power.ofFv(45f)
 
-    assertEquals(powerOffered.size, 3, "All three consumers should be called")
-    assertEquals(
-      powerOffered(0),
-      totalDynamicPower,
-      "First consumer gets total dynamic power"
-    )
-    assertEquals(
-      powerOffered(1),
-      totalDynamicPower - Power.ofFv(15f),
-      "Second consumer gets remaining after first used 15"
-    )
-    assertEquals(
-      powerOffered(2),
-      totalDynamicPower - Power.ofFv(15f) - Power.ofFv(20f),
-      "Third consumer gets remaining after first two"
-    )
+        assertEquals(
+          powerOffered.size,
+          3,
+          "All three consumers should be called"
+        )
+        assertEquals(
+          powerOffered(0),
+          totalDynamicPower,
+          "First consumer gets total dynamic power"
+        )
+        assertEquals(
+          powerOffered(1),
+          totalDynamicPower - Power.ofFv(15f),
+          "Second consumer gets remaining after first used 15"
+        )
+        assertEquals(
+          powerOffered(2),
+          totalDynamicPower - Power.ofFv(15f) - Power.ofFv(20f),
+          "Third consumer gets remaining after first two"
+        )
+      })
   }
 
   test(
@@ -190,7 +222,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq(consumer1, consumer2, consumer3)
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       orderer,
       Set(consumer1, consumer2, consumer3),
       processorConfig
@@ -205,13 +237,15 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (_, _) = processor.process(state, event, now)
-
-    assertEquals(
-      callCount.toList,
-      List(1),
-      "Only first consumer should be called as it consumes all available power"
-    )
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          callCount.toList,
+          List(1),
+          "Only first consumer should be called as it consumes all available power"
+        )
+      )
   }
 
   test("DynamicPowerProcessor aggregates state changes from consumers") {
@@ -242,7 +276,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq(consumer1, consumer2)
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       orderer,
       Set(consumer1, consumer2),
       processorConfig
@@ -256,18 +290,21 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (finalState, _) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((finalState, _) => {
 
-    assertEquals(
-      finalState.powerManagement.production.powerAvailable,
-      Some(100f),
-      "State changes from consumer1 should be preserved"
-    )
-    assertEquals(
-      finalState.powerManagement.production.powerProduced,
-      Some(50f),
-      "State changes from consumer2 should be applied on top of consumer1's changes"
-    )
+        assertEquals(
+          finalState.powerManagement.production.powerAvailable,
+          Some(100f),
+          "State changes from consumer1 should be preserved"
+        )
+        assertEquals(
+          finalState.powerManagement.production.powerProduced,
+          Some(50f),
+          "State changes from consumer2 should be applied on top of consumer1's changes"
+        )
+      })
   }
 
   test(
@@ -298,7 +335,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq(consumer1, consumer2)
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       orderer,
       Set(consumer1, consumer2),
       processorConfig
@@ -312,13 +349,16 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (_, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((_, actions) => {
 
-    assertEquals(
-      actions,
-      Set[Action](action1, action2, action3, total),
-      "All actions from consumers should be aggregated"
-    )
+        assertEquals(
+          actions,
+          Set[Action](action1, action2, action3, total),
+          "All actions from consumers should be aggregated"
+        )
+      })
   }
 
   test(
@@ -329,21 +369,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val orderer = DynamicConsumerOrdererStub()
 
     val processor =
-      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
 
     val state = State()
     val event = Event.System.StartupEvent
 
-    val (finalState, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((finalState, actions) => {
 
-    assertEquals(finalState, state, "State should not change")
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
-      ),
-      "UI item reset action should be emitted"
-    )
+        assertEquals(finalState, state, "State should not change")
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+          ),
+          "UI item reset action should be emitted"
+        )
+      })
   }
 
   test(
@@ -364,7 +407,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val processor =
-      DynamicPowerProcessor(orderer, Set(consumer1), processorConfig)
+      getDynamicPowerProcessor(orderer, Set(consumer1), processorConfig)
 
     val state = State().modify(_.grid.availablePower).setTo(Some(60f))
     val powerDiscarded = 30f
@@ -375,13 +418,15 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (_, _) = processor.process(state, event, now)
-
-    assertEquals(
-      powerOffered(0),
-      Power.ofFv(50f) + Power.ofGrid(60f),
-      "Total dynamic power should include the configured grid power and the consumer's current usage"
-    )
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          powerOffered(0),
+          Power.ofFv(50f) + Power.ofGrid(60f),
+          "Total dynamic power should include the configured grid power and the consumer's current usage"
+        )
+      )
   }
 
   test(
@@ -391,7 +436,8 @@ class DynamicPowerProcessorSuite extends FunSuite {
       orderConsumersStub = (_, _) => Seq.empty
     )
 
-    val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
+    val processor =
+      getDynamicPowerProcessor(orderer, Set.empty, processorConfig)
 
     val state = State()
     val event = powerStatusEvent(
@@ -401,23 +447,26 @@ class DynamicPowerProcessorSuite extends FunSuite {
       linesPower = List.empty
     )
 
-    val (finalState, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((finalState, actions) => {
 
-    assertEquals(
-      finalState,
-      state,
-      "State should remain unchanged when there are no consumers"
-    )
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(
-          processorConfig.dynamicFVPowerUsedItem,
-          "0.0"
+        assertEquals(
+          finalState,
+          state,
+          "State should remain unchanged when there are no consumers"
         )
-      ),
-      "No actions should be emitted when there are no consumers"
-    )
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(
+              processorConfig.dynamicFVPowerUsedItem,
+              "0.0"
+            )
+          ),
+          "No actions should be emitted when there are no consumers"
+        )
+      })
   }
 
   test(
@@ -445,29 +494,32 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val processor =
-      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
 
     val state = State()
     val event = Event.System.StartupEvent
 
-    val (finalState, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((finalState, actions) => {
 
-    assert(
-      addMissingConsumersCalled,
-      "addMissingConsumersToState should be called on StartupEvent"
-    )
-    assertEquals(
-      finalState,
-      expectedState,
-      "State should be the one returned by addMissingConsumersToState"
-    )
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
-      ),
-      "UI item reset action should be emitted"
-    )
+        assert(
+          addMissingConsumersCalled,
+          "addMissingConsumersToState should be called on StartupEvent"
+        )
+        assertEquals(
+          finalState,
+          expectedState,
+          "State should be the one returned by addMissingConsumersToState"
+        )
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+          ),
+          "UI item reset action should be emitted"
+        )
+      })
   }
 
   test(
@@ -480,20 +532,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
         state.modify(_.powerManagement.dynamic.consumersOrder).setTo(Seq.empty)
     )
 
-    val processor = DynamicPowerProcessor(orderer, Set.empty, processorConfig)
+    val processor =
+      getDynamicPowerProcessor(orderer, Set.empty, processorConfig)
 
     val state = State()
     val event = Event.System.StartupEvent
 
-    val (_, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((_, actions) => {
 
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
-      ),
-      "Only reset action should be generated for empty consumer list"
-    )
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0")
+          ),
+          "Only reset action should be generated for empty consumer list"
+        )
+      })
   }
 
   test(
@@ -512,21 +568,24 @@ class DynamicPowerProcessorSuite extends FunSuite {
     )
 
     val processor =
-      DynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
 
     val state = State()
     val event = Event.System.StartupEvent
 
-    val (_, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((_, actions) => {
 
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
-        Action.SetUIItemValue(consumerCode, "1")
-      ),
-      "Should generate reset action and priority action with value 1"
-    )
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
+            Action.SetUIItemValue(consumerCode, "1")
+          ),
+          "Should generate reset action and priority action with value 1"
+        )
+      })
   }
 
   test(
@@ -549,7 +608,7 @@ class DynamicPowerProcessorSuite extends FunSuite {
           .setTo(Seq(consumerCode1, consumerCode2, consumerCode3))
     )
 
-    val processor = DynamicPowerProcessor(
+    val processor = getDynamicPowerProcessor(
       orderer,
       Set(consumer1, consumer2, consumer3),
       processorConfig
@@ -558,17 +617,20 @@ class DynamicPowerProcessorSuite extends FunSuite {
     val state = State()
     val event = Event.System.StartupEvent
 
-    val (_, actions) = processor.process(state, event, now)
+    processor
+      .process(state, event, now)
+      .map((_, actions) => {
 
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
-        Action.SetUIItemValue(consumerCode1, "1"),
-        Action.SetUIItemValue(consumerCode2, "2"),
-        Action.SetUIItemValue(consumerCode3, "3")
-      ),
-      "Should generate reset action and priority actions with values 1, 2, and 3"
-    )
+        assertEquals(
+          actions,
+          Set[Action](
+            Action.SetUIItemValue(processorConfig.dynamicFVPowerUsedItem, "0"),
+            Action.SetUIItemValue(consumerCode1, "1"),
+            Action.SetUIItemValue(consumerCode2, "2"),
+            Action.SetUIItemValue(consumerCode3, "3")
+          ),
+          "Should generate reset action and priority actions with values 1, 2, and 3"
+        )
+      })
   }
 }

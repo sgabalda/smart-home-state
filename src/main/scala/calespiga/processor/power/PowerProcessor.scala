@@ -1,6 +1,6 @@
 package calespiga.processor.power
 
-import calespiga.processor.SingleProcessor
+import calespiga.processor.EffectfulProcessor
 import calespiga.config.PowerProcessorConfig
 import java.time.ZoneId
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
@@ -14,13 +14,13 @@ object PowerProcessor {
       zoneId: ZoneId,
       dynamicConsumers: Set[DynamicPowerConsumer],
       manager: calespiga.processor.grid.GridConnectionManager
-  ): SingleProcessor =
-    PowerAvailableProcessor(config.powerAvailable, zoneId).andThen(
+  ): EffectfulProcessor =
+    PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful.andThen(
       DynamicPowerProcessor(
         DynamicConsumerOrderer(),
         dynamicConsumers,
         config.dynamicPower,
         manager
-      ).andThen(DynamicPowerPriorityProcessor())
+      ).andThen(DynamicPowerPriorityProcessor().toEffectful)
     )
 }

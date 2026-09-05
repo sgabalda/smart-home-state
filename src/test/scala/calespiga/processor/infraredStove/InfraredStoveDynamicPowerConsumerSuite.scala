@@ -1,6 +1,6 @@
 package calespiga.processor.infraredStove
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{State, Action}
 import calespiga.model.InfraredStoveSignal
 import calespiga.processor.power.dynamic.Power
@@ -10,7 +10,7 @@ import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
 
-class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
+class InfraredStoveDynamicPowerConsumerSuite extends CatsEffectSuite {
 
   private val dummyConfig = ProcessorConfigHelper.infraredStoveConfig
 
@@ -51,7 +51,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -64,7 +64,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -76,7 +76,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -89,7 +89,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(600f))
+    result.map(assertEquals(_, Power.ofFv(600f)))
   }
 
   test(
@@ -102,7 +102,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.ofFv(1200f))
+    result.map(assertEquals(_, Power.ofFv(1200f)))
   }
 
   test(
@@ -115,7 +115,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -128,7 +128,7 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(result, Power.zero)
+    result.map(assertEquals(_, Power.zero))
   }
 
   test(
@@ -151,10 +151,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.zero,
-      "Should return zero power when not in sync beyond timeout"
+    result.map(
+      assertEquals(
+        _,
+        Power.zero,
+        "Should return zero power when not in sync beyond timeout"
+      )
     )
   }
 
@@ -176,10 +178,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.ofFv(1200f),
-      "Should return normal power when NotInSyncNow"
+    result.map(
+      assertEquals(
+        _,
+        Power.ofFv(1200f),
+        "Should return normal power when NotInSyncNow"
+      )
     )
   }
 
@@ -203,10 +207,12 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result = consumerWithSyncDetector.currentlyUsedDynamicPower(state, now)
 
-    assertEquals(
-      result,
-      Power.ofFv(600f),
-      "Should return normal power when not in sync within timeout"
+    result.map(
+      assertEquals(
+        _,
+        Power.ofFv(600f),
+        "Should return normal power when not in sync within timeout"
+      )
     )
   }
 
@@ -222,14 +228,15 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
-
-    assertEquals(result.state, state, "State should remain unchanged")
-    assertEquals(result.actions, Set.empty, "No actions should be returned")
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+    result.map { result =>
+      assertEquals(result.state, state, "State should remain unchanged")
+      assertEquals(result.actions, Set.empty, "No actions should be returned")
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
+    }
   }
 
   test(
@@ -238,14 +245,15 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     val state = stateWithInfraredStove()
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
-
-    assertEquals(result.state, state, "State should remain unchanged")
-    assertEquals(result.actions, Set.empty, "No actions should be returned")
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+    result.map { result =>
+      assertEquals(result.state, state, "State should remain unchanged")
+      assertEquals(result.actions, Set.empty, "No actions should be returned")
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
+    }
   }
 
   test(
@@ -256,44 +264,45 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power1200),
+        "lastCommandSent should be Power1200"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(1200f),
+        "Power used should be 1200"
+      )
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power1200),
-      "lastCommandSent should be Power1200"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(1200f),
-      "Power used should be 1200"
-    )
+      // Check that actions are returned
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    // Check that actions are returned
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
+      // Verify one is immediate MQTT and one is periodic
+      val mqttActions = result.actions.collect {
+        case a: Action.SendMqttStringMessage => a
+      }
+      val periodicActions = result.actions.collect { case a: Action.Periodic =>
+        a
+      }
 
-    // Verify one is immediate MQTT and one is periodic
-    val mqttActions = result.actions.collect {
-      case a: Action.SendMqttStringMessage => a
+      assertEquals(mqttActions.size, 1, "Should have one MQTT action")
+      assertEquals(periodicActions.size, 1, "Should have one periodic action")
+
+      val mqttAction = mqttActions.head
+      assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
+      assertEquals(mqttAction.message, "1200")
+
+      val periodicAction = periodicActions.head
+      assertEquals(
+        periodicAction.id,
+        dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
+        "Periodic action ID should match"
+      )
+      assertEquals(periodicAction.period, dummyConfig.resendInterval)
     }
-    val periodicActions = result.actions.collect { case a: Action.Periodic =>
-      a
-    }
-
-    assertEquals(mqttActions.size, 1, "Should have one MQTT action")
-    assertEquals(periodicActions.size, 1, "Should have one periodic action")
-
-    val mqttAction = mqttActions.head
-    assertEquals(mqttAction.topic, dummyConfig.mqttTopicForCommand)
-    assertEquals(mqttAction.message, "1200")
-
-    val periodicAction = periodicActions.head
-    assertEquals(
-      periodicAction.id,
-      dummyConfig.id + CommandActions.COMMAND_ACTION_SUFFIX,
-      "Periodic action ID should match"
-    )
-    assertEquals(periodicAction.period, dummyConfig.resendInterval)
   }
 
   test(
@@ -304,25 +313,26 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(800f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power600),
+        "lastCommandSent should be Power600"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(600f),
+        "Power used should be 600"
+      )
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power600),
-      "lastCommandSent should be Power600"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(600f),
-      "Power used should be 600"
-    )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "600")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "600")
+    }
   }
 
   test(
@@ -333,25 +343,26 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(300f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Off),
+        "lastCommandSent should be Off"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Power used should be zero"
+      )
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Off),
-      "lastCommandSent should be Off"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Power used should be zero"
-    )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "0")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "0")
+    }
   }
 
   test(
@@ -362,12 +373,13 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(1200f), now)
-
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power600)
-    )
-    assertEquals(result.powerUsed, Power.ofFv(600f))
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power600)
+      )
+      assertEquals(result.powerUsed, Power.ofFv(600f))
+    }
   }
 
   test(
@@ -378,12 +390,13 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(600f), now)
-
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Off)
-    )
-    assertEquals(result.powerUsed, Power.zero)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+    }
   }
 
   test(
@@ -396,22 +409,23 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
     )
 
     val result = consumer.usePower(state, Power.ofFv(1500f), now)
-
-    assertEquals(
-      result.state.infraredStove.status,
-      Some(InfraredStoveSignal.Power600),
-      "Status should remain unchanged"
-    )
-    assertEquals(
-      result.state.infraredStove.lastCommandReceived,
-      Some(InfraredStoveSignal.SetAutomatic),
-      "lastCommandReceived should remain unchanged"
-    )
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power1200),
-      "Only lastCommandSent should be updated"
-    )
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.status,
+        Some(InfraredStoveSignal.Power600),
+        "Status should remain unchanged"
+      )
+      assertEquals(
+        result.state.infraredStove.lastCommandReceived,
+        Some(InfraredStoveSignal.SetAutomatic),
+        "lastCommandReceived should remain unchanged"
+      )
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power1200),
+        "Only lastCommandSent should be updated"
+      )
+    }
   }
 
   test(
@@ -433,24 +447,25 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Off),
+        "Should set Off when not in sync beyond timeout"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.zero,
+        "Should use zero power when not in sync beyond timeout"
+      )
+      assert(result.actions.nonEmpty, "Actions should be returned")
+      assertEquals(result.actions.size, 2, "Should return 2 actions")
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Off),
-      "Should set Off when not in sync beyond timeout"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.zero,
-      "Should use zero power when not in sync beyond timeout"
-    )
-    assert(result.actions.nonEmpty, "Actions should be returned")
-    assertEquals(result.actions.size, 2, "Should return 2 actions")
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "0", "Should send Off command")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "0", "Should send Off command")
+    }
   }
 
   test(
@@ -470,22 +485,23 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(2500f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power1200),
+        "Should set Power1200 when NotInSyncNow"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(1200f),
+        "Should use normal power when NotInSyncNow"
+      )
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power1200),
-      "Should set Power1200 when NotInSyncNow"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(1200f),
-      "Should use normal power when NotInSyncNow"
-    )
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "1200")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "1200")
+    }
   }
 
   test(
@@ -507,21 +523,22 @@ class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
 
     val result =
       consumerWithSyncDetector.usePower(state, Power.ofFv(800f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.infraredStove.lastCommandSent,
+        Some(InfraredStoveSignal.Power600),
+        "Should set Power600 when not in sync within timeout"
+      )
+      assertEquals(
+        result.powerUsed,
+        Power.ofFv(600f),
+        "Should use normal power when not in sync within timeout"
+      )
 
-    assertEquals(
-      result.state.infraredStove.lastCommandSent,
-      Some(InfraredStoveSignal.Power600),
-      "Should set Power600 when not in sync within timeout"
-    )
-    assertEquals(
-      result.powerUsed,
-      Power.ofFv(600f),
-      "Should use normal power when not in sync within timeout"
-    )
-
-    val mqttAction = result.actions.collectFirst {
-      case a: Action.SendMqttStringMessage => a
-    }.get
-    assertEquals(mqttAction.message, "600")
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "600")
+    }
   }
 }
