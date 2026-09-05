@@ -139,11 +139,21 @@ object CarChargerDynamicPowerConsumer {
             if now.isAfter(
               since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
             ) =>
-          logger
-            .warn(
-              s"Car charger not in sync for dynamic power usage since $since, ignoring dynamic power usage"
-            )
-            .as(DynamicPowerResult(state, Set.empty, Power.zero))
+          state.carCharger.lastCommandReceived match
+            case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
+              logger
+                .warn(
+                  s"Car charger not in sync $since and automatic, turning off"
+                )
+                .as(
+                  applyCommandAndPower(Power.zero, CarChargerSignal.Off, state)
+                )
+            case _ =>
+              logger
+                .warn(
+                  s"Car charger not in sync $since but not automatic, ignoring dynamic power usage"
+                )
+                .as(DynamicPowerResult(state, Set.empty, Power.zero))
         case _ =>
           state.carCharger.lastCommandReceived match
             case Some(SetAutomaticFV) =>
@@ -190,10 +200,9 @@ object CarChargerDynamicPowerConsumer {
                 if tariffAllowed then powerToUse.grid else 0f
               for {
                 _ <- logger.info(
-                  s"""Automatic Grid: tariff ${state.grid.currentTariff}, 
-                  and allowed tariff ${state.carCharger.maxGridTariff}, 
-                  grid to be used: $tariffAllowed, so grid power: $gridAvailablePower
-                  """
+                  s"Automatic Grid: tariff ${state.grid.currentTariff}, " +
+                    s"and allowed tariff ${state.carCharger.maxGridTariff}, " +
+                    s"grid to be used: $tariffAllowed, so grid power: $gridAvailablePower"
                 )
                 enoughPower =
                   powerToUse.fv + gridAvailablePower >= config.chargerPowerWatts

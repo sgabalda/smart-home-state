@@ -1,6 +1,6 @@
 package calespiga.processor.power
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{State, Action, Event}
 import calespiga.processor.power.dynamic.{
   DynamicConsumerOrderer,
@@ -16,7 +16,7 @@ import calespiga.processor.power.dynamic.Power
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 
-class DynamicPowerProcessorSuite extends FunSuite {
+class DynamicPowerProcessorSuite extends CatsEffectSuite {
 
   val now = Instant.parse("2023-08-17T10:00:00Z")
 

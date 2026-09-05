@@ -1,6 +1,6 @@
 package calespiga.processor.infraredStove
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{State, Action}
 import calespiga.model.InfraredStoveSignal
 import calespiga.processor.power.dynamic.Power
@@ -10,7 +10,7 @@ import java.time.Instant
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
 
-class InfraredStoveDynamicPowerConsumerSuite extends FunSuite {
+class InfraredStoveDynamicPowerConsumerSuite extends CatsEffectSuite {
 
   private val dummyConfig = ProcessorConfigHelper.infraredStoveConfig
 

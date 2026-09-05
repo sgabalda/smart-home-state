@@ -1,6 +1,6 @@
 package calespiga.processor.carCharger
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{
   Action,
   BatteryChargeTariff,
@@ -15,7 +15,7 @@ import calespiga.processor.ProcessorConfigHelper
 import CarChargerTestHelper.stateWithCarCharger
 import cats.effect.IO
 
-class CarChargerDynamicPowerConsumerSuite extends FunSuite {
+class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
 
   private val dummyConfig = ProcessorConfigHelper.carCharger
 
@@ -277,7 +277,9 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
     }
   }
 
-  test("usePower: sets Off and uses zero power when NotInSync beyond timeout") {
+  test(
+    "usePower: sets Off and uses zero power when NotInSync beyond timeout if automatic FV"
+  ) {
     val syncStartTime = now.minusSeconds(120)
     val consumerWithSyncDetector = CarChargerDynamicPowerConsumer(
       dummyConfig,
@@ -307,6 +309,65 @@ class CarChargerDynamicPowerConsumerSuite extends FunSuite {
         case a: Action.SendMqttStringMessage => a
       }.get
       assertEquals(mqttAction.message, "off")
+    }
+  }
+
+  test(
+    "usePower: sets Off and uses zero power when NotInSync beyond timeout if automatic Grid"
+  ) {
+    val syncStartTime = now.minusSeconds(120)
+    val consumerWithSyncDetector = CarChargerDynamicPowerConsumer(
+      dummyConfig,
+      SyncDetectorStub(checkIfInSyncStub =
+        _ => calespiga.processor.utils.SyncDetector.NotInSync(syncStartTime)
+      )
+    )
+
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid)
+    )
+
+    val result =
+      consumerWithSyncDetector.usePower(state, Power.ofFv(3000f), now)
+    result.map { result =>
+      assertEquals(
+        result.state.carCharger.lastCommandSent,
+        Some(CarChargerSignal.Off)
+      )
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assert(result.actions.nonEmpty)
+      assertEquals(result.actions.size, 2)
+
+      val mqttAction = result.actions.collectFirst {
+        case a: Action.SendMqttStringMessage => a
+      }.get
+      assertEquals(mqttAction.message, "off")
+    }
+  }
+
+  test(
+    "usePower: does not change anything when NotInSync beyond timeout if NOT automatic"
+  ) {
+    val syncStartTime = now.minusSeconds(120)
+    val consumerWithSyncDetector = CarChargerDynamicPowerConsumer(
+      dummyConfig,
+      SyncDetectorStub(checkIfInSyncStub =
+        _ => calespiga.processor.utils.SyncDetector.NotInSync(syncStartTime)
+      )
+    )
+
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.TurnOn)
+    )
+
+    val result =
+      consumerWithSyncDetector.usePower(state, Power.ofFv(3000f), now)
+    result.map { result =>
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(result.state, state)
+      assertEquals(result.actions, Set.empty)
     }
   }
 

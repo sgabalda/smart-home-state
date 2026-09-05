@@ -1,6 +1,6 @@
 package calespiga.processor.heater
 
-import munit.FunSuite
+import munit.CatsEffectSuite
 import calespiga.model.{State, Action}
 import calespiga.model.HeaterSignal
 import calespiga.processor.power.dynamic.Power
@@ -11,7 +11,7 @@ import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
 import cats.effect.IO
 
-class HeaterDynamicPowerConsumerSuite extends FunSuite {
+class HeaterDynamicPowerConsumerSuite extends CatsEffectSuite {
 
   private val dummyConfig = ProcessorConfigHelper.heaterConfig
 
