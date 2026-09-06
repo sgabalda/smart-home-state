@@ -106,8 +106,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
     val state = stateWithCarCharger(
       switchStatus = Some(CarChargerSignal.On),
       lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
-      currentDynamicFVPower = Some(1800f),
-      currentDynamicGridPower = Some(700f)
+      plannedDynamicFVPower = Some(1800f),
+      plannedDynamicGridPower = Some(700f)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -121,7 +121,7 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
     val state = stateWithCarCharger(
       switchStatus = Some(CarChargerSignal.On),
       lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
-      currentDynamicFVPower = Some(2500f)
+      plannedDynamicFVPower = Some(2500f)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
@@ -179,14 +179,14 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
   ) {
     val state = stateWithCarCharger(
       lastCommandReceived = Some(CarChargerSignal.TurnOff),
-      currentDynamicFVPower = Some(1000f),
-      currentDynamicGridPower = Some(1000f)
+      plannedDynamicFVPower = Some(1000f),
+      plannedDynamicGridPower = Some(1000f)
     )
 
     val resultState = stateWithCarCharger(
       lastCommandReceived = Some(CarChargerSignal.TurnOff),
-      currentDynamicFVPower = None,
-      currentDynamicGridPower = None
+      plannedDynamicFVPower = None,
+      plannedDynamicGridPower = None
     )
 
     val result = consumer.usePower(state, Power.ofFv(3000f), now)
@@ -213,10 +213,10 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
       )
       assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
       assertEquals(
-        result.state.carCharger.currentDynamicFVPower,
+        result.state.carCharger.plannedDynamicFVPower,
         Some(dummyConfig.chargerPowerWatts)
       )
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
 
       assert(result.actions.nonEmpty)
       assertEquals(result.actions.size, 2)
@@ -243,8 +243,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
         Some(CarChargerSignal.Off)
       )
       assertEquals(result.powerUsed, Power.zero)
-      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
 
       assert(result.actions.nonEmpty)
       assertEquals(result.actions.size, 2)
@@ -270,10 +270,10 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
       )
       assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
       assertEquals(
-        result.state.carCharger.currentDynamicFVPower,
+        result.state.carCharger.plannedDynamicFVPower,
         Some(dummyConfig.chargerPowerWatts)
       )
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
     }
   }
 
@@ -300,8 +300,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
         Some(CarChargerSignal.Off)
       )
       assertEquals(result.powerUsed, Power.zero)
-      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
       assert(result.actions.nonEmpty)
       assertEquals(result.actions.size, 2)
 
@@ -335,8 +335,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
         Some(CarChargerSignal.Off)
       )
       assertEquals(result.powerUsed, Power.zero)
-      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
       assert(result.actions.nonEmpty)
       assertEquals(result.actions.size, 2)
 
@@ -388,10 +388,10 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
       )
       assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
       assertEquals(
-        result.state.carCharger.currentDynamicFVPower,
+        result.state.carCharger.plannedDynamicFVPower,
         Some(dummyConfig.chargerPowerWatts)
       )
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
     }
   }
 
@@ -412,8 +412,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
         Some(CarChargerSignal.On)
       )
       assertEquals(result.powerUsed, Power(fvPower, 500f))
-      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(fvPower))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+      assertEquals(result.state.carCharger.plannedDynamicFVPower, Some(fvPower))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(500f))
     }
   }
 
@@ -428,7 +428,7 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
     val result = consumer.usePower(state, Power(1600f, 1000f), now)
     result.map { result =>
       assertEquals(result.powerUsed, Power.zero)
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
     }
   }
 
@@ -443,7 +443,7 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
     val result = consumer.usePower(state, Power(1600f, 500f), now)
     result.map { result =>
       assertEquals(result.powerUsed, Power(1600f, 500f))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(500f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(500f))
     }
   }
 
@@ -465,8 +465,8 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
         Some(CarChargerSignal.Off)
       )
       assertEquals(result.powerUsed, Power.zero)
-      assertEquals(result.state.carCharger.currentDynamicFVPower, Some(0f))
-      assertEquals(result.state.carCharger.currentDynamicGridPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicFVPower, Some(0f))
+      assertEquals(result.state.carCharger.plannedDynamicGridPower, Some(0f))
     }
   }
 

@@ -74,7 +74,9 @@ object CarChargerDynamicPowerConsumer {
                 case Some(CarChargerSignal.On) =>
                   val res = state.carCharger.currentPowerWatts
                     .map(p => Power.ofFv(p))
-                    .getOrElse(Power.ofFv(config.chargerPowerWatts))
+                    .getOrElse(
+                      Power.ofFv(config.chargerPowerWatts)
+                    ) // use the config power only if the charger status is CHARGING, otherwise use 0 as the car is not connected
 
                   logger
                     .info(
@@ -91,12 +93,12 @@ object CarChargerDynamicPowerConsumer {
               state.carCharger.switchStatus match
                 case Some(CarChargerSignal.On) =>
                   val res = Power(
-                    state.carCharger.currentDynamicFVPower.getOrElse(0f),
-                    state.carCharger.currentDynamicGridPower.getOrElse(0f)
+                    state.carCharger.plannedDynamicFVPower.getOrElse(0f),
+                    state.carCharger.plannedDynamicGridPower.getOrElse(0f)
                   )
                   logger
                     .info(
-                      s"last command is automatic Grid, car charger is on, in the state FV: ${state.carCharger.currentDynamicFVPower} grid: ${state.carCharger.currentDynamicGridPower}, so current power is $res"
+                      s"last command is automatic Grid, car charger is on, in the state FV: ${state.carCharger.plannedDynamicFVPower} grid: ${state.carCharger.plannedDynamicGridPower}, so current power is $res"
                     )
                     .as(res)
                 case _ =>
@@ -121,9 +123,9 @@ object CarChargerDynamicPowerConsumer {
         state
           .modify(_.carCharger.lastCommandSent)
           .setTo(Some(command))
-          .modify(_.carCharger.currentDynamicFVPower)
+          .modify(_.carCharger.plannedDynamicFVPower)
           .setTo(Some(powerUsed.fv))
-          .modify(_.carCharger.currentDynamicGridPower)
+          .modify(_.carCharger.plannedDynamicGridPower)
           .setTo(Some(powerUsed.grid)),
         actions.commandActionWithResend(command),
         powerUsed
@@ -237,9 +239,9 @@ object CarChargerDynamicPowerConsumer {
 
             case _ =>
               val newState = state
-                .modify(_.carCharger.currentDynamicFVPower)
+                .modify(_.carCharger.plannedDynamicFVPower)
                 .setTo(None)
-                .modify(_.carCharger.currentDynamicGridPower)
+                .modify(_.carCharger.plannedDynamicGridPower)
                 .setTo(None)
 
               // car charger is not in automatic mode, do not use dynamic power
