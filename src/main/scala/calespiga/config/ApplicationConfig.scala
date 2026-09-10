@@ -87,6 +87,7 @@ final case class CarChargerConfig(
     lastCommandItem: String,
     id: String,
     syncTimeoutForDynamicPower: FiniteDuration,
+    automaticOnGracePeriod: FiniteDuration,
     dynamicConsumerCode: String,
     chargerPowerWatts: Float
 ) derives ConfigReader

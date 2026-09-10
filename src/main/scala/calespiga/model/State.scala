@@ -133,6 +133,7 @@ object State {
       lastCommandReceived: Option[CarChargerSignal.UserCommand] = None,
       lastChange: Option[java.time.Instant] = None,
       lastSyncing: Option[java.time.Instant] = None,
+      automaticOnSince: Option[java.time.Instant] = None,
       currentPowerWatts: Option[Float] = None,
       plannedDynamicFVPower: Option[Float] = None,
       plannedDynamicGridPower: Option[Float] = None,
