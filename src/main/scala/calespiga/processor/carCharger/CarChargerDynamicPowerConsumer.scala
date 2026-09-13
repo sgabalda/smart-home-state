@@ -142,24 +142,45 @@ object CarChargerDynamicPowerConsumer {
       * consumers can use it. If at some point the car is connected and
       * charging, the power used is reported so other donwstream consumers do
       * not use it. The logic is as follows:
+      * {{{
+      * if not automatic:
       *
-      * if not automatic: clear planned power clear automaticOnSince return zero
-      * power, no action
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power, no action
       *
-      * if sync timeout exceeded: turn charger off clear planned power clear
-      * automaticOnSince return zero power
+      * if sync timeout exceeded:
+      *     turn charger off
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power
       *
-      * calculate whether enough FV/grid power is available if insufficient:
-      * turn charger off clear planned power clear automaticOnSince return zero
-      * power
+      * calculate whether enough FV/grid power is available
+      *
+      * if insufficient:
+      *     turn charger off
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power
       *
       * calculate planned power
       *
-      * if charging: turn charger on clear automaticOnSince report
-      * planned/measured power else if automaticOnSince is absent: turn charger
-      * on set automaticOnSince = now report planned power during the grace
-      * period else if now - automaticOnSince <= grace timeout: keep charger on
-      * report planned power else: keep charger on report zero power
+      * if charging:
+      *     turn charger on
+      *     clear automaticOnSince
+      *     report planned/measured power
+      * else if automaticOnSince is absent:
+      *     turn charger on
+      *     set automaticOnSince = now
+      *     report planned power during the grace period
+      * else if now - automaticOnSince <= grace timeout:
+      *     keep charger on
+      *     report planned power
+      * else:
+      *     keep charger on
+      *     report zero power
+      *
+      * }}}
       */
     override def usePower(
         state: State,
