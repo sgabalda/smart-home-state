@@ -450,9 +450,56 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
       assertEquals(result.powerUsed, Power.ofFv(1800f))
       assertEquals(
         result.state.carCharger.plannedDynamicFVPower,
-        Some(dummyConfig.chargerPowerWatts)
+        Some(1800f)
       )
       assertEquals(result.state.carCharger.automaticOnSince, None)
+    }
+  }
+
+  test(
+    "usePower: grid mode reserves the actual charging power without over-reporting grid usage"
+  ) {
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
+      chargingStatus = Some(CarChargerChargingStatus.Charging),
+      currentPowerWatts = Some(1800f)
+    )
+
+    val result = consumer.usePower(state, Power(1600f, 500f), now)
+
+    result.map { result =>
+      assertEquals(result.powerUsed, Power(1600f, 200f))
+      assertEquals(
+        result.state.carCharger.plannedDynamicFVPower,
+        Some(1600f)
+      )
+      assertEquals(
+        result.state.carCharger.plannedDynamicGridPower,
+        Some(200f)
+      )
+    }
+  }
+
+  test("usePower: reports planned power before grace period expires") {
+    val automaticOnSince = now.minusSeconds(10)
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticFV),
+      automaticOnSince = Some(automaticOnSince),
+      chargingStatus = Some(CarChargerChargingStatus.Connected)
+    )
+
+    val result = consumer.usePower(state, Power.ofFv(2500f), now)
+
+    result.map { result =>
+      assertEquals(result.powerUsed, Power.ofFv(dummyConfig.chargerPowerWatts))
+      assertEquals(
+        result.state.carCharger.plannedDynamicFVPower,
+        Some(dummyConfig.chargerPowerWatts)
+      )
+      assertEquals(
+        result.state.carCharger.automaticOnSince,
+        Some(automaticOnSince)
+      )
     }
   }
 
@@ -483,6 +530,20 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
       )
     }
   }
+
+  test("usePower: reports zero at the grace period boundary") {
+    val automaticOnSince = now.minusSeconds(30)
+    val state = stateWithCarCharger(
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticFV),
+      automaticOnSince = Some(automaticOnSince),
+      chargingStatus = Some(CarChargerChargingStatus.Connected)
+    )
+
+    val result = consumer.usePower(state, Power.ofFv(2500f), now)
+
+    result.map(result => assertEquals(result.powerUsed, Power.zero))
+  }
+
   test("usePower: grid mode excludes grid power above the configured tariff") {
     val state = stateWithCarCharger(
       lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
