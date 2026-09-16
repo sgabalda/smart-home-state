@@ -166,6 +166,7 @@ object ProcessorConfigHelper {
     lastCommandItem = "carcharger/lastCommand",
     id = "car-charger-processor",
     syncTimeoutForDynamicPower = 50.seconds,
+    automaticOnGracePeriod = 30.seconds,
     dynamicConsumerCode = "car-charger-consumer-code",
     chargerPowerWatts = 2100f
   )

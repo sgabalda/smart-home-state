@@ -33,6 +33,15 @@ object CarChargerDynamicPowerConsumer {
     *
     * This ensures the car charger respects user-configured tariff preferences,
     * preventing charging during expensive peak hours.
+    *
+    * On the other hand, as the charger can not currently detect whether there
+    * is a car connected, the only way to activate it dynamically is:
+    *   - if the car is charging and on dynamic mode, then the charging power is
+    *     the real one set in the state. If it is still available, keep it ON.
+    *     if it is not, turn it OFF
+    *   - if the car is not charging, then the dynamic power used is 0 (or the
+    *     measured), even if the charger is ON. But on the usePower, check if
+    *     there is enough available power to turn it on or not.
     */
   private def gridTariffAllowed(state: State): Boolean =
     state.carCharger.maxGridTariff.forall {
@@ -55,6 +64,11 @@ object CarChargerDynamicPowerConsumer {
 
     override def uniqueCode: String = config.dynamicConsumerCode
 
+    /** Reports the dynamic power that is effectively being consumed by the
+      * charger when it is in automatic mode and synchronized. If the charger is
+      * not actually charging, we report zero consumption to avoid reserving
+      * power for a device that is not drawing it.
+      */
     override def currentlyUsedDynamicPower(
         state: State,
         now: Instant
@@ -69,185 +83,231 @@ object CarChargerDynamicPowerConsumer {
             .as(Power.zero)
         case _ =>
           state.carCharger.lastCommandReceived match
-            case Some(SetAutomaticFV) =>
-              state.carCharger.switchStatus match
-                case Some(CarChargerSignal.On) =>
-                  val res = state.carCharger.currentPowerWatts
-                    .map(p => Power.ofFv(p))
-                    .getOrElse(Power.ofFv(config.chargerPowerWatts))
-
-                  logger
-                    .info(
-                      s"last command is automatic FV, car charger is on, current power is ${state.carCharger.currentPowerWatts}, so dynamic power used is $res"
-                    )
-                    .as(res)
-                case _ =>
-                  logger
-                    .info(
-                      "last command is automatic FV, but car charger is not on, so dynamic power used is 0"
-                    )
-                    .as(Power.zero)
-            case Some(SetAutomaticGrid) =>
-              state.carCharger.switchStatus match
-                case Some(CarChargerSignal.On) =>
-                  val res = Power(
-                    state.carCharger.currentDynamicFVPower.getOrElse(0f),
-                    state.carCharger.currentDynamicGridPower.getOrElse(0f)
+            case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
+              (
+                state.carCharger.chargingStatus,
+                state.carCharger.switchStatus
+              ) match
+                case (
+                      Some(CarChargerChargingStatus.Charging),
+                      Some(CarChargerSignal.On)
+                    ) =>
+                  val activeDynamicUsage = Power(
+                    state.carCharger.plannedDynamicFVPower.getOrElse(0f),
+                    state.carCharger.plannedDynamicGridPower.getOrElse(0f)
                   )
                   logger
                     .info(
-                      s"last command is automatic Grid, car charger is on, in the state FV: ${state.carCharger.currentDynamicFVPower} grid: ${state.carCharger.currentDynamicGridPower}, so current power is $res"
+                      s"Automatic mode active, charger is charging and switched on; dynamic usage is $activeDynamicUsage"
                     )
-                    .as(res)
+                    .as(activeDynamicUsage)
                 case _ =>
                   logger
                     .info(
-                      "last command is automatic Grid, but car charger is not on, so dynamic power used is 0"
+                      "Automatic mode active, but the charger is not currently drawing power"
                     )
                     .as(Power.zero)
             case other =>
               logger
                 .info(
-                  s"No automatic command received: $other, dynamic power used is 0"
+                  s"No automatic mode command received: $other; dynamic usage is zero"
                 )
                 .as(Power.zero)
 
     private def applyCommandAndPower(
+        plannedPower: Option[Power],
         powerUsed: Power,
         command: CarChargerSignal.ControllerState,
-        state: State
+        state: State,
+        automaticOnSince: Option[Instant]
     ): DynamicPowerResult =
       DynamicPowerResult(
         state
           .modify(_.carCharger.lastCommandSent)
           .setTo(Some(command))
-          .modify(_.carCharger.currentDynamicFVPower)
-          .setTo(Some(powerUsed.fv))
-          .modify(_.carCharger.currentDynamicGridPower)
-          .setTo(Some(powerUsed.grid)),
+          .modify(_.carCharger.plannedDynamicFVPower)
+          .setTo(plannedPower.map(_.fv))
+          .modify(_.carCharger.plannedDynamicGridPower)
+          .setTo(plannedPower.map(_.grid))
+          .modify(_.carCharger.automaticOnSince)
+          .setTo(automaticOnSince),
         actions.commandActionWithResend(command),
         powerUsed
       )
 
+    /** As the car charger can not detect if the car is plugged in until it is
+      * set to ON and some seconds have passed, the logic implemented starts the
+      * charger if there is enough power, but if after some time (a grace
+      * timeout) the car is not charging, reports 0 as the used power, so other
+      * consumers can use it. If at some point the car is connected and
+      * charging, the power used is reported so other donwstream consumers do
+      * not use it. The logic is as follows:
+      * {{{
+      * if not automatic:
+      *
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power, no action
+      *
+      * if sync timeout exceeded:
+      *     turn charger off
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power
+      *
+      * calculate whether enough FV/grid power is available
+      *
+      * if insufficient:
+      *     turn charger off
+      *     clear planned power
+      *     clear automaticOnSince
+      *     return zero power
+      *
+      * calculate planned power
+      *
+      * if charging:
+      *     turn charger on
+      *     clear automaticOnSince
+      *     report planned/measured power
+      * else if automaticOnSince is absent:
+      *     turn charger on
+      *     set automaticOnSince = now
+      *     report planned power during the grace period
+      * else if now - automaticOnSince < grace timeout:
+      *     keep charger on
+      *     report planned power
+      * else:
+      *     keep charger on
+      *     report zero power
+      *
+      * }}}
+      */
     override def usePower(
         state: State,
         powerToUse: Power,
         now: Instant
     ): IO[DynamicPowerResult] =
-      carChargerSyncDetector.checkIfInSync(state) match
-        case calespiga.processor.utils.SyncDetector.NotInSync(since)
-            if now.isAfter(
-              since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
-            ) =>
-          state.carCharger.lastCommandReceived match
-            case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
+      state.carCharger.lastCommandReceived match
+        case Some(mode) if mode == SetAutomaticFV || mode == SetAutomaticGrid =>
+          carChargerSyncDetector.checkIfInSync(state) match
+            case calespiga.processor.utils.SyncDetector.NotInSync(since)
+                if now.isAfter(
+                  since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
+                ) =>
               logger
-                .warn(
-                  s"Car charger not in sync $since and automatic, turning off"
-                )
+                .warn(s"Car charger not in sync since $since, turning off")
                 .as(
-                  applyCommandAndPower(Power.zero, CarChargerSignal.Off, state)
+                  applyCommandAndPower(
+                    None,
+                    Power.zero,
+                    CarChargerSignal.Off,
+                    state,
+                    None
+                  )
                 )
             case _ =>
-              logger
-                .warn(
-                  s"Car charger not in sync $since but not automatic, ignoring dynamic power usage"
+              // When the car is already charging, the real draw is known; otherwise
+              // we assume the configured charger power as a safe estimate.
+              val requiredChargingPower =
+                if (
+                  state.carCharger.chargingStatus.contains(
+                    CarChargerChargingStatus.Charging
+                  )
                 )
-                .as(DynamicPowerResult(state, Set.empty, Power.zero))
-        case _ =>
-          state.carCharger.lastCommandReceived match
-            case Some(SetAutomaticFV) =>
-              val command = if (powerToUse.fv >= config.chargerPowerWatts) then
-                CarChargerSignal.On
-              else CarChargerSignal.Off
-              for {
-                _ <- logger.info(
-                  s"Automatic FV: as ${powerToUse.fv} >= ${config.chargerPowerWatts} ? then $command"
+                  state.carCharger.currentPowerWatts.getOrElse(
+                    config.chargerPowerWatts
+                  )
+                else config.chargerPowerWatts
+
+              val gridChargingAllowed =
+                mode == SetAutomaticGrid && gridTariffAllowed(state)
+              val availablePowerForCharging =
+                if (gridChargingAllowed) powerToUse else powerToUse.withOnlyFv
+
+              val remainingPowerAfterRequest =
+                availablePowerForCharging.consumeFvThenGrid(
+                  requiredChargingPower
                 )
-                powerUsed <-
-                  if (command == CarChargerSignal.Off)
-                    logger
-                      .info("As command is off, power to use is 0")
-                      .as(Power.zero)
-                  else {
-                    // if the charger reports it's actually charging, prefer the measured current power
+
+              logger.info(
+                s"Car charger power decision: mode=${mode}, " +
+                  s"available=${powerToUse}, " +
+                  s"grid tariff allowed=$gridChargingAllowed, " +
+                  s"considered=${availablePowerForCharging} W, " +
+                  s"required=${requiredChargingPower} W, remaining=$remainingPowerAfterRequest"
+              ) *> {
+                remainingPowerAfterRequest match
+                  case Some(remainingPower) =>
+                    val plannedChargingPower =
+                      availablePowerForCharging - remainingPower
+
                     state.carCharger.chargingStatus match
                       case Some(CarChargerChargingStatus.Charging) =>
-                        val res = Power.ofFv(
-                          state.carCharger.currentPowerWatts
-                            .getOrElse(config.chargerPowerWatts)
+                        logger
+                          .info(
+                            s"Car charger is already charging, reserving ${plannedChargingPower} W"
+                          )
+                          .as(
+                            applyCommandAndPower(
+                              Some(plannedChargingPower),
+                              plannedChargingPower,
+                              CarChargerSignal.On,
+                              state,
+                              None
+                            )
+                          )
+                      case _ =>
+                        val automaticOnSince = state.carCharger.automaticOnSince
+                        val onSince = automaticOnSince.getOrElse(now)
+                        val gracePeriodExpired = !now.isBefore(
+                          onSince.plusMillis(
+                            config.automaticOnGracePeriod.toMillis
+                          )
                         )
+                        val reportedDynamicUsage =
+                          if (gracePeriodExpired) Power.zero
+                          else plannedChargingPower
+
                         logger
                           .info(
-                            s"Automatic FV: Car charger status is Charging, so power used is $res"
+                            s"Car charger is not charging yet; grace expired? $gracePeriodExpired, reporting $reportedDynamicUsage"
                           )
-                          .as(res)
-
-                      case other =>
-                        logger
-                          .info(
-                            s"Automatic FV: Car charger status is not Charging but $other, so using configured power"
+                          .as(
+                            applyCommandAndPower(
+                              Some(plannedChargingPower),
+                              reportedDynamicUsage,
+                              CarChargerSignal.On,
+                              state,
+                              Some(onSince)
+                            )
                           )
-                          .as(Power.ofFv(config.chargerPowerWatts))
-                  }
-              } yield (
-                applyCommandAndPower(powerUsed, command, state)
-              )
-
-            case Some(SetAutomaticGrid) =>
-              val tariffAllowed = gridTariffAllowed(state)
-              val gridAvailablePower =
-                if tariffAllowed then powerToUse.grid else 0f
-              for {
-                _ <- logger.info(
-                  s"Automatic Grid: tariff ${state.grid.currentTariff}, " +
-                    s"and allowed tariff ${state.carCharger.maxGridTariff}, " +
-                    s"grid to be used: $tariffAllowed, so grid power: $gridAvailablePower"
-                )
-                enoughPower =
-                  powerToUse.fv + gridAvailablePower >= config.chargerPowerWatts
-                command =
-                  if (enoughPower) then CarChargerSignal.On
-                  else CarChargerSignal.Off
-                _ <- logger.info(
-                  s"FV(${powerToUse.fv} + Grid($gridAvailablePower) >= ${config.chargerPowerWatts}? => $command"
-                )
-
-                // TODO some other log with all the data
-                powerUsed <-
-                  if (command == CarChargerSignal.Off)
+                  case None =>
                     logger
-                      .info("Command is off, so using 0 power")
-                      .as(Power.zero)
-                  else {
-                    val fvPower = powerToUse.fv.min(config.chargerPowerWatts)
-                    val gridPower = if tariffAllowed then
-                      config.chargerPowerWatts - fvPower
-                    else 0f
-                    logger
-                      .info(s"Power to use: FV($fvPower) + Grid($gridPower)")
+                      .info(
+                        "Not enough available power, turning car charger off"
+                      )
                       .as(
-                        Power(
-                          fvPower,
-                          gridPower
+                        applyCommandAndPower(
+                          None,
+                          Power.zero,
+                          CarChargerSignal.Off,
+                          state,
+                          None
                         )
                       )
-                  }
-              } yield (applyCommandAndPower(powerUsed, command, state))
+              }
+        case _ =>
+          val newState = state
+            .modify(_.carCharger.plannedDynamicFVPower)
+            .setTo(None)
+            .modify(_.carCharger.plannedDynamicGridPower)
+            .setTo(None)
+            .modify(_.carCharger.automaticOnSince)
+            .setTo(None)
 
-            case _ =>
-              val newState = state
-                .modify(_.carCharger.currentDynamicFVPower)
-                .setTo(None)
-                .modify(_.carCharger.currentDynamicGridPower)
-                .setTo(None)
-
-              // car charger is not in automatic mode, do not use dynamic power
-              logger
-                .info(
-                  s"Car charger is not in automatic mode, ignoring dynamic power usage and setting both dynamic FV and Grid power to None in the state"
-                )
-                .as(DynamicPowerResult(newState, Set.empty, Power.zero))
+          logger
+            .info("Car charger is not in automatic mode")
+            .as(DynamicPowerResult(newState, Set.empty, Power.zero))
 
   }
 
