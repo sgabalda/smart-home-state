@@ -13,4 +13,3 @@ lazy val root = (project in file("."))
     scalacOptions := scalacOptions.value
       .filterNot(_ == "-Xfatal-warnings") :+ "-Werror"
   )
-
