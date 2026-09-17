@@ -16,7 +16,7 @@ RUN sbt update
 COPY src/ ./src/
 
 # Build the application
-RUN sbt clean compile stage
+RUN sbt ";clean;compile;stage"
 
 # Stage 2: Create runtime image
 FROM eclipse-temurin:25-jre-jammy AS runtime
