@@ -8,8 +8,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Dependencies.dependencies ++ Dependencies.testing,
     Global / semanticdbEnabled := true,
     Compile / run / fork := true,
-    Universal / stage / target := baseDirectory.value / "target" / "universal" / "stage",
-    Universal / target := baseDirectory.value / "target" / "universal" / "stage",
+    Universal / stage / target := baseDirectory.value / "target" / "universal",
+    Universal / target := baseDirectory.value / "target" / "universal",
     scalacOptions := scalacOptions.value
       .filterNot(_ == "-Xfatal-warnings") :+ "-Werror"
   )
