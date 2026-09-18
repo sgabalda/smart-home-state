@@ -2,7 +2,8 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
-import cats.effect.{IO, Ref}
+import cats.effect.IO
+import cats.effect.Ref
 import munit.CatsEffectSuite
 import scala.concurrent.duration._
 

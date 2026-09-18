@@ -2,16 +2,16 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.Event.FeedbackEventData
+import calespiga.mqtt.ActionToMqttProducer
 import calespiga.mqtt.ActionToMqttProducerStub
+import calespiga.ui.UserInterfaceManager
 import calespiga.ui.UserInterfaceManagerStub
 import cats.effect.IO
+import cats.effect.std.Queue
 import munit.CatsEffectSuite
 import scala.concurrent.duration.*
-import cats.effect.std.Queue
-import calespiga.model.Event.FeedbackEventData
-import calespiga.ui.UserInterfaceManager
-import calespiga.mqtt.ActionToMqttProducer
-import calespiga.model.Event
 
 class DirectExecutorSuite extends CatsEffectSuite {
 

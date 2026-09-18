@@ -1,12 +1,13 @@
 package calespiga.processor
 
-import munit.CatsEffectSuite
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import cats.effect.IO
 import cats.effect.Ref
-import calespiga.model.{State, Event}
-import java.time.Instant
 import com.softwaremill.quicklens.*
-import calespiga.model.Action
+import java.time.Instant
+import munit.CatsEffectSuite
 
 class FeatureFlagsProcessorSuite extends CatsEffectSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")

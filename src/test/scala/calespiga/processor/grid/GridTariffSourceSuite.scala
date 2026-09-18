@@ -1,12 +1,13 @@
 package calespiga.processor.grid
 
-import munit.CatsEffectSuite
-import cats.effect.{IO, Ref}
-import cats.effect.testkit.TestControl
 import calespiga.model.GridTariff
-import java.time.ZoneId
-import scala.concurrent.duration.*
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.testkit.TestControl
 import java.time.LocalDateTime
+import java.time.ZoneId
+import munit.CatsEffectSuite
+import scala.concurrent.duration.*
 
 class GridTariffSourceSuite extends CatsEffectSuite {
 

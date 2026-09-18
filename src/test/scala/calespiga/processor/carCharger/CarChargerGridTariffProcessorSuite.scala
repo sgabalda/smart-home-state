@@ -1,6 +1,9 @@
 package calespiga.processor.carCharger
 
-import calespiga.model.{Action, BatteryChargeTariff, Event, State}
+import calespiga.model.Action
+import calespiga.model.BatteryChargeTariff
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 import java.time.Instant

@@ -1,11 +1,11 @@
 package calespiga.processor.power.dynamic
 
+import calespiga.model.Action
 import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
-import calespiga.model.Action
 import calespiga.processor.power.dynamic.Power
-import java.time.Instant
 import cats.effect.IO
+import java.time.Instant
 
 trait DynamicPowerConsumer {
 

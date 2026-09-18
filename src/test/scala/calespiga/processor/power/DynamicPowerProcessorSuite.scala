@@ -1,20 +1,20 @@
 package calespiga.processor.power
 
-import munit.CatsEffectSuite
-import calespiga.model.{State, Action, Event}
-import calespiga.processor.power.dynamic.{
-  DynamicConsumerOrderer,
-  DynamicPowerConsumer,
-  DynamicPowerConsumerStub,
-  DynamicConsumerOrdererStub
-}
 import calespiga.config.DynamicPowerProcessorConfig
-import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
-import java.time.Instant
-import scala.collection.mutable.ListBuffer
-import calespiga.processor.power.dynamic.Power
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.power.dynamic.DynamicConsumerOrderer
+import calespiga.processor.power.dynamic.DynamicConsumerOrdererStub
+import calespiga.processor.power.dynamic.DynamicPowerConsumer
+import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
+import calespiga.processor.power.dynamic.DynamicPowerConsumerStub
+import calespiga.processor.power.dynamic.Power
 import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.CatsEffectSuite
+import scala.collection.mutable.ListBuffer
 
 class DynamicPowerProcessorSuite extends CatsEffectSuite {
 

@@ -1,11 +1,12 @@
 package calespiga.power.sunnyBoy
 
-import io.circe.parser.decode
-import io.circe.{Decoder, HCursor}
 import calespiga.config.SunnyBoyConfig
-import calespiga.power.sunnyBoy.SunnyBoyDecoder.DataResponse
 import calespiga.power.PowerProductionData
+import calespiga.power.sunnyBoy.SunnyBoyDecoder.DataResponse
 import cats.implicits.*
+import io.circe.Decoder
+import io.circe.HCursor
+import io.circe.parser.decode
 
 trait SunnyBoyDecoder {
   def getToken(responseBody: String): Either[Throwable, String]

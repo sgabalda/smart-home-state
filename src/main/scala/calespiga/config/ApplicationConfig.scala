@@ -1,7 +1,6 @@
 package calespiga.config
 
 import pureconfig.ConfigReader
-
 import scala.concurrent.duration.FiniteDuration
 
 final case class ApplicationConfig(

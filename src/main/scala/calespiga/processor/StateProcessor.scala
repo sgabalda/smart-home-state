@@ -1,16 +1,19 @@
 package calespiga.processor
 
-import calespiga.model.{Action, Event, State}
-import calespiga.processor.heater.HeaterProcessor
-import java.time.ZoneId
-import cats.effect.IO
-import cats.effect.Ref
-import calespiga.processor.temperatures.TemperaturesProcessor
-import calespiga.processor.power.PowerProcessor
-import calespiga.processor.infraredStove.InfraredStoveProcessor
-import calespiga.processor.grid.{GridConnectionManager, GridProcessor}
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.battery.BatteryProcessor
 import calespiga.processor.carCharger.CarChargerProcessor
+import calespiga.processor.grid.GridConnectionManager
+import calespiga.processor.grid.GridProcessor
+import calespiga.processor.heater.HeaterProcessor
+import calespiga.processor.infraredStove.InfraredStoveProcessor
+import calespiga.processor.power.PowerProcessor
+import calespiga.processor.temperatures.TemperaturesProcessor
+import cats.effect.IO
+import cats.effect.Ref
+import java.time.ZoneId
 
 trait StateProcessor {
   def process(

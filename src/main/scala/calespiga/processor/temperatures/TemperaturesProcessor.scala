@@ -1,8 +1,8 @@
 package calespiga.processor.temperatures
 
+import calespiga.config.SyncDetectorConfig
 import calespiga.config.TemperatureFansConfig
 import calespiga.processor.SingleProcessor
-import calespiga.config.SyncDetectorConfig
 
 object TemperaturesProcessor {
   def apply(

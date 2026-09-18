@@ -1,16 +1,21 @@
 package calespiga.power.sunnyBoy
 
-import cats.effect.{IO, Resource}
-import calespiga.power.PowerDataSource.*
 import calespiga.config.SunnyBoyConfig
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.log4cats.Logger
-import sttp.client4.httpclient.cats.HttpClientCatsBackend
-import sttp.client4.{Response, UriContext, WebSocketBackend, basicRequest}
-import cats.effect.kernel.Ref
+import calespiga.power.PowerDataSource.*
 import calespiga.power.PowerProductionData
-import java.net.{CookieManager, CookiePolicy}
+import cats.effect.IO
+import cats.effect.Resource
+import cats.effect.kernel.Ref
+import java.net.CookieManager
+import java.net.CookiePolicy
 import java.net.http.HttpClient
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import sttp.client4.Response
+import sttp.client4.UriContext
+import sttp.client4.WebSocketBackend
+import sttp.client4.basicRequest
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 
 object SunnyBoyAPIClient {
 

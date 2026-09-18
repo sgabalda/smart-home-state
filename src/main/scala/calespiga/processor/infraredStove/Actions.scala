@@ -1,9 +1,9 @@
 package calespiga.processor.infraredStove
 
-import calespiga.model.InfraredStoveSignal
 import calespiga.config.InfraredStoveConfig
-import calespiga.processor.utils.CommandActions
+import calespiga.model.InfraredStoveSignal
 import calespiga.model.InfraredStoveSignal.*
+import calespiga.processor.utils.CommandActions
 
 private object Actions {
 

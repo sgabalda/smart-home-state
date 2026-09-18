@@ -1,9 +1,11 @@
 package calespiga.processor.battery
 
-import calespiga.model.{Action, Event, State}
+import calespiga.model.Action
+import calespiga.model.BatteryStatus
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import java.time.Instant
-import calespiga.model.BatteryStatus
 
 private[battery] object BatteryAlertOnLowProcessor {
 

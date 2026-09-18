@@ -1,6 +1,7 @@
 package calespiga.processor.carCharger
 
-import calespiga.config.{CarChargerConfig, OfflineDetectorConfig}
+import calespiga.config.CarChargerConfig
+import calespiga.config.OfflineDetectorConfig
 import calespiga.processor.SingleProcessor
 import java.time.ZoneId
 

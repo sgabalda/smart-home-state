@@ -1,11 +1,11 @@
 package calespiga.processor
 
-import calespiga.model.State
-import calespiga.model.Event.EventData
-import java.time.Instant
 import calespiga.model.Action
-import cats.effect.IO
+import calespiga.model.Event.EventData
+import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
+import cats.effect.IO
+import java.time.Instant
 
 /** A processor that processes events one at a time, modifying the state and
   * producing actions, in an effectful way (i.e., returning an IO). If you want

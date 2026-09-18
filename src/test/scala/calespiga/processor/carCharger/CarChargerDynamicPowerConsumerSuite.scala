@@ -1,19 +1,17 @@
 package calespiga.processor.carCharger
 
-import munit.CatsEffectSuite
-import calespiga.model.{
-  Action,
-  BatteryChargeTariff,
-  CarChargerSignal,
-  GridTariff
-}
+import CarChargerTestHelper.stateWithCarCharger
+import calespiga.model.Action
+import calespiga.model.BatteryChargeTariff
+import calespiga.model.CarChargerChargingStatus
+import calespiga.model.CarChargerSignal
+import calespiga.model.GridTariff
+import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.power.dynamic.Power
 import calespiga.processor.utils.SyncDetectorStub
-import java.time.Instant
 import com.softwaremill.quicklens.*
-import calespiga.processor.ProcessorConfigHelper
-import CarChargerTestHelper.stateWithCarCharger
-import calespiga.model.CarChargerChargingStatus
+import java.time.Instant
+import munit.CatsEffectSuite
 
 class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
 

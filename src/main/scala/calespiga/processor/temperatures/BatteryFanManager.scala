@@ -1,20 +1,18 @@
 package calespiga.processor.temperatures
 
-import calespiga.processor.SingleProcessor
-import calespiga.model.Event
-import calespiga.model.Event.Temperature.Fans.BatteryFanStatus
-import calespiga.model.Event.Temperature.Fans.BatteryFanCommand
-import calespiga.model.State
-import calespiga.model.Action
-import com.softwaremill.quicklens.*
 import calespiga.config.BatteryFanConfig
-import calespiga.model.FanSignal
-import calespiga.model.Event.Temperature.{
-  BatteryClosetTemperatureMeasured,
-  ExternalTemperatureMeasured
-}
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.Event.Temperature.BatteryClosetTemperatureMeasured
+import calespiga.model.Event.Temperature.ExternalTemperatureMeasured
+import calespiga.model.Event.Temperature.Fans.BatteryFanCommand
+import calespiga.model.Event.Temperature.Fans.BatteryFanStatus
 import calespiga.model.Event.Temperature.GoalTemperatureChanged
+import calespiga.model.FanSignal
+import calespiga.model.State
+import calespiga.processor.SingleProcessor
 import calespiga.processor.temperatures.utils.FanCommandsCreator
+import com.softwaremill.quicklens.*
 
 private object BatteryFanManager {
 

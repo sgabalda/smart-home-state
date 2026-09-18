@@ -1,6 +1,8 @@
 package calespiga.config
 
-import cats.effect.{IO, Resource, ResourceIO}
+import cats.effect.IO
+import cats.effect.Resource
+import cats.effect.ResourceIO
 import pureconfig.*
 
 object ConfigLoader {

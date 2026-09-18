@@ -1,18 +1,18 @@
 package calespiga.processor.temperatures
 
-import calespiga.processor.SingleProcessor
-import calespiga.model.Event
-import calespiga.model.Event.Temperature.Fans.ElectronicsFanStatus
-import calespiga.model.Event.Temperature.Fans.ElectronicsFanCommand
-import calespiga.model.State
-import calespiga.model.Action
-import com.softwaremill.quicklens.*
 import calespiga.config.ElectronicsFanConfig
-import calespiga.model.FanSignal
+import calespiga.model.Action
+import calespiga.model.Event
 import calespiga.model.Event.Temperature.ElectronicsTemperatureMeasured
-import calespiga.model.Event.Temperature.GoalTemperatureChanged
 import calespiga.model.Event.Temperature.ExternalTemperatureMeasured
+import calespiga.model.Event.Temperature.Fans.ElectronicsFanCommand
+import calespiga.model.Event.Temperature.Fans.ElectronicsFanStatus
+import calespiga.model.Event.Temperature.GoalTemperatureChanged
+import calespiga.model.FanSignal
+import calespiga.model.State
+import calespiga.processor.SingleProcessor
 import calespiga.processor.temperatures.utils.FanCommandsCreator
+import com.softwaremill.quicklens.*
 
 private object ElectronicsFanManager {
 

@@ -1,11 +1,12 @@
 package calespiga.processor.grid
 
-import munit.FunSuite
-import calespiga.model.{Action, State}
+import calespiga.model.Action
 import calespiga.model.GridSignal
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
 import com.softwaremill.quicklens.*
+import munit.FunSuite
 
 class GridConnectionManagerSuite extends FunSuite {
 

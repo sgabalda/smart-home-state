@@ -1,14 +1,16 @@
 package calespiga.mqtt
 
 import calespiga.config.MqttConfig
-import cats.effect.{IO, ResourceIO}
-import com.comcast.ip4s.{Host, Port}
+import cats.effect.IO
+import cats.effect.ResourceIO
+import com.comcast.ip4s.Host
+import com.comcast.ip4s.Port
 import net.sigusr.mqtt.api.*
 import net.sigusr.mqtt.api.RetryConfig.Custom
 import retry.RetryPolicies
 import scala.concurrent.duration.DurationInt
-
-import scala.concurrent.duration.{FiniteDuration, SECONDS}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.SECONDS
 
 object SessionProvider {
 

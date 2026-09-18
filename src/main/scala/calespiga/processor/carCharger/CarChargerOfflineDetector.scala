@@ -1,6 +1,7 @@
 package calespiga.processor.carCharger
 
-import calespiga.config.{CarChargerConfig, OfflineDetectorConfig}
+import calespiga.config.CarChargerConfig
+import calespiga.config.OfflineDetectorConfig
 import calespiga.model.Event
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.OfflineDetector

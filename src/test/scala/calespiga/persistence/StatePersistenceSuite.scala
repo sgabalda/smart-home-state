@@ -1,22 +1,22 @@
 package calespiga.persistence
 
+import calespiga.ErrorManager
 import calespiga.ErrorManager.Error.StateFileUpdateError
-import calespiga.{ErrorManager, ErrorManagerStub}
+import calespiga.ErrorManagerStub
+import calespiga.HealthComponentManagerStub
+import calespiga.HealthStatusManager
 import calespiga.config.StatePersistenceConfig
+import calespiga.model.State
 import cats.effect.IO
+import cats.effect.ResourceIO
 import cats.effect.kernel.Ref
 import cats.effect.testkit.TestControl
-import munit.CatsEffectSuite
+import com.softwaremill.quicklens.*
 import io.circe.generic.auto.*
 import io.circe.syntax.*
-import com.softwaremill.quicklens.*
-
+import munit.CatsEffectSuite
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import calespiga.model.State
-import cats.effect.ResourceIO
-import calespiga.HealthStatusManager
-import calespiga.HealthComponentManagerStub
 
 class StatePersistenceSuite extends CatsEffectSuite {
 

@@ -1,8 +1,8 @@
 package calespiga.processor.battery
 
-import munit.FunSuite
 import calespiga.model._
 import java.time.Instant
+import munit.FunSuite
 
 class BatteryAlertOnLowSuite extends FunSuite {
 

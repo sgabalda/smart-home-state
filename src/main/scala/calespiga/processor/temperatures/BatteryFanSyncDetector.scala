@@ -1,12 +1,12 @@
 package calespiga.processor.temperatures
 
+import calespiga.config.SyncDetectorConfig
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.SyncDetector
-import calespiga.config.SyncDetectorConfig
-import calespiga.model.State
 import com.softwaremill.quicklens.*
 import java.time.Instant
-import calespiga.model.Event
 
 private object BatteryFanSyncDetector {
 

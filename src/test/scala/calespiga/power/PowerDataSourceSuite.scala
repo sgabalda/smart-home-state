@@ -1,13 +1,14 @@
 package calespiga.power
 
-import cats.effect.{IO, Ref}
+import calespiga.ErrorManager
+import calespiga.config.PowerProductionSourceConfig
+import calespiga.model.Event.Power.PowerProductionReadingError
+import calespiga.model.Event.Power.PowerStatusReported
+import cats.effect.IO
+import cats.effect.Ref
 import cats.effect.testkit.TestControl
 import munit.CatsEffectSuite
 import scala.concurrent.duration._
-import calespiga.config.PowerProductionSourceConfig
-import calespiga.model.Event.Power.{PowerStatusReported}
-import calespiga.ErrorManager
-import calespiga.model.Event.Power.PowerProductionReadingError
 
 class PowerDataSourceSuite extends CatsEffectSuite {
 

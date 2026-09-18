@@ -1,7 +1,9 @@
 package calespiga.processor.grid
 
 import calespiga.config.GridConfig
-import calespiga.model.{Action, Event, State}
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
 import java.time.Instant

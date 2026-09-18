@@ -1,14 +1,14 @@
 package calespiga.processor.temperatures
 
-import calespiga.processor.SingleProcessor
-import calespiga.model.State
+import calespiga.config.TemperaturesItemsConfig
 import calespiga.model.Action
 import calespiga.model.Event.EventData
 import calespiga.model.Event.System.StartupEvent
-import java.time.Instant
 import calespiga.model.Event.Temperature.*
+import calespiga.model.State
+import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
-import calespiga.config.TemperaturesItemsConfig
+import java.time.Instant
 
 private object TemperaturesUpdater {
 

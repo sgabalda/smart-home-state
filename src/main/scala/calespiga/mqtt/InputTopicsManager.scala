@@ -2,7 +2,6 @@ package calespiga.mqtt
 
 import calespiga.model.Event
 import calespiga.mqtt.MqttToEventInputProcessor.TopicMessagesConverter
-
 import scala.util.Try
 
 trait InputTopicsManager {

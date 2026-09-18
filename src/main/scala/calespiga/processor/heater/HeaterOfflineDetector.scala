@@ -1,8 +1,8 @@
 package calespiga.processor.heater
 
-import calespiga.model.Event.EventData
-import calespiga.model.Event
 import calespiga.config.OfflineDetectorConfig
+import calespiga.model.Event
+import calespiga.model.Event.EventData
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.OfflineDetector
 

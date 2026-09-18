@@ -1,11 +1,13 @@
 package calespiga
 
 import calespiga.model.Action
-import cats.effect.{IO, Resource, ResourceIO}
+import calespiga.model.Event
+import cats.effect.IO
+import cats.effect.Resource
+import cats.effect.ResourceIO
+import cats.implicits.toFoldableOps
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import cats.implicits.toFoldableOps
-import calespiga.model.Event
 
 trait ErrorManager {
 

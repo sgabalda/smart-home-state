@@ -1,10 +1,12 @@
 package calespiga.processor.temperatures
 
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
-import calespiga.processor.utils.OfflineDetector
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.utils.OfflineDetector
+import java.time.Instant
+import munit.FunSuite
 
 class TemperaturesOfflineDetectorSuite extends FunSuite {
   val config = ProcessorConfigHelper.offlineDetectorConfig

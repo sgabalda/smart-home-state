@@ -1,18 +1,19 @@
 package calespiga.processor.infraredStove
 
-import munit.FunSuite
-import calespiga.model.{State, Action}
+import calespiga.model.Action
 import calespiga.model.Event.InfraredStove.*
 import calespiga.model.InfraredStoveSignal
-import java.time.Instant
-import com.softwaremill.quicklens.*
-import java.time.ZoneId
+import calespiga.model.State
 import calespiga.model.State.InfraredStove
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.utils.CommandActions
 import calespiga.processor.utils.EnergyCalculatorStub
 import calespiga.processor.utils.ProcessorFormatter
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import java.time.ZoneId
+import munit.FunSuite
 import scala.collection.mutable
-import calespiga.processor.utils.CommandActions
 
 class InfraredStovePowerProcessorSuite extends FunSuite {
 

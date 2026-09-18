@@ -1,7 +1,8 @@
 package calespiga.processor.grid
 
 import calespiga.config.SyncDetectorConfig
-import calespiga.model.{Event, State}
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
 import java.time.Instant

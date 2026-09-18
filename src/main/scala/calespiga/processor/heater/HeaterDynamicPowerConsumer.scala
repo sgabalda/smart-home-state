@@ -1,16 +1,16 @@
 package calespiga.processor.heater
 
+import calespiga.config.HeaterConfig
+import calespiga.model.HeaterSignal
+import calespiga.model.HeaterSignal.SetAutomatic
+import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
-import calespiga.model.State
-import calespiga.model.HeaterSignal.SetAutomatic
-import calespiga.model.HeaterSignal
 import calespiga.processor.power.dynamic.Power
-import com.softwaremill.quicklens.*
-import calespiga.config.HeaterConfig
 import calespiga.processor.utils.SyncDetector
-import java.time.Instant
 import cats.effect.IO
+import com.softwaremill.quicklens.*
+import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

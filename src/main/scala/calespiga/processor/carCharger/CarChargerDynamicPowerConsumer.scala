@@ -1,18 +1,20 @@
 package calespiga.processor.carCharger
 
+import calespiga.config.CarChargerConfig
+import calespiga.model.BatteryChargeTariff
+import calespiga.model.CarChargerChargingStatus
+import calespiga.model.CarChargerSignal
+import calespiga.model.CarChargerSignal.SetAutomaticFV
+import calespiga.model.CarChargerSignal.SetAutomaticGrid
+import calespiga.model.GridTariff
+import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
-import calespiga.model.State
-import calespiga.model.CarChargerSignal.{SetAutomaticFV, SetAutomaticGrid}
-import calespiga.model.CarChargerSignal
 import calespiga.processor.power.dynamic.Power
-import com.softwaremill.quicklens.*
-import calespiga.config.CarChargerConfig
 import calespiga.processor.utils.SyncDetector
-import calespiga.model.CarChargerChargingStatus
-import java.time.Instant
-import calespiga.model.{BatteryChargeTariff, GridTariff}
 import cats.effect.IO
+import com.softwaremill.quicklens.*
+import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

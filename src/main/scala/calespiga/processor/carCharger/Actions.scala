@@ -1,8 +1,8 @@
 package calespiga.processor.carCharger
 
 import calespiga.config.CarChargerConfig
-import calespiga.processor.utils.CommandActions
 import calespiga.model.CarChargerSignal
+import calespiga.processor.utils.CommandActions
 
 object Actions {
 

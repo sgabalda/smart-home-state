@@ -2,7 +2,9 @@ package calespiga.power.sunnyBoy
 
 import calespiga.config.SunnyBoyConfig
 import calespiga.power.PowerProductionData
-import cats.effect.{IO, Resource, Ref}
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.Resource
 import munit.CatsEffectSuite
 import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.testing.*

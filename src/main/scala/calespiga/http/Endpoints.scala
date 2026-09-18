@@ -1,18 +1,18 @@
 package calespiga.http
 
-import cats.effect._
-import org.http4s._
+import calespiga.HealthStatusManager
+import calespiga.config.HttpServerConfig
 import calespiga.model.State
+import cats.effect._
 import io.circe.generic.auto._
+import org.http4s._
+import org.http4s.netty.server.NettyServerBuilder
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s.Http4sServerInterpreter
-import sttp.capabilities.fs2.Fs2Streams
-import org.http4s.netty.server.NettyServerBuilder
-import calespiga.config.HttpServerConfig
-import calespiga.HealthStatusManager
-import sttp.model.StatusCode
 
 object Endpoints {
 

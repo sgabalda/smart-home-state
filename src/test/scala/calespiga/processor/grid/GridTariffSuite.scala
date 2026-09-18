@@ -1,8 +1,9 @@
 package calespiga.processor.grid
 
-import munit.FunSuite
 import calespiga.model.GridTariff
-import java.time.{Instant, ZoneId}
+import java.time.Instant
+import java.time.ZoneId
+import munit.FunSuite
 
 class GridTariffSuite extends FunSuite {
 

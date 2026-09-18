@@ -1,15 +1,16 @@
 package calespiga.processor.heater
 
-import munit.CatsEffectSuite
-import calespiga.model.{State, Action}
+import calespiga.model.Action
 import calespiga.model.HeaterSignal
-import calespiga.processor.power.dynamic.Power
-import com.softwaremill.quicklens.*
-import calespiga.processor.utils.SyncDetectorStub
-import java.time.Instant
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.power.dynamic.Power
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.SyncDetectorStub
 import cats.effect.IO
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.CatsEffectSuite
 
 class HeaterDynamicPowerConsumerSuite extends CatsEffectSuite {
 

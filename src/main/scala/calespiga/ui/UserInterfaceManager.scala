@@ -1,16 +1,16 @@
 package calespiga.ui
 
 import calespiga.ErrorManager
+import calespiga.config.UIConfig
 import calespiga.model.Event
 import calespiga.openhab.APIClient
 import cats.effect.IO
-import fs2.Stream
-import scala.util.Try
-import calespiga.config.UIConfig
 import cats.effect.Ref
+import cats.implicits.catsSyntaxApplicativeByName
+import fs2.Stream
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
-import cats.implicits.catsSyntaxApplicativeByName
+import scala.util.Try
 
 trait UserInterfaceManager {
 

@@ -1,11 +1,11 @@
 package calespiga.processor.grid
 
+import calespiga.config.GridConfig
 import calespiga.model.Action
 import calespiga.model.GridSignal
 import calespiga.model.State
 import calespiga.processor.utils.CommandActions
 import com.softwaremill.quicklens.*
-import calespiga.config.GridConfig
 
 /** Handles grid connection commands and status updates.
   *

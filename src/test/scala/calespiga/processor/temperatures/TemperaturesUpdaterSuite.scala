@@ -1,11 +1,13 @@
 package calespiga.processor.temperatures
 
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
-import com.softwaremill.quicklens.*
-import scala.concurrent.duration.*
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.FunSuite
+import scala.concurrent.duration.*
 
 class TemperaturesUpdaterSuite extends FunSuite {
 

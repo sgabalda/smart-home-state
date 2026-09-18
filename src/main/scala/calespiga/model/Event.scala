@@ -1,12 +1,11 @@
 package calespiga.model
 
+import calespiga.model.GridSignal
 import calespiga.mqtt.annotations.InputEventMqtt
-
-import java.time.Instant
 import calespiga.mqtt.annotations.InputTopicMapper
 import calespiga.openhab.annotations.InputEventOHItem
 import calespiga.openhab.annotations.InputOHItemsMapper
-import calespiga.model.GridSignal
+import java.time.Instant
 
 case class Event(
     timestamp: Instant,

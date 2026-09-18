@@ -1,9 +1,9 @@
 package calespiga.processor.temperatures.utils
 
-import calespiga.model.FanSignal
-import calespiga.model.State
-import calespiga.model.FanSignal.*
 import calespiga.model.Action
+import calespiga.model.FanSignal
+import calespiga.model.FanSignal.*
+import calespiga.model.State
 import scala.concurrent.duration.FiniteDuration
 
 trait FanCommandsCreator {

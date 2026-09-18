@@ -2,18 +2,19 @@ package calespiga.persistence
 
 import calespiga.ErrorManager
 import calespiga.ErrorManager.Error.*
+import calespiga.HealthStatusManager.HealthComponentManager
 import calespiga.config.StatePersistenceConfig
 import calespiga.model.State
+import cats.effect.IO
+import cats.effect.ResourceIO
 import cats.effect.kernel.Ref
-import cats.effect.{IO, ResourceIO}
 import io.circe.generic.auto.*
 import io.circe.parser.decode
 import io.circe.syntax.*
+import java.nio.file.Files
+import java.nio.file.Paths
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-
-import java.nio.file.{Files, Paths}
-import calespiga.HealthStatusManager.HealthComponentManager
 
 trait StatePersistence {
 

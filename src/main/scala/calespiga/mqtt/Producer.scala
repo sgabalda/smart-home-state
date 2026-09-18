@@ -1,10 +1,12 @@
 package calespiga.mqtt
 
-import calespiga.config.MqttConfig
-import cats.effect.{IO, ResourceIO, Deferred}
-import net.sigusr.mqtt.api.Session
-import net.sigusr.mqtt.api.ConnectionState
 import calespiga.HealthStatusManager.HealthComponentManager
+import calespiga.config.MqttConfig
+import cats.effect.Deferred
+import cats.effect.IO
+import cats.effect.ResourceIO
+import net.sigusr.mqtt.api.ConnectionState
+import net.sigusr.mqtt.api.Session
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

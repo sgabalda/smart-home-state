@@ -2,8 +2,11 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
-import cats.effect.{IO, Ref, Fiber, Resource}
-import cats.implicits.{catsSyntaxParallelTraverse1}
+import cats.effect.Fiber
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.Resource
+import cats.implicits.catsSyntaxParallelTraverse1
 
 trait ScheduledExecutor {
 

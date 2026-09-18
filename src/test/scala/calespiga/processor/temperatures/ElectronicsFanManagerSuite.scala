@@ -1,10 +1,11 @@
 package calespiga.processor.temperatures
 
-import munit.FunSuite
-import calespiga.model.{State, Action}
+import calespiga.model.Action
 import calespiga.model.FanSignal
-import com.softwaremill.quicklens._
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import com.softwaremill.quicklens._
+import munit.FunSuite
 
 class ElectronicsFanManagerSuite extends FunSuite {
 

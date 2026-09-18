@@ -1,12 +1,12 @@
 package calespiga.mqtt.annotations
 
-import scala.quoted.*
-import calespiga.model.Event.EventData
-import calespiga.model.HeaterSignal
-import calespiga.model.FanSignal
-import calespiga.model.InfraredStoveSignal
-import calespiga.model.GridSignal
 import calespiga.model.CarChargerSignal
+import calespiga.model.Event.EventData
+import calespiga.model.FanSignal
+import calespiga.model.GridSignal
+import calespiga.model.HeaterSignal
+import calespiga.model.InfraredStoveSignal
+import scala.quoted.*
 
 object InputTopicMapper {
 
