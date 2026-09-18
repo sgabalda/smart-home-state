@@ -1,5 +1,4 @@
 <configuration>
-    <property name="PRODUCTION_SETUP" value="${PRODUCTION_SETUP:-false}"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -29,16 +28,8 @@
         <discardingThreshold>0</discardingThreshold>
     </appender>
 
-    <if condition='property("PRODUCTION_SETUP") != null &amp;&amp; property("PRODUCTION_SETUP").equals("true")'>
-        <then>
-            <root level="INFO">
-                <appender-ref ref="ASYNC_FILE" />
-            </root>
-        </then>
-        <else>
-            <root level="INFO">
-                <appender-ref ref="STDOUT" />
-            </root>
-        </else>
-    </if>
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="ASYNC_FILE" />
+    </root>
 </configuration>
