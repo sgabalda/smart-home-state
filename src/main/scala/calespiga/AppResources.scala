@@ -2,7 +2,7 @@ package calespiga
 
 import java.time.ZoneId
 
-import calespiga.config.{ConfigLoader, PowerProductionConfig}
+import calespiga.config.ConfigLoader
 import calespiga.executor.{DirectExecutor, Executor, ScheduledExecutor}
 import calespiga.http.Endpoints
 import calespiga.model.Event.FeedbackEventData
@@ -14,7 +14,6 @@ import calespiga.mqtt.{
 }
 import calespiga.persistence.StatePersistence
 import calespiga.power.PowerDataSource
-import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
 import calespiga.processor.StateProcessor
 import calespiga.processor.grid.GridTariffSource
 import calespiga.ui.UserInterfaceManager
@@ -105,7 +104,14 @@ object AppResources {
         zoneId
       )
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
-      powerSource <- powerDeps(appConfig.powerProduction, zoneId)
+      sunnyBoy <- externalInterfaces.sunnyBoyApiClient(
+        appConfig.powerProduction.sunnyBoy
+      )
+      powerSource = PowerDataSource(
+        appConfig.powerProduction.powerProductionSource,
+        sunnyBoy,
+        zoneId
+      )
       tariffSource = GridTariffSource(zoneId)
       inputStream = buildInputStream(
         mqttInputProcessor,
@@ -163,18 +169,4 @@ object AppResources {
       }
   }
 
-  private def powerDeps(
-      config: PowerProductionConfig,
-      zoneId: ZoneId
-  ): ResourceIO[PowerDataSource] =
-    for {
-      sunnyBoy <- SunnyBoyAPIClient(
-        config.sunnyBoy,
-        SunnyBoyDecoder(config.sunnyBoy)
-      )
-    } yield PowerDataSource(
-      config.powerProductionSource,
-      sunnyBoy,
-      zoneId
-    )
 }
