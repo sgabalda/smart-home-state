@@ -1,13 +1,10 @@
 package calespiga.processor.carCharger
 
-import calespiga.model.{
-  CarChargerChargingStatus,
-  CarChargerSignal,
-  OfflineOnlineSignal,
-  State
-}
+import calespiga.model.CarChargerChargingStatus
+import calespiga.model.CarChargerSignal
+import calespiga.model.OfflineOnlineSignal
+import calespiga.model.State
 import com.softwaremill.quicklens.*
-
 import java.time.Instant
 
 object CarChargerTestHelper {

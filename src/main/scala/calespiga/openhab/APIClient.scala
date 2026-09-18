@@ -1,21 +1,24 @@
 package calespiga.openhab
 
+import calespiga.HealthStatusManager.HealthComponentManager
 import calespiga.config.OpenHabConfig
 import calespiga.openhab.APIClient.ItemChangedEvent
-import cats.effect.{IO, ResourceIO}
+import cats.effect.IO
+import cats.effect.ResourceIO
 import fs2.Stream
 import io.circe.generic.auto.*
 import io.circe.parser.decode
-import sttp.client4.httpclient.cats.HttpClientCatsBackend
-import sttp.client4.ws.async.asWebSocketUnsafe
-import sttp.client4.{Response, UriContext, WebSocketBackend, basicRequest}
-import sttp.ws.WebSocket
-import calespiga.HealthStatusManager.HealthComponentManager
-
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.*
 import scala.language.postfixOps
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.log4cats.Logger
+import sttp.client4.Response
+import sttp.client4.UriContext
+import sttp.client4.WebSocketBackend
+import sttp.client4.basicRequest
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
+import sttp.client4.ws.async.asWebSocketUnsafe
+import sttp.ws.WebSocket
 
 trait APIClient {
 

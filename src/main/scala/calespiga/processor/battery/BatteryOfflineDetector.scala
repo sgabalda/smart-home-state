@@ -1,9 +1,9 @@
 package calespiga.processor.battery
 
 import calespiga.config.OfflineDetectorConfig
+import calespiga.model.Event
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.OfflineDetector
-import calespiga.model.Event
 import com.softwaremill.quicklens.*
 
 private[battery] object BatteryOfflineDetector {

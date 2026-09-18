@@ -1,7 +1,7 @@
 package calespiga.openhab.annotations
 
-import scala.quoted.*
 import calespiga.model.Event.EventData
+import scala.quoted.*
 
 object InputOHItemsMapper {
 

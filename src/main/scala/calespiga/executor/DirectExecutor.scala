@@ -2,14 +2,14 @@ package calespiga.executor
 
 import calespiga.ErrorManager
 import calespiga.model.Action
+import calespiga.model.Event.FeedbackEventData
 import calespiga.mqtt.ActionToMqttProducer
-import cats.effect.IO
-import cats.implicits.catsSyntaxParallelTraverse1
 import calespiga.ui.UserInterfaceManager
+import cats.effect.IO
+import cats.effect.std.Queue
+import cats.implicits.catsSyntaxParallelTraverse1
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import cats.effect.std.Queue
-import calespiga.model.Event.FeedbackEventData
 
 trait DirectExecutor {
 

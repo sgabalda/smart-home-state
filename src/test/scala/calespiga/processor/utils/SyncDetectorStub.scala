@@ -1,8 +1,10 @@
 package calespiga.processor.utils
 
-import calespiga.model.{State, Event, Action}
-import java.time.Instant
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.utils.SyncDetector.CheckSyncResult
+import java.time.Instant
 
 object SyncDetectorStub {
 

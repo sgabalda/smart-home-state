@@ -1,12 +1,13 @@
 package calespiga.processor.grid
 
-import calespiga.model.{Event, GridTariff}
+import calespiga.model.Event
+import calespiga.model.GridTariff
 import cats.effect.IO
 import fs2.Stream
 import java.time.ZoneId
-import scala.concurrent.duration.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import scala.concurrent.duration.*
 
 trait GridTariffSource {
   def events: Stream[IO, Event.Grid.GridTariffChanged]

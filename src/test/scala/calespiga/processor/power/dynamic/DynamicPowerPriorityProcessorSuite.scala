@@ -1,11 +1,12 @@
 package calespiga.processor.power.dynamic
 
-import munit.FunSuite
-import calespiga.model.{State, Event}
-import java.time.Instant
-import com.softwaremill.quicklens.*
 import calespiga.model.Action
+import calespiga.model.Event
 import calespiga.model.Event.Power.PowerStatusReported
+import calespiga.model.State
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.FunSuite
 
 class DynamicPowerPriorityProcessorSuite extends FunSuite {
 

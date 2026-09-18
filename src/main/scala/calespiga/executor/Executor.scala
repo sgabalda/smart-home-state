@@ -1,7 +1,7 @@
 package calespiga.executor
 
-import calespiga.model.Action
 import calespiga.ErrorManager
+import calespiga.model.Action
 import cats.effect.IO
 
 trait Executor {

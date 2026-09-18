@@ -1,13 +1,15 @@
 package calespiga.processor.carCharger
 
-import munit.FunSuite
-import calespiga.model.{State, Action, CarChargerSignal}
+import CarChargerTestHelper.stateWithCarCharger
+import calespiga.model.Action
+import calespiga.model.CarChargerSignal
 import calespiga.model.Event.CarCharger.*
+import calespiga.model.State
+import calespiga.processor.ProcessorConfigHelper
+import com.softwaremill.quicklens.*
 import java.time.Instant
 import java.time.ZoneId
-import com.softwaremill.quicklens.*
-import calespiga.processor.ProcessorConfigHelper
-import CarChargerTestHelper.stateWithCarCharger
+import munit.FunSuite
 
 class CarChargerEnergyProcessorSuite extends FunSuite {
 

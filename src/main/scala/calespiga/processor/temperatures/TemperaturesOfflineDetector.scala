@@ -1,7 +1,7 @@
 package calespiga.processor.temperatures
 
-import calespiga.model.Event
 import calespiga.config.OfflineDetectorConfig
+import calespiga.model.Event
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.OfflineDetector
 

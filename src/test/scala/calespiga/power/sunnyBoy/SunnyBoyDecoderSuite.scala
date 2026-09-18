@@ -1,7 +1,7 @@
 package calespiga.power.sunnyBoy
 
-import munit.FunSuite
 import calespiga.config.SunnyBoyConfig
+import munit.FunSuite
 
 class SunnyBoyDecoderSuite extends FunSuite {
 

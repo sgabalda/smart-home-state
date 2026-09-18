@@ -1,13 +1,15 @@
 package calespiga.mqtt
 
+import calespiga.HealthStatusManager.HealthComponentManager
 import calespiga.config.MqttConfig
-import cats.effect.{IO, ResourceIO, Deferred}
+import cats.effect.Deferred
+import cats.effect.IO
+import cats.effect.ResourceIO
 import fs2.Stream
 import net.sigusr.mqtt.api.*
 import net.sigusr.mqtt.api.QualityOfService.AtLeastOnce
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import calespiga.HealthStatusManager.HealthComponentManager
 
 trait Consumer {
   def startConsumer(): Stream[IO, Message]

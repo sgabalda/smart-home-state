@@ -1,17 +1,17 @@
 package calespiga.ui
 
 import calespiga.ErrorManager
+import calespiga.config.UIConfig
 import calespiga.model.Event
+import calespiga.model.FanSignal
 import calespiga.openhab.APIClient.ItemChangedEvent
 import calespiga.openhab.ApiClientStub
-import cats.effect.IO
-import munit.CatsEffectSuite
-import fs2.Stream
-import calespiga.model.FanSignal
 import calespiga.ui.UserInterfaceManager
-import calespiga.config.UIConfig
-import scala.concurrent.duration.*
+import cats.effect.IO
 import cats.effect.testkit.TestControl
+import fs2.Stream
+import munit.CatsEffectSuite
+import scala.concurrent.duration.*
 
 class UserInterfaceManagerSuite extends CatsEffectSuite {
 

@@ -3,8 +3,8 @@ package calespiga.processor.power.dynamic
 import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
 import calespiga.processor.power.dynamic.Power
-import java.time.Instant
 import cats.effect.IO
+import java.time.Instant
 
 object DynamicPowerConsumerStub {
 

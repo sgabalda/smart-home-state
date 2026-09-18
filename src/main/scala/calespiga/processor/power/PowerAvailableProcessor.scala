@@ -1,14 +1,16 @@
 package calespiga.processor.power
 
+import calespiga.config.PowerAvailableProcessorConfig
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.Event.Power.PowerProductionReadingError
+import calespiga.model.Event.Power.PowerStatusReported
+import calespiga.model.Event.System.StartupEvent
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
-import calespiga.model.Event.Power.PowerStatusReported
-import calespiga.model.{State, Action, Event}
 import java.time.Instant
-import calespiga.config.PowerAvailableProcessorConfig
 import java.time.ZoneId
-import calespiga.model.Event.System.StartupEvent
-import calespiga.model.Event.Power.PowerProductionReadingError
 
 object PowerAvailableProcessor {
 

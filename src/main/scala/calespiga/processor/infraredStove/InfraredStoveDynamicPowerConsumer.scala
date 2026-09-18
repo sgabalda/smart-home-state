@@ -1,16 +1,16 @@
 package calespiga.processor.infraredStove
 
+import calespiga.config.InfraredStoveConfig
+import calespiga.model.InfraredStoveSignal
+import calespiga.model.InfraredStoveSignal.SetAutomatic
+import calespiga.model.State
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer.DynamicPowerResult
-import calespiga.model.State
-import calespiga.model.InfraredStoveSignal.SetAutomatic
-import calespiga.model.InfraredStoveSignal
 import calespiga.processor.power.dynamic.Power
-import com.softwaremill.quicklens.*
-import calespiga.config.InfraredStoveConfig
 import calespiga.processor.utils.SyncDetector
-import java.time.Instant
 import cats.effect.IO
+import com.softwaremill.quicklens.*
+import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

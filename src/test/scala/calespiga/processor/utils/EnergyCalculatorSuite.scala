@@ -1,8 +1,8 @@
 package calespiga.processor.utils
 
-import munit.FunSuite
 import java.time.Instant
 import java.time.ZoneId
+import munit.FunSuite
 
 class EnergyCalculatorSuite extends FunSuite {
 

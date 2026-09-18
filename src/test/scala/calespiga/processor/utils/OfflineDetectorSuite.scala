@@ -1,11 +1,12 @@
 package calespiga.processor.utils
 
-import calespiga.processor.utils.OfflineDetector
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
-
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
+import calespiga.processor.utils.OfflineDetector
 import java.time.Instant
+import munit.FunSuite
 
 class OfflineDetectorSuite extends FunSuite {
 

@@ -1,9 +1,11 @@
 package calespiga.processor
 
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.FunSuite
 
 class SingleProcessorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")

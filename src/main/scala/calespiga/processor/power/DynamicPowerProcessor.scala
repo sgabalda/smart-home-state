@@ -1,22 +1,22 @@
 package calespiga.processor.power
 
-import calespiga.processor.EffectfulProcessor
-import calespiga.model.State
+import calespiga.config.DynamicPowerProcessorConfig
+import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.Event.Power.PowerStatusReported
-import java.time.Instant
-import calespiga.model.Action
+import calespiga.model.Event.System.StartupEvent
+import calespiga.model.GridSignal
+import calespiga.model.State
+import calespiga.processor.EffectfulProcessor
+import calespiga.processor.grid.GridConnectionManager
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
-import calespiga.config.DynamicPowerProcessorConfig
-import calespiga.processor.grid.GridConnectionManager
-import calespiga.model.GridSignal
-import calespiga.model.Event.System.StartupEvent
 import cats.effect.IO
+import cats.implicits.*
+import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import cats.implicits.*
 
 object DynamicPowerProcessor {
 

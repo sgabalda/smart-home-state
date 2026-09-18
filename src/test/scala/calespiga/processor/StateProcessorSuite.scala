@@ -1,14 +1,16 @@
 package calespiga.processor
 
-import munit.CatsEffectSuite
+import calespiga.processor.grid.GridConnectionManagerStub
 import cats.effect.IO
+import cats.effect.Ref
 import com.softwaremill.quicklens.*
 import java.time.ZoneId
-import cats.effect.Ref
-import calespiga.processor.grid.GridConnectionManagerStub
+import munit.CatsEffectSuite
 
 class StateProcessorSuite extends CatsEffectSuite {
-  import calespiga.model.{State, Action, Event}
+  import calespiga.model.Action
+  import calespiga.model.Event
+  import calespiga.model.State
   import java.time.Instant
 
   val now = Instant.parse("2023-08-17T10:00:00Z")

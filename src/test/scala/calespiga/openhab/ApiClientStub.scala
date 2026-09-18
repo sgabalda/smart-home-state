@@ -1,9 +1,9 @@
 package calespiga.openhab
 
+import calespiga.config.OpenHabConfig
 import calespiga.openhab.APIClient.ItemChangedEvent
 import cats.effect.IO
 import scala.concurrent.duration.*
-import calespiga.config.OpenHabConfig
 
 object ApiClientStub {
 

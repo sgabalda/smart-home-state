@@ -1,9 +1,9 @@
 package calespiga.processor.power.dynamic
 
-import munit.FunSuite
 import calespiga.model.State
-import com.softwaremill.quicklens.*
 import cats.effect.IO
+import com.softwaremill.quicklens.*
+import munit.FunSuite
 
 class DynamicConsumerOrdererSuite extends FunSuite {
 

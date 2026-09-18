@@ -1,13 +1,15 @@
 package calespiga.processor.utils
 
-import calespiga.model.{Action, Event, State}
 import calespiga.config.OfflineDetectorConfig
-import java.time.Instant
-import calespiga.processor.SingleProcessor
-import calespiga.model.Event.System.OfflineDetected
-import calespiga.model.OfflineOnlineSignal
+import calespiga.model.Action
 import calespiga.model.Action.SendFeedbackEvent
 import calespiga.model.Action.SendNotification
+import calespiga.model.Event
+import calespiga.model.Event.System.OfflineDetected
+import calespiga.model.OfflineOnlineSignal
+import calespiga.model.State
+import calespiga.processor.SingleProcessor
+import java.time.Instant
 
 /** Generic offline detector processor that can be used for any component by
   * providing a matching function for the relevant events and the actions to set

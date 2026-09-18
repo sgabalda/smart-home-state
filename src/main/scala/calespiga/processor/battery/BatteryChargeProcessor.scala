@@ -1,9 +1,13 @@
 package calespiga.processor.battery
 
 import calespiga.config.BatteryConfig
-import calespiga.model.{Action, Event, GridTariff, State}
-import calespiga.model.{BatteryChargeTariff, BatteryStatus}
+import calespiga.model.Action
+import calespiga.model.BatteryChargeTariff
+import calespiga.model.BatteryStatus
+import calespiga.model.Event
 import calespiga.model.GridSignal
+import calespiga.model.GridTariff
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
 import java.time.Instant

@@ -1,10 +1,12 @@
 package calespiga.processor.power
 
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
 import calespiga.config.PowerAvailableProcessorConfig
-import java.time.Instant
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import com.softwaremill.quicklens.*
+import java.time.Instant
+import munit.FunSuite
 import scala.concurrent.duration.*
 
 class PowerAvailableProcessorSuite extends FunSuite {

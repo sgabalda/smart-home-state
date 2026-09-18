@@ -1,10 +1,13 @@
 package calespiga.processor.grid
 
-import munit.FunSuite
-import calespiga.model.{Action, Event, GridTariff, State}
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.GridTariff
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
 import java.time.Instant
+import munit.FunSuite
 
 class GridAvailablePowerProcessorSuite extends FunSuite {
 

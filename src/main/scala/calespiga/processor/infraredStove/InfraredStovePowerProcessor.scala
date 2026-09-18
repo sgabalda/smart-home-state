@@ -1,22 +1,24 @@
 package calespiga.processor.infraredStove
 
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
 import calespiga.config.InfraredStoveConfig
-import calespiga.model.Event.InfraredStove.InfraredStovePowerStatusReported
-import calespiga.model.Event.InfraredStove.InfraredStovePowerCommandChanged
-import calespiga.model.InfraredStoveSignal.TurnOff
-import calespiga.model.InfraredStoveSignal.SetAutomatic
-import calespiga.model.InfraredStoveSignal.SetPower600
-import calespiga.model.InfraredStoveSignal.SetPower1200
-import calespiga.model.InfraredStoveSignal
-import com.softwaremill.quicklens.*
+import calespiga.model.Action
+import calespiga.model.Event
 import calespiga.model.Event.InfraredStove
-import java.time.ZoneId
+import calespiga.model.Event.InfraredStove.InfraredStovePowerCommandChanged
+import calespiga.model.Event.InfraredStove.InfraredStovePowerStatusReported
+import calespiga.model.InfraredStoveSignal
+import calespiga.model.InfraredStoveSignal.SetAutomatic
+import calespiga.model.InfraredStoveSignal.SetPower1200
+import calespiga.model.InfraredStoveSignal.SetPower600
+import calespiga.model.InfraredStoveSignal.TurnOff
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
-import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.ProcessorFormatter
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import java.time.ZoneId
 
 private object InfraredStovePowerProcessor {
 

@@ -1,7 +1,7 @@
 package calespiga.processor.heater
 
-import calespiga.model.HeaterSignal
 import calespiga.config.HeaterConfig
+import calespiga.model.HeaterSignal
 import calespiga.processor.utils.CommandActions
 
 object Actions {

@@ -1,18 +1,20 @@
 package calespiga
 
-import calespiga.config.{
-  MqttConfig,
-  OpenHabConfig,
-  StatePersistenceConfig,
-  SunnyBoyConfig
-}
+import calespiga.config.MqttConfig
+import calespiga.config.OpenHabConfig
+import calespiga.config.StatePersistenceConfig
+import calespiga.config.SunnyBoyConfig
 import calespiga.model.State
-import calespiga.mqtt.{Consumer, Producer}
+import calespiga.mqtt.Consumer
+import calespiga.mqtt.Producer
 import calespiga.openhab.APIClient
 import calespiga.persistence.StatePersistence
 import calespiga.power.PowerDataSource.PowerProductionOnRequestProvider
-import calespiga.power.sunnyBoy.{SunnyBoyAPIClient, SunnyBoyDecoder}
-import cats.effect.{IO, Ref, ResourceIO}
+import calespiga.power.sunnyBoy.SunnyBoyAPIClient
+import calespiga.power.sunnyBoy.SunnyBoyDecoder
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.ResourceIO
 
 trait ExternalInterfaces {
   def mqttConsumer(

@@ -1,11 +1,11 @@
 package calespiga.processor.power
 
-import calespiga.processor.EffectfulProcessor
 import calespiga.config.PowerProcessorConfig
-import java.time.ZoneId
+import calespiga.processor.EffectfulProcessor
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.DynamicPowerPriorityProcessor
+import java.time.ZoneId
 
 object PowerProcessor {
 

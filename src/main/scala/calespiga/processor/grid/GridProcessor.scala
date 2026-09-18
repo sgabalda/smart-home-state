@@ -1,9 +1,9 @@
 package calespiga.processor.grid
 
 import calespiga.config.GridConfig
+import calespiga.config.OfflineDetectorConfig
 import calespiga.config.SyncDetectorConfig
 import calespiga.processor.SingleProcessor
-import calespiga.config.OfflineDetectorConfig
 
 /** Aggregate processor for the grid connection relay.
   */

@@ -1,11 +1,11 @@
 package calespiga.processor.power.dynamic
 
-import calespiga.processor.SingleProcessor
-import calespiga.model.State
-import calespiga.model.Event
-import java.time.Instant
 import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
+import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
+import java.time.Instant
 
 object DynamicPowerPriorityProcessor {
 

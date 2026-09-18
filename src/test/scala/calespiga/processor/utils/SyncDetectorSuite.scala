@@ -1,11 +1,13 @@
 package calespiga.processor.utils
 
-import munit.FunSuite
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
+import calespiga.model.Action
+import calespiga.model.Event
 import calespiga.model.HeaterSignal
-import calespiga.processor.utils.SyncDetector
+import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.utils.SyncDetector
+import java.time.Instant
+import munit.FunSuite
 
 class SyncDetectorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")

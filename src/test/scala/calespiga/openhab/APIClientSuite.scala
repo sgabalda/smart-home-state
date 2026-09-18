@@ -1,14 +1,15 @@
 package calespiga.openhab
 
-import cats.effect.{IO, Resource}
+import calespiga.HealthComponentManagerStub
+import calespiga.openhab.ApiClientStub
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.Resource
 import munit.CatsEffectSuite
 import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.testing.*
 import sttp.client4.testing.StubBody.Adjust
 import sttp.model.StatusCode
-import calespiga.HealthComponentManagerStub
-import cats.effect.Ref
-import calespiga.openhab.ApiClientStub
 
 class APIClientSuite extends CatsEffectSuite {
   private val config = ApiClientStub.config

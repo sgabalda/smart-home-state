@@ -1,13 +1,13 @@
 package calespiga.power
 
+import calespiga.ErrorManager
+import calespiga.config.PowerProductionSourceConfig
+import calespiga.model.Event.Power.PowerData
+import calespiga.model.Event.Power.PowerProductionReadingError
+import calespiga.model.Event.Power.PowerStatusReported
 import cats.effect.IO
 import fs2.Stream
-
-import calespiga.config.PowerProductionSourceConfig
-import calespiga.model.Event.Power.{PowerStatusReported, PowerData}
-import calespiga.ErrorManager
 import java.time.ZoneId
-import calespiga.model.Event.Power.PowerProductionReadingError
 
 trait PowerDataSource {
 

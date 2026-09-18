@@ -2,9 +2,9 @@ package calespiga.processor.heater
 
 import calespiga.config.HeaterConfig
 import calespiga.config.OfflineDetectorConfig
-import java.time.ZoneId
-import calespiga.processor.SingleProcessor
 import calespiga.config.SyncDetectorConfig
+import calespiga.processor.SingleProcessor
+import java.time.ZoneId
 
 object HeaterProcessor {
 

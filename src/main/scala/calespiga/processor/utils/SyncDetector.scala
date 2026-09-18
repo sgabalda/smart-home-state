@@ -1,10 +1,12 @@
 package calespiga.processor.utils
 
-import calespiga.model.{Action, Event, State}
-import calespiga.config.SyncDetectorConfig
-import java.time.Instant
 import SyncDetector.CheckSyncResult
+import calespiga.config.SyncDetectorConfig
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
+import java.time.Instant
 
 /** Generic synchronization detector processor that can be used for any
   * component by providing two fields to compare for sync status, functions to

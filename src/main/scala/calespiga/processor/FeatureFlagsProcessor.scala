@@ -1,11 +1,14 @@
 package calespiga.processor
 
-import calespiga.model.{Event, State, Action}
-import calespiga.model.Event.EventData
-import java.time.Instant
-import com.softwaremill.quicklens.*
-import cats.effect.{IO, Ref}
 import calespiga.config.FeatureFlagsConfig
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.Event.EventData
+import calespiga.model.State
+import cats.effect.IO
+import cats.effect.Ref
+import com.softwaremill.quicklens.*
+import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

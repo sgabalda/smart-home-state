@@ -1,7 +1,11 @@
 package calespiga.model
 
-import io.circe.{Decoder, Encoder, Json}
-import java.time.{DayOfWeek, Instant, ZoneId}
+import io.circe.Decoder
+import io.circe.Encoder
+import io.circe.Json
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.ZoneId
 import sttp.tapir.Schema
 
 /** Electricity tariff period for the grid connection. */

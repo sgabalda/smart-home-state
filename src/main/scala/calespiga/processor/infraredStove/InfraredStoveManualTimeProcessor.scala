@@ -1,15 +1,17 @@
 package calespiga.processor.infraredStove
 
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
-import java.time.ZoneId
+import calespiga.model.Action
+import calespiga.model.Event
 import calespiga.model.Event.InfraredStove.InfraredStovePowerCommandChanged
 import calespiga.model.InfraredStoveSignal
-import com.softwaremill.quicklens.*
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.ProcessorFormatter
-import scala.concurrent.duration._
+import com.softwaremill.quicklens.*
 import java.time.{Duration => JavaDuration}
+import java.time.Instant
+import java.time.ZoneId
+import scala.concurrent.duration._
 
 private object InfraredStoveManualTimeProcessor {
 

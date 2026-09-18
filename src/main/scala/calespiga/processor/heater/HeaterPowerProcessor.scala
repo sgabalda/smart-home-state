@@ -1,24 +1,26 @@
 package calespiga.processor.heater
 
-import calespiga.model.{State, Action, Event}
-import java.time.Instant
 import calespiga.config.HeaterConfig
-import calespiga.model.Event.Heater.HeaterPowerStatusReported
-import calespiga.model.Event.Heater.HeaterPowerCommandChanged
+import calespiga.model.Action
+import calespiga.model.Event
+import calespiga.model.Event.Heater
 import calespiga.model.Event.Heater.HeaterIsHotReported
-import calespiga.model.HeaterSignal.TurnOff
+import calespiga.model.Event.Heater.HeaterPowerCommandChanged
+import calespiga.model.Event.Heater.HeaterPowerStatusReported
+import calespiga.model.HeaterSignal
 import calespiga.model.HeaterSignal.SetAutomatic
-import calespiga.model.HeaterSignal.SetPower500
 import calespiga.model.HeaterSignal.SetPower1000
 import calespiga.model.HeaterSignal.SetPower2000
-import calespiga.model.HeaterSignal
-import com.softwaremill.quicklens.*
-import calespiga.model.Event.Heater
-import java.time.ZoneId
+import calespiga.model.HeaterSignal.SetPower500
+import calespiga.model.HeaterSignal.TurnOff
+import calespiga.model.State
 import calespiga.processor.SingleProcessor
-import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.EnergyCalculator
 import calespiga.processor.utils.ProcessorFormatter
+import com.softwaremill.quicklens.*
+import java.time.Instant
+import java.time.ZoneId
 
 private object HeaterPowerProcessor {
 

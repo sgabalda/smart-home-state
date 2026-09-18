@@ -1,11 +1,11 @@
 package calespiga.processor.battery
 
-import munit.FunSuite
 import calespiga.model._
 import calespiga.processor.ProcessorConfigHelper
+import calespiga.processor.grid.GridConnectionManagerStub
 import com.softwaremill.quicklens.*
 import java.time.Instant
-import calespiga.processor.grid.GridConnectionManagerStub
+import munit.FunSuite
 
 class BatteryProcessorSuite extends FunSuite {
 

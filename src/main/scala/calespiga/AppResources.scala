@@ -1,25 +1,28 @@
 package calespiga
 
-import java.time.ZoneId
-
 import calespiga.config.ConfigLoader
-import calespiga.executor.{DirectExecutor, Executor, ScheduledExecutor}
+import calespiga.executor.DirectExecutor
+import calespiga.executor.Executor
+import calespiga.executor.ScheduledExecutor
 import calespiga.http.Endpoints
+import calespiga.model.Event
 import calespiga.model.Event.FeedbackEventData
-import calespiga.model.{Event, State}
-import calespiga.mqtt.{
-  ActionToMqttProducer,
-  InputTopicsManager,
-  MqttToEventInputProcessor
-}
+import calespiga.model.State
+import calespiga.mqtt.ActionToMqttProducer
+import calespiga.mqtt.InputTopicsManager
+import calespiga.mqtt.MqttToEventInputProcessor
 import calespiga.persistence.StatePersistence
 import calespiga.power.PowerDataSource
 import calespiga.processor.StateProcessor
 import calespiga.processor.grid.GridTariffSource
 import calespiga.ui.UserInterfaceManager
-import cats.effect.{IO, Ref, Resource, ResourceIO}
+import cats.effect.IO
+import cats.effect.Ref
+import cats.effect.Resource
+import cats.effect.ResourceIO
 import cats.effect.std.Queue
 import fs2.Stream
+import java.time.ZoneId
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

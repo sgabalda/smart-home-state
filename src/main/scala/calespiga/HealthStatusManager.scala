@@ -1,8 +1,8 @@
 package calespiga
 
+import calespiga.HealthStatusManager.HealthComponentManager
 import cats.effect.IO
 import cats.effect.Resource
-import calespiga.HealthStatusManager.HealthComponentManager
 
 trait HealthStatusManager {
   def status: IO[HealthStatusManager.Health]

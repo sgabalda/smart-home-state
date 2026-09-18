@@ -1,19 +1,16 @@
 package calespiga.model
 
+import calespiga.model.State.Battery
+import calespiga.model.State.CarCharger
+import calespiga.model.State.Fans
+import calespiga.model.State.FeatureFlags
+import calespiga.model.State.Grid
+import calespiga.model.State.Heater
+import calespiga.model.State.InfraredStove
+import calespiga.model.State.PowerManagement
+import calespiga.model.State.Temperatures
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto._
-
-import calespiga.model.State.{
-  Fans,
-  Grid,
-  Temperatures,
-  FeatureFlags,
-  Heater,
-  PowerManagement,
-  InfraredStove,
-  Battery,
-  CarCharger
-}
 
 case class State(
     featureFlags: FeatureFlags = FeatureFlags(),

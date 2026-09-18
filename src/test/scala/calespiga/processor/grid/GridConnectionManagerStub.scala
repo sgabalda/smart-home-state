@@ -1,6 +1,8 @@
 package calespiga.processor.grid
 
-import calespiga.model.{Action, GridSignal, State}
+import calespiga.model.Action
+import calespiga.model.GridSignal
+import calespiga.model.State
 
 class GridConnectionManagerStub extends GridConnectionManager {
   var requestCalls: List[GridSignal.ActorsConnecting] = Nil
