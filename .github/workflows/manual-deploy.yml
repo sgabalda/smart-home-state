@@ -41,8 +41,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check whether ref is a Git tag
+        id: ref-type
+        env:
+          DEPLOY_REF: ${{ github.event.inputs.ref }}
+        run: |
+          if git ls-remote --exit-code --refs origin "refs/tags/$DEPLOY_REF" >/dev/null; then
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Extract metadata
         id: meta
+        if: steps.ref-type.outputs.is_tag != 'true'
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -50,8 +62,16 @@ jobs:
             type=raw,value=stable
             type=raw,value=manual-${{ github.event.inputs.ref }}-${{ github.run_number }}
 
+      - name: Use existing tagged image
+        if: steps.ref-type.outputs.is_tag == 'true'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          IMAGE_TAG: ${{ github.event.inputs.ref }}
+        run: docker buildx imagetools create --tag "$IMAGE:stable" "$IMAGE:$IMAGE_TAG"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
+        if: steps.ref-type.outputs.is_tag != 'true'
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -68,5 +88,9 @@ jobs:
           echo "📝 Reason: ${{ github.event.inputs.reason }}"
           echo "📦 Docker images published:"
           echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable"
-          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:manual-${{ github.event.inputs.ref }}-${{ github.run_number }}"
+          if [ "${{ steps.ref-type.outputs.is_tag }}" = "true" ]; then
+            echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.ref }} (existing image)"
+          else
+            echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:manual-${{ github.event.inputs.ref }}-${{ github.run_number }}"
+          fi
           echo "🔄 Watchtower will automatically deploy the new stable image to your Raspberry Pi"
