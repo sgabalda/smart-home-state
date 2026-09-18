@@ -7,6 +7,30 @@ on:
     branches: [main]
 
 jobs:
+  changes:
+    name: Detect Docker build changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    outputs:
+      docker: ${{ steps.filter.outputs.docker }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Docker build files
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docker:
+              - 'build.sbt'
+              - 'project/plugins.sbt'
+              - 'project/build.properties'
+              - 'Dockerfile'
+
   test:
     name: Format, Compile and Test
     runs-on: ubuntu-latest
@@ -45,3 +69,34 @@ jobs:
 
       - name: Run tests
         run: sbt test
+
+  docker:
+    name: Build and run Docker image
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --tag smart-home-state:ci .
+
+      - name: Run Docker image
+        run: |
+          set -euo pipefail
+
+          container_name=smart-home-state-ci
+          cleanup() {
+            docker logs "$container_name" || true
+            docker rm --force "$container_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run --detach --name "$container_name" smart-home-state:ci
+          running=$(docker inspect --format '{{.State.Running}}' "$container_name")
+          test "$running" = true
+          docker stop "$container_name"
