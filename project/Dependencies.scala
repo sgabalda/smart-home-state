@@ -20,7 +20,7 @@ object Dependencies {
 
     val logback = "1.6.3"
 
-    val munit = "2.2.0"
+    val munit = "2.2.1"
 
     val pureconfig = "0.17.10"
 
