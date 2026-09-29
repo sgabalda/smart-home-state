@@ -73,6 +73,8 @@ sitemap shs label="Ca l'espiga SHS" {
             Setpoint item=BassaAiguaGrisaHoraFiSHS label="Hora fi [%d h]" minValue=0 maxValue=23 step=1
             Text item=BassaAiguaGrisaStatusSHS label="Estat bomba: [%s]"
             Text item=BassaAiguaGrisaProgramacioSHS label="Programació: [%s]"
+            Text item=BassaAiguaGrisaSincronitzacioSHS label="Sincronització: [%s]"
+            Text item=BassaAiguaGrisaMicroControladorEstatSHS label="Microcontrolador: [%s]"
         }
     }
 

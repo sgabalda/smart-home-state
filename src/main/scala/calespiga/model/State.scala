@@ -86,7 +86,10 @@ object State {
       mode: GreyWaterMode = GreyWaterMode.Off,
       startHour: Int = 16,
       endHour: Int = 18,
-      pumpOn: Option[Boolean] = None
+      pumpOn: Option[Boolean] = None,
+      lastCommandSent: Option[Boolean] = None,
+      lastSyncing: Option[java.time.Instant] = None,
+      online: Option[OfflineOnlineSignal] = None
   )
 
   case class PowerManagement(

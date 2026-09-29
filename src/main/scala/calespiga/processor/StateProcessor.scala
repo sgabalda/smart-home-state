@@ -76,7 +76,12 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      GreyWaterProcessor(config.greyWater, zoneId).toEffectful,
+      GreyWaterProcessor(
+        config.greyWater,
+        zoneId,
+        config.offlineDetector,
+        config.syncDetector
+      ).toEffectful,
       GridProcessor(
         config.grid,
         config.syncDetector,

@@ -4,21 +4,33 @@ import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.Event.GreyWater.*
 import calespiga.model.GreyWaterMode
+import calespiga.model.OfflineOnlineSignal
 import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.OfflineDetector
+import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
 import java.time.Instant
 import java.time.ZoneId
 import munit.FunSuite
 import scala.concurrent.duration.*
 
-class GreyWaterProcessorSuite extends FunSuite {
+class GreyWaterControlProcessorSuite extends FunSuite {
 
   private val config = ProcessorConfigHelper.greyWaterConfig
   private val zone = ZoneId.of("UTC")
   private val now = Instant.parse("2023-08-17T16:00:00Z")
-  private val processor = GreyWaterProcessor(config, zone)
+  private val processor = GreyWaterControlProcessor(config, zone)
+  private val aggregateProcessor = GreyWaterProcessor(
+    config,
+    zone,
+    ProcessorConfigHelper.offlineDetectorConfig,
+    ProcessorConfigHelper.syncDetectorConfig
+  )
+
+  private def assertCondition(condition: Boolean): Unit =
+    assertEquals(condition, true)
 
   private def expectedCommandActions(command: String): Set[Action] = {
     val mqttAction =
@@ -35,7 +47,7 @@ class GreyWaterProcessorSuite extends FunSuite {
 
   private def scheduledTransition(delay: FiniteDuration): Action =
     Action.Delayed(
-      GreyWaterProcessor.SCHEDULE_ID,
+      GreyWaterControlProcessor.SCHEDULE_ID,
       Action.SendFeedbackEvent(ScheduleTransition),
       delay
     )
@@ -45,26 +57,30 @@ class GreyWaterProcessorSuite extends FunSuite {
       processor.process(State(), ModeChanged("On"), now)
 
     assertEquals(newState.greyWater.mode, GreyWaterMode.On)
-    assert(expectedCommandActions("start").subsetOf(actions))
-    assert(
+    assertCondition(expectedCommandActions("start").subsetOf(actions))
+    assertCondition(
       actions.contains(
         Action.SetUIItemValue(config.scheduleDescriptionItem, "Sempre encesa")
       )
     )
-    assert(actions.contains(Action.Cancel(GreyWaterProcessor.SCHEDULE_ID)))
+    assertCondition(
+      actions.contains(Action.Cancel(GreyWaterControlProcessor.SCHEDULE_ID))
+    )
   }
 
   test("Off mode stops the pump") {
     val initialState = State().modify(_.greyWater.pumpOn).setTo(Some(true))
     val (_, actions) = processor.process(initialState, ModeChanged("off"), now)
 
-    assert(expectedCommandActions("stop").subsetOf(actions))
-    assert(
+    assertCondition(expectedCommandActions("stop").subsetOf(actions))
+    assertCondition(
       actions.contains(
         Action.SetUIItemValue(config.scheduleDescriptionItem, "Sempre apagada")
       )
     )
-    assert(actions.contains(Action.Cancel(GreyWaterProcessor.SCHEDULE_ID)))
+    assertCondition(
+      actions.contains(Action.Cancel(GreyWaterControlProcessor.SCHEDULE_ID))
+    )
   }
 
   test("Horari starts within the inclusive window and schedules its end") {
@@ -78,9 +94,9 @@ class GreyWaterProcessorSuite extends FunSuite {
     val (_, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
-    assert(expectedCommandActions("start").subsetOf(actions))
-    assert(actions.contains(scheduledTransition(2.hours)))
-    assert(
+    assertCondition(expectedCommandActions("start").subsetOf(actions))
+    assertCondition(actions.contains(scheduledTransition(2.hours)))
+    assertCondition(
       actions.contains(
         Action.SetUIItemValue(
           config.scheduleDescriptionItem,
@@ -100,8 +116,8 @@ class GreyWaterProcessorSuite extends FunSuite {
     val (_, actions) =
       processor.process(initialState, ScheduleTransition, endOfWindow)
 
-    assert(expectedCommandActions("stop").subsetOf(actions))
-    assert(actions.contains(scheduledTransition(22.hours)))
+    assertCondition(expectedCommandActions("stop").subsetOf(actions))
+    assertCondition(actions.contains(scheduledTransition(22.hours)))
   }
 
   test("overnight schedule remains on after midnight") {
@@ -116,8 +132,8 @@ class GreyWaterProcessorSuite extends FunSuite {
     val (_, actions) =
       processor.process(initialState, ScheduleTransition, afterMidnight)
 
-    assert(expectedCommandActions("start").subsetOf(actions))
-    assert(actions.contains(scheduledTransition(4.hours)))
+    assertCondition(expectedCommandActions("start").subsetOf(actions))
+    assertCondition(actions.contains(scheduledTransition(4.hours)))
   }
 
   test(
@@ -135,9 +151,11 @@ class GreyWaterProcessorSuite extends FunSuite {
     val (_, actions) =
       processor.process(initialState, Event.System.StartupEvent, now)
 
-    assert(expectedCommandActions("stop").subsetOf(actions))
-    assert(actions.contains(Action.Cancel(GreyWaterProcessor.SCHEDULE_ID)))
-    assert(!actions.exists(_.isInstanceOf[Action.Delayed]))
+    assertCondition(expectedCommandActions("stop").subsetOf(actions))
+    assertCondition(
+      actions.contains(Action.Cancel(GreyWaterControlProcessor.SCHEDULE_ID))
+    )
+    assertCondition(!actions.exists(_.isInstanceOf[Action.Delayed]))
   }
 
   test("hours outside 0-23 are rejected and the displayed value is restored") {
@@ -183,8 +201,10 @@ class GreyWaterProcessorSuite extends FunSuite {
       processor.process(State(), PumpStatusReported("on"), now)
 
     assertEquals(newState.greyWater.pumpOn, Some(true))
-    assert(actions.contains(Action.SetUIItemValue(config.statusItem, "on")))
-    assert(expectedCommandActions("stop").subsetOf(actions))
+    assertCondition(
+      actions.contains(Action.SetUIItemValue(config.statusItem, "on"))
+    )
+    assertCondition(expectedCommandActions("stop").subsetOf(actions))
   }
 
   test("unknown pump status is ignored") {
@@ -226,7 +246,7 @@ class GreyWaterProcessorSuite extends FunSuite {
 
   test("spring DST gap moves a missing schedule boundary forward") {
     val madridProcessor =
-      GreyWaterProcessor(config, ZoneId.of("Europe/Madrid"))
+      GreyWaterControlProcessor(config, ZoneId.of("Europe/Madrid"))
     val initialState = State()
       .modify(_.greyWater.mode)
       .setTo(GreyWaterMode.Horari)
@@ -241,7 +261,7 @@ class GreyWaterProcessorSuite extends FunSuite {
       beforeClockChange
     )
 
-    assert(beforeActions.contains(scheduledTransition(30.minutes)))
+    assertCondition(beforeActions.contains(scheduledTransition(30.minutes)))
 
     val clockChange = Instant.parse("2023-03-26T01:00:00Z")
     val (_, transitionActions) = madridProcessor.process(
@@ -250,13 +270,13 @@ class GreyWaterProcessorSuite extends FunSuite {
       clockChange
     )
 
-    assert(expectedCommandActions("start").subsetOf(transitionActions))
-    assert(transitionActions.contains(scheduledTransition(1.hour)))
+    assertCondition(expectedCommandActions("start").subsetOf(transitionActions))
+    assertCondition(transitionActions.contains(scheduledTransition(1.hour)))
   }
 
   test("autumn DST overlap uses the earlier boundary and keeps the window on") {
     val madridProcessor =
-      GreyWaterProcessor(config, ZoneId.of("Europe/Madrid"))
+      GreyWaterControlProcessor(config, ZoneId.of("Europe/Madrid"))
     val initialState = State()
       .modify(_.greyWater.mode)
       .setTo(GreyWaterMode.Horari)
@@ -271,7 +291,7 @@ class GreyWaterProcessorSuite extends FunSuite {
       beforeClockChange
     )
 
-    assert(beforeActions.contains(scheduledTransition(30.minutes)))
+    assertCondition(beforeActions.contains(scheduledTransition(30.minutes)))
 
     val repeatedHour = Instant.parse("2023-10-29T01:30:00Z")
     val (_, repeatedHourActions) = madridProcessor.process(
@@ -280,7 +300,107 @@ class GreyWaterProcessorSuite extends FunSuite {
       repeatedHour
     )
 
-    assert(expectedCommandActions("start").subsetOf(repeatedHourActions))
-    assert(repeatedHourActions.contains(scheduledTransition(90.minutes)))
+    assertCondition(
+      expectedCommandActions("start").subsetOf(repeatedHourActions)
+    )
+    assertCondition(
+      repeatedHourActions.contains(scheduledTransition(90.minutes))
+    )
+  }
+
+  test(
+    "aggregate tracks startup synchronization and schedules offline detection"
+  ) {
+    val initialState = State()
+      .modify(_.greyWater.mode)
+      .setTo(GreyWaterMode.On)
+    val (newState, actions) = aggregateProcessor.process(
+      initialState,
+      Event.System.StartupEvent,
+      now
+    )
+    val syncId = config.id + SyncDetector.ID_SUFFIX
+    val offlineId = config.id + OfflineDetector.ID_SUFFIX
+
+    assertEquals(newState.greyWater.lastCommandSent, Some(true))
+    assertEquals(newState.greyWater.lastSyncing, Some(now))
+    assertCondition(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.syncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncingText
+        )
+      )
+    )
+    assertCondition(
+      actions.contains(
+        Action.Delayed(
+          offlineId,
+          Action.SendFeedbackEvent(Event.System.OfflineDetected(offlineId)),
+          ProcessorConfigHelper.offlineDetectorConfig.timeoutDuration
+        )
+      )
+    )
+    assertCondition(actions.exists {
+      case Action.Delayed(`syncId`, _, _) => true
+      case _                              => false
+    })
+  }
+
+  test("aggregate reports online and synchronized after matching pump status") {
+    val initialState = State()
+      .modify(_.greyWater.mode)
+      .setTo(GreyWaterMode.On)
+      .modify(_.greyWater.lastCommandSent)
+      .setTo(Some(true))
+      .modify(_.greyWater.lastSyncing)
+      .setTo(Some(now.minusSeconds(20)))
+    val (newState, actions) = aggregateProcessor.process(
+      initialState,
+      PumpStatusReported("on"),
+      now
+    )
+
+    assertEquals(newState.greyWater.pumpOn, Some(true))
+    assertEquals(newState.greyWater.online, Some(OfflineOnlineSignal.Online))
+    assertEquals(newState.greyWater.lastSyncing, None)
+    assertCondition(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.onlineStatusItem,
+          ProcessorConfigHelper.offlineDetectorConfig.onlineText
+        )
+      )
+    )
+    assertCondition(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.syncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncText
+        )
+      )
+    )
+    assertCondition(
+      actions.contains(Action.Cancel(config.id + SyncDetector.ID_SUFFIX))
+    )
+  }
+
+  test("aggregate marks microcontroller offline after its status timeout") {
+    val offlineId = config.id + OfflineDetector.ID_SUFFIX
+    val (newState, actions) = aggregateProcessor.process(
+      State(),
+      Event.System.OfflineDetected(offlineId),
+      now
+    )
+
+    assertEquals(newState.greyWater.online, Some(OfflineOnlineSignal.Offline))
+    assertCondition(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.onlineStatusItem,
+          ProcessorConfigHelper.offlineDetectorConfig.offlineText
+        )
+      )
+    )
   }
 }

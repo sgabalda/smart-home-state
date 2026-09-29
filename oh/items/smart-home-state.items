@@ -58,6 +58,8 @@ Number BassaAiguaGrisaHoraIniciSHS "Hora inici bomba aigua grisa"
 Number BassaAiguaGrisaHoraFiSHS "Hora fi bomba aigua grisa"
 String BassaAiguaGrisaStatusSHS "Estat bomba aigua grisa"
 String BassaAiguaGrisaProgramacioSHS "Programació bomba aigua grisa"
+String BassaAiguaGrisaSincronitzacioSHS "Estat sincronització bomba aigua grisa"
+String BassaAiguaGrisaMicroControladorEstatSHS "Estat microcontrolador aigua grisa"
 
 /*
 ----------------------

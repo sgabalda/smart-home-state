@@ -98,7 +98,9 @@ object ProcessorConfigHelper {
     modeItem = "greyWater/mode",
     startHourItem = "greyWater/startHour",
     endHourItem = "greyWater/endHour",
-    scheduleDescriptionItem = "greyWater/schedule"
+    scheduleDescriptionItem = "greyWater/schedule",
+    syncStatusItem = "greyWater/syncStatus",
+    onlineStatusItem = "greyWater/onlineStatus"
   )
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(

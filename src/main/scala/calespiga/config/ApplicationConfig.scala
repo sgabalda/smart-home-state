@@ -203,7 +203,9 @@ final case class GreyWaterConfig(
     modeItem: String,
     startHourItem: String,
     endHourItem: String,
-    scheduleDescriptionItem: String
+    scheduleDescriptionItem: String,
+    syncStatusItem: String,
+    onlineStatusItem: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(
