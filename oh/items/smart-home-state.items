@@ -49,6 +49,20 @@ String EstufaInfrarrojosProgramatApagamentSHS "Apagada programada"
 
 /*
 ----------------------
+ GREY WATER
+----------------------
+*/
+String AiguaGrisaTitle "Aigua grisa"
+String BassaAiguaGrisaModeSHS "Mode bomba aigua grisa"
+Number BassaAiguaGrisaHoraIniciSHS "Hora inici bomba aigua grisa"
+Number BassaAiguaGrisaHoraFiSHS "Hora fi bomba aigua grisa"
+String BassaAiguaGrisaStatusSHS "Estat bomba aigua grisa"
+String BassaAiguaGrisaProgramacioSHS "Programació bomba aigua grisa"
+String BassaAiguaGrisaSincronitzacioSHS "Estat sincronització bomba aigua grisa"
+String BassaAiguaGrisaMicroControladorEstatSHS "Estat microcontrolador aigua grisa"
+
+/*
+----------------------
  POWER 
 ----------------------
 */

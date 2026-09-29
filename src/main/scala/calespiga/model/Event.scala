@@ -154,6 +154,24 @@ object Event {
 
   }
 
+  object GreyWater {
+    sealed trait GreyWaterData extends EventData
+
+    @InputEventMqtt("bassa/aiguagrisa/status")
+    case class PumpStatusReported(status: String) extends GreyWaterData
+
+    @InputEventOHItem("BassaAiguaGrisaModeSHS")
+    case class ModeChanged(mode: String) extends GreyWaterData
+
+    @InputEventOHItem("BassaAiguaGrisaHoraIniciSHS")
+    case class StartHourChanged(hour: Int) extends GreyWaterData
+
+    @InputEventOHItem("BassaAiguaGrisaHoraFiSHS")
+    case class EndHourChanged(hour: Int) extends GreyWaterData
+
+    case object ScheduleTransition extends FeedbackEventData with GreyWaterData
+  }
+
   object Grid {
     sealed trait GridData extends EventData
 
