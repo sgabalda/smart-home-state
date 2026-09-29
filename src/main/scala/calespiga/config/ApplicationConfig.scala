@@ -55,6 +55,7 @@ final case class ProcessorConfig(
     syncDetector: SyncDetectorConfig,
     heater: HeaterConfig,
     infraredStove: InfraredStoveConfig,
+    greyWater: GreyWaterConfig,
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
     grid: GridConfig,
@@ -192,6 +193,17 @@ final case class InfraredStoveConfig(
     syncTimeoutForDynamicPower: FiniteDuration,
     dynamicConsumerCode: String,
     programmedOffTimeItem: String
+) derives ConfigReader
+
+final case class GreyWaterConfig(
+    mqttTopicForCommand: String,
+    resendInterval: FiniteDuration,
+    id: String,
+    statusItem: String,
+    modeItem: String,
+    startHourItem: String,
+    endHourItem: String,
+    scheduleDescriptionItem: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(

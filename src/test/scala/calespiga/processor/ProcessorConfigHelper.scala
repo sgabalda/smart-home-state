@@ -90,6 +90,17 @@ object ProcessorConfigHelper {
     programmedOffTimeItem = "infraredStove/programmedOffTime"
   )
 
+  val greyWaterConfig: GreyWaterConfig = GreyWaterConfig(
+    mqttTopicForCommand = "bassa/aiguagrisa/set",
+    resendInterval = 20.seconds,
+    id = "grey-water-processor",
+    statusItem = "greyWater/status",
+    modeItem = "greyWater/mode",
+    startHourItem = "greyWater/startHour",
+    endHourItem = "greyWater/endHour",
+    scheduleDescriptionItem = "greyWater/schedule"
+  )
+
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
     heaterMqttTopic = Set("heater/topic1", "heater/topic2"),
     setHeaterManagementItem = "featureFlags/setHeaterManagement",
@@ -177,6 +188,7 @@ object ProcessorConfigHelper {
     syncDetector = syncDetectorConfig,
     heater = heaterConfig,
     infraredStove = infraredStoveConfig,
+    greyWater = greyWaterConfig,
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,

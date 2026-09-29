@@ -9,6 +9,8 @@ object CarChargerSignal {
   case object Off extends ControllerState
   case object On extends ControllerState
 
+  given Schema[ControllerState] = Schema.string
+
   implicit val controllerStateEncoder: Encoder[ControllerState] =
     Encoder.instance {
       case Off => Json.fromString("off")

@@ -5,6 +5,7 @@ import calespiga.model.Event
 import calespiga.model.State
 import calespiga.processor.battery.BatteryProcessor
 import calespiga.processor.carCharger.CarChargerProcessor
+import calespiga.processor.greyWater.GreyWaterProcessor
 import calespiga.processor.grid.GridConnectionManager
 import calespiga.processor.grid.GridProcessor
 import calespiga.processor.heater.HeaterProcessor
@@ -75,6 +76,7 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
+      GreyWaterProcessor(config.greyWater, zoneId).toEffectful,
       GridProcessor(
         config.grid,
         config.syncDetector,

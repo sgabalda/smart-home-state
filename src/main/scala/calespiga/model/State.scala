@@ -4,6 +4,7 @@ import calespiga.model.State.Battery
 import calespiga.model.State.CarCharger
 import calespiga.model.State.Fans
 import calespiga.model.State.FeatureFlags
+import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
 import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
@@ -18,6 +19,7 @@ case class State(
     fans: Fans = Fans(),
     heater: Heater = Heater(),
     infraredStove: InfraredStove = InfraredStove(),
+    greyWater: GreyWater = GreyWater(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     battery: Battery = Battery(),
@@ -78,6 +80,13 @@ object State {
       energyToday: Float = 0.0f,
       lastOnline: Option[java.time.Instant] = None,
       lastSyncing: Option[java.time.Instant] = None
+  )
+
+  case class GreyWater(
+      mode: GreyWaterMode = GreyWaterMode.Off,
+      startHour: Int = 16,
+      endHour: Int = 18,
+      pumpOn: Option[Boolean] = None
   )
 
   case class PowerManagement(
