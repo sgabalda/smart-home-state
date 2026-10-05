@@ -12,7 +12,7 @@ object Dependencies {
 
     val http4s = "0.23.37"
 
-    val http4s_netty = "0.7.1"
+    val http4s_netty = "0.7.2"
 
     val janino = "3.1.12"
 
