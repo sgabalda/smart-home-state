@@ -18,7 +18,6 @@ object FeatureFlagsProcessor {
 
   private case class Impl(
       mqttBlacklist: Ref[IO, Set[String]],
-      uiBlacklist: Ref[IO, Set[String]],
       config: FeatureFlagsConfig
   ) extends EffectfulProcessor {
 
@@ -32,143 +31,38 @@ object FeatureFlagsProcessor {
         case Event.System.StartupEvent =>
           mqttBlacklist
             .update { bl =>
-              val heaterBl =
-                if (!state.featureFlags.heaterManagementEnabled)
-                  config.heaterMqttTopic
-                else Set.empty
-              val stoveBl =
-                if (!state.featureFlags.infraredStoveEnabled)
-                  config.infraredStoveMqttTopic
-                else Set.empty
-              val gridBl =
-                if (!state.featureFlags.gridConnectionEnabled)
-                  config.gridMqttTopic
-                else Set.empty
-              val carChargerBl =
-                if (!state.featureFlags.carChargerManagementEnabled)
-                  config.carChargerMqttTopic
-                else Set.empty
-              bl ++ heaterBl ++ stoveBl ++ gridBl ++ carChargerBl
-            }
-            .flatMap { _ =>
-              uiBlacklist.update { bl =>
-                val heaterBl =
-                  if (!state.featureFlags.heaterManagementEnabled)
-                    config.heaterUiNotification
-                  else Set.empty
-                val stoveBl =
-                  if (!state.featureFlags.infraredStoveEnabled)
-                    config.infraredStoveUiNotification
-                  else Set.empty
-                val gridBl =
-                  if (!state.featureFlags.gridConnectionEnabled)
-                    config.gridUiNotification
-                  else Set.empty
-                bl ++ heaterBl ++ stoveBl ++ gridBl
-              }
+              if (state.featureFlags.greyWaterEnabled) bl
+              else bl ++ config.greyWaterMqttTopic
             }
             .as(
               (
                 state,
                 Set(
                   Action.SetUIItemValue(
-                    config.setHeaterManagementItem,
-                    state.featureFlags.heaterManagementEnabled.toString
-                  ),
-                  Action.SetUIItemValue(
-                    config.setInfraredStoveEnabledItem,
-                    state.featureFlags.infraredStoveEnabled.toString
-                  ),
-                  Action.SetUIItemValue(
-                    config.setGridConnectionEnabledItem,
-                    state.featureFlags.gridConnectionEnabled.toString
-                  ),
-                  Action.SetUIItemValue(
-                    config.setCarChargerManagementItem,
-                    state.featureFlags.carChargerManagementEnabled.toString
+                    config.setGreyWaterEnabledItem,
+                    state.featureFlags.greyWaterEnabled.toString
                   )
                 )
               )
             ) <* logger.info("Feature flags initialized on startup")
 
-        case Event.FeatureFlagEvents.SetHeaterManagement(enable) =>
+        case Event.FeatureFlagEvents.SetGreyWaterEnabled(enable) =>
           val modifier = if (enable) { (bl: Set[String]) =>
-            bl -- config.heaterMqttTopic
+            bl -- config.greyWaterMqttTopic
           } else { (bl: Set[String]) =>
-            bl ++ config.heaterMqttTopic
+            bl ++ config.greyWaterMqttTopic
           }
           mqttBlacklist
             .update(modifier)
             .as(
               (
                 state
-                  .modify(_.featureFlags.heaterManagementEnabled)
-                  .setTo(enable),
-                Set.empty
-              )
-            ) <* logger.info("Heater management feature flag set to " + enable)
-
-        case Event.FeatureFlagEvents.SetInfraredStoveEnabled(enable) =>
-          val modifier = if (enable) { (bl: Set[String]) =>
-            bl -- config.infraredStoveMqttTopic
-          } else { (bl: Set[String]) =>
-            bl ++ config.infraredStoveMqttTopic
-          }
-          mqttBlacklist
-            .update(modifier)
-            .as(
-              (
-                state
-                  .modify(_.featureFlags.infraredStoveEnabled)
+                  .modify(_.featureFlags.greyWaterEnabled)
                   .setTo(enable),
                 Set.empty
               )
             ) <* logger.info(
-            "Infrared stove MQTT feature flag set to " + enable
-          )
-
-        case Event.FeatureFlagEvents.SetCarChargerManagement(enable) =>
-          val modifier = if (enable) { (bl: Set[String]) =>
-            bl -- config.carChargerMqttTopic
-          } else { (bl: Set[String]) =>
-            bl ++ config.carChargerMqttTopic
-          }
-          mqttBlacklist
-            .update(modifier)
-            .as(
-              (
-                state
-                  .modify(_.featureFlags.carChargerManagementEnabled)
-                  .setTo(enable),
-                Set.empty
-              )
-            ) <* logger.info(
-            "Car charger MQTT feature flag set to " + enable
-          )
-
-        case Event.FeatureFlagEvents.SetGridConnectionEnabled(enable) =>
-          val modifier = if (enable) { (bl: Set[String]) =>
-            bl -- config.gridMqttTopic
-          } else { (bl: Set[String]) =>
-            bl ++ config.gridMqttTopic
-          }
-          mqttBlacklist
-            .update(modifier)
-            .flatMap(_ =>
-              uiBlacklist.update { bl =>
-                if (enable) bl -- config.gridUiNotification
-                else bl ++ config.gridUiNotification
-              }
-            )
-            .as(
-              (
-                state
-                  .modify(_.featureFlags.gridConnectionEnabled)
-                  .setTo(enable),
-                Set.empty
-              )
-            ) <* logger.info(
-            "Grid connection MQTT feature flag set to " + enable
+            "Grey water MQTT feature flag set to " + enable
           )
 
         case _ =>
@@ -181,7 +75,6 @@ object FeatureFlagsProcessor {
 
   def apply(
       mqttBlacklist: Ref[IO, Set[String]],
-      uiBlacklist: Ref[IO, Set[String]],
       config: FeatureFlagsConfig
-  ): EffectfulProcessor = Impl(mqttBlacklist, uiBlacklist, config)
+  ): EffectfulProcessor = Impl(mqttBlacklist, config)
 }

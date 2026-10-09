@@ -12,6 +12,7 @@ import cats.effect.ResourceIO
 import cats.effect.kernel.Ref
 import cats.effect.testkit.TestControl
 import com.softwaremill.quicklens.*
+import io.circe.Json
 import io.circe.generic.auto.*
 import io.circe.syntax.*
 import munit.CatsEffectSuite
@@ -70,6 +71,41 @@ class StatePersistenceSuite extends CatsEffectSuite {
       } yield ()
     }
   }
+
+  test("StatePersistence loads legacy feature flags with Grey water disabled") {
+    val legacyStateJson = someState.asJson
+      .mapObject(
+        _.add(
+          "featureFlags",
+          Json.obj(
+            "heaterManagementEnabled" -> Json.fromBoolean(false),
+            "infraredStoveEnabled" -> Json.fromBoolean(false),
+            "gridConnectionEnabled" -> Json.fromBoolean(false),
+            "carChargerManagementEnabled" -> Json.fromBoolean(true)
+          )
+        )
+      )
+      .noSpaces
+    val sut = getSut(
+      config,
+      readInput = _ => IO.pure(legacyStateJson),
+      saveOutput = (_, _) =>
+        IO.raiseError(new Exception("Not expected call to save input"))
+    )
+
+    sut.use { statePersistence =>
+      statePersistence.loadState.map { loadedState =>
+        val expectedState = someState
+          .modify(_.featureFlags)
+          .setTo(State.FeatureFlags())
+        assertEquals(
+          loadedState,
+          Right(expectedState)
+        )
+      }
+    }
+  }
+
   test("StatePersistence should return an error if reading file fails") {
     val error = new Exception("File not found")
     val sut = getSut(
