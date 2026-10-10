@@ -70,6 +70,58 @@ jobs:
       - name: Run tests
         run: sbt test
 
+  firmware:
+    name: Compile Arduino Uno firmware
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python for clang-format
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install clang-format
+        run: python -m pip install clang-format==18.1.8
+
+      - name: Check Arduino formatting
+        run: find firmware -type f -name '*.ino' -exec clang-format --dry-run --Werror --style=file {} +
+
+      - name: Set up Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.1.1
+
+      - name: Install Arduino AVR platform
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr@1.8.6
+
+      - name: Install Arduino libraries
+        run: |
+          arduino-cli lib install \
+            Ethernet@2.0.2 \
+            PubSubClient@2.8.0 \
+            OneWire@2.3.8 \
+            DallasTemperature@4.0.6 \
+            PZEM004Tv30@1.2.1
+
+      - name: Compile all Arduino Uno sketches
+        run: |
+          shopt -s nullglob
+          sketches=(firmware/arduino/uno/*/)
+          if (( ${#sketches[@]} == 0 )); then
+            echo "No Arduino Uno sketches found" >&2
+            exit 1
+          fi
+          for sketch in "${sketches[@]}"; do
+            arduino-cli compile --fqbn arduino:avr:uno "$sketch"
+          done
+
   docker:
     name: Build and run Docker image
     needs: changes
