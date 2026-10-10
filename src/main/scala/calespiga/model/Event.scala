@@ -44,18 +44,8 @@ object Event {
   object FeatureFlagEvents {
     sealed trait FeatureFlagEvent extends EventData
 
-    @InputEventOHItem("CalentadorHabilitatsSHS")
-    case class SetHeaterManagement(enable: Boolean) extends FeatureFlagEvent
-
-    @InputEventOHItem("EstufaInfrarrojosEnabledSHS")
-    case class SetInfraredStoveEnabled(enable: Boolean) extends FeatureFlagEvent
-
-    @InputEventOHItem("XarxaEnabledSHS")
-    case class SetGridConnectionEnabled(enable: Boolean)
-        extends FeatureFlagEvent
-
-    @InputEventOHItem("CarChargerHabilitatsSHS")
-    case class SetCarChargerManagement(enable: Boolean) extends FeatureFlagEvent
+    @InputEventOHItem("BassaAiguaGrisaEnabledSHS")
+    case class SetGreyWaterEnabled(enable: Boolean) extends FeatureFlagEvent
   }
 
   object Temperature {

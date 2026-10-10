@@ -104,18 +104,8 @@ object ProcessorConfigHelper {
   )
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
-    heaterMqttTopic = Set("heater/topic1", "heater/topic2"),
-    setHeaterManagementItem = "featureFlags/setHeaterManagement",
-    infraredStoveMqttTopic =
-      Set("infraredStove/topic1", "infraredStove/topic2"),
-    setInfraredStoveEnabledItem = "featureFlags/setInfraredStoveEnabled",
-    gridMqttTopic = Set("grid/topic1", "grid/topic2"),
-    setGridConnectionEnabledItem = "featureFlags/setGridConnectionEnabled",
-    heaterUiNotification = Set.empty,
-    infraredStoveUiNotification = Set.empty,
-    gridUiNotification = Set("grid-processor-sync-detector"),
-    carChargerMqttTopic = Set("cotxe/carrega/set"),
-    setCarChargerManagementItem = "featureFlags/setCarChargerManagement"
+    greyWaterMqttTopic = Set("greyWater/command"),
+    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =

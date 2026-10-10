@@ -10,6 +10,7 @@ import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
+import io.circe.Decoder
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto._
 
@@ -155,10 +156,12 @@ object State {
   )
 
   case class FeatureFlags(
-      // to be removed when heater is controlled by SHS
-      heaterManagementEnabled: Boolean = false,
-      infraredStoveEnabled: Boolean = false,
-      gridConnectionEnabled: Boolean = false,
-      carChargerManagementEnabled: Boolean = false
+      greyWaterEnabled: Boolean = false
   )
+  object FeatureFlags:
+    given Decoder[FeatureFlags] = Decoder.instance { cursor =>
+      cursor
+        .get[Option[Boolean]]("greyWaterEnabled")
+        .map(enabled => FeatureFlags(enabled.getOrElse(false)))
+    }
 }

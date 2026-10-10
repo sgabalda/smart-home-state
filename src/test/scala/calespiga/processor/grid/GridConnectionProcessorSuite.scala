@@ -199,7 +199,7 @@ class GridConnectionProcessorSuite extends FunSuite {
 
     val (newState, actions) = processor.process(
       state,
-      Event.FeatureFlagEvents.SetHeaterManagement(false),
+      Event.FeatureFlagEvents.SetGreyWaterEnabled(false),
       now
     )
 

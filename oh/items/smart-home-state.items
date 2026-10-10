@@ -136,8 +136,5 @@ String CalentadorMicroControladorEstatSHS "Estat microcontrolador calentador"
 String EstufaInfrarrojosMicroControladorEstatSHS "Estat microcontrolador estufa"
 
 /* feature flags */
-String CalentadorHabilitatsSHS "Habilitar calentador per SHS"
-String EstufaInfrarrojosEnabledSHS "Habilitar estufa infrarrojos per SHS"
-String XarxaEnabledSHS "Habilitar xarxa per SHS"
-String CarChargerHabilitatsSHS "Habilitar carregador per SHS"
+String BassaAiguaGrisaEnabledSHS "Habilitar control d'aigua grisa per SHS"
 

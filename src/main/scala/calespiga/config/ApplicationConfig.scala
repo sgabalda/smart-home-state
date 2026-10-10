@@ -209,17 +209,8 @@ final case class GreyWaterConfig(
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(
-    heaterMqttTopic: Set[String],
-    setHeaterManagementItem: String,
-    infraredStoveMqttTopic: Set[String],
-    setInfraredStoveEnabledItem: String,
-    gridMqttTopic: Set[String],
-    setGridConnectionEnabledItem: String,
-    heaterUiNotification: Set[String],
-    infraredStoveUiNotification: Set[String],
-    gridUiNotification: Set[String],
-    carChargerMqttTopic: Set[String],
-    setCarChargerManagementItem: String
+    greyWaterMqttTopic: Set[String],
+    setGreyWaterEnabledItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

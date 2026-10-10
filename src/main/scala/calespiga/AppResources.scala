@@ -103,7 +103,6 @@ object AppResources {
       processor = StateProcessor(
         appConfig.processor,
         mqttBlacklist,
-        uiBlacklist,
         zoneId
       )
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)
