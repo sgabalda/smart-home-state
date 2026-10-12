@@ -17,6 +17,14 @@
 #define CAR_CHARGER_PZEM_ENERGY_MQTT_TOPIC "cotxe/carrega/energy"
 #define CAR_CHARGER_PZEM_POWER_CHANGE_THRESHOLD_W 250.0
 
+#define HOME_CONSUMPTION_PZEM_RX_PIN A3
+#define HOME_CONSUMPTION_PZEM_TX_PIN A4
+#define HOME_CONSUMPTION_PZEM_SERIAL_BAUD 9600
+#define HOME_CONSUMPTION_PZEM_ADDRESS 0xF8
+#define HOME_CONSUMPTION_PZEM_ENERGY_MQTT_TOPIC "casa/consum/energy"
+#define HOME_CONSUMPTION_PZEM_POWER_MQTT_TOPIC "casa/consum/power"
+#define HOME_CONSUMPTION_PZEM_POWER_CHANGE_THRESHOLD_W 250.0
+
 // temp sensors
 #define TOPIC_TEMPERATURE_ELECTRONICS "diposit1/temperature/electronics"
 #define TOPIC_TEMPERATURE_BATTERIES "diposit1/temperature/batteries"
@@ -96,6 +104,10 @@ DallasTemperature sensors(&oneWire);
 
 SoftwareSerial carChargerPzemSerial(CAR_CHARGER_PZEM_RX_PIN, CAR_CHARGER_PZEM_TX_PIN);
 PZEM004Tv30 carChargerPzem(static_cast<Stream &>(carChargerPzemSerial), CAR_CHARGER_PZEM_ADDRESS);
+SoftwareSerial homeConsumptionPzemSerial(HOME_CONSUMPTION_PZEM_RX_PIN,
+                                         HOME_CONSUMPTION_PZEM_TX_PIN);
+PZEM004Tv30 homeConsumptionPzem(static_cast<Stream &>(homeConsumptionPzemSerial),
+                                HOME_CONSUMPTION_PZEM_ADDRESS);
 
 EthernetClient ethClient;
 PubSubClient client(ethClient);
@@ -105,6 +117,9 @@ long lastPublished = 0;
 unsigned long lastCarChargerPzemPublished = 0;
 float previousCarChargerPzemPower = 0.0;
 bool hasPreviousCarChargerPzemPower = false;
+unsigned long lastHomeConsumptionPzemPublished = 0;
+float previousHomeConsumptionPzemPower = 0.0;
+bool hasPreviousHomeConsumptionPzemPower = false;
 bool mqttEnabled = true;
 
 long lastOrder = 0; // to store the last time when an order was received
@@ -157,6 +172,7 @@ void setup() {
   Serial.begin(9600);
   sensors.begin();
   carChargerPzemSerial.begin(CAR_CHARGER_PZEM_SERIAL_BAUD);
+  homeConsumptionPzemSerial.begin(HOME_CONSUMPTION_PZEM_SERIAL_BAUD);
 
   // WARNING:  this can be removed if memory is needed, it is useful only when the addresses are
   // identified
@@ -234,39 +250,59 @@ void readTempSensors() {
   Serial.println(cstr);
 }
 
-void readAndPublishCarChargerPzem() {
-  float carChargerPower = carChargerPzem.power();
-  float carChargerEnergyKWh = carChargerPzem.energy();
+void readAndPublishPzem(PZEM004Tv30 &pzem, SoftwareSerial &pzemSerial, const char *powerTopic,
+                        const char *energyTopic, float powerChangeThreshold,
+                        unsigned long &lastPublishedAt, float &previousPower,
+                        bool &hasPreviousPower, const __FlashStringHelper *meterName) {
+  pzemSerial.listen();
+  float power = pzem.power();
+  float energyKWh = pzem.energy();
 
-  if(isnan(carChargerPower)) carChargerPower = 0.0;
+  if (isnan(power))
+    power = 0.0;
 
-  if (isnan(carChargerEnergyKWh)) {
-    Serial.println(F("PZEM read failed"));
+  if (isnan(energyKWh)) {
+    Serial.print(meterName);
+    Serial.println(F(" PZEM read failed"));
     return;
   }
 
-  float carChargerEnergy = carChargerEnergyKWh * 1000.0;
-  bool carChargerPowerChanged =
-      hasPreviousCarChargerPzemPower && fabs(carChargerPower - previousCarChargerPzemPower) >=
-                                            CAR_CHARGER_PZEM_POWER_CHANGE_THRESHOLD_W;
-  previousCarChargerPzemPower = carChargerPower;
-  hasPreviousCarChargerPzemPower = true;
+  float energy = energyKWh * 1000.0;
+  bool powerChanged = hasPreviousPower && fabs(power - previousPower) >= powerChangeThreshold;
+  previousPower = power;
+  hasPreviousPower = true;
 
-  if (millis() - lastCarChargerPzemPublished >= TIME_BETWEEN_DATA_PUBLISHED ||
-      carChargerPowerChanged) {
+  if (millis() - lastPublishedAt >= TIME_BETWEEN_DATA_PUBLISHED || powerChanged) {
     char powerText[16];
     char energyText[16];
 
-    dtostrf(carChargerPower, 1, 1, powerText);
-    dtostrf(carChargerEnergy, 1, 0, energyText);
-    client.publish(CAR_CHARGER_PZEM_POWER_MQTT_TOPIC, powerText);
-    client.publish(CAR_CHARGER_PZEM_ENERGY_MQTT_TOPIC, energyText);
-    Serial.print(F("PZEM power: "));
+    dtostrf(power, 1, 1, powerText);
+    dtostrf(energy, 1, 0, energyText);
+    client.publish(powerTopic, powerText);
+    client.publish(energyTopic, energyText);
+    Serial.print(meterName);
+    Serial.print(F(" PZEM power: "));
     Serial.println(powerText);
-    Serial.print(F("PZEM energy: "));
+    Serial.print(meterName);
+    Serial.print(F(" PZEM energy: "));
     Serial.println(energyText);
-    lastCarChargerPzemPublished = millis();
+    lastPublishedAt = millis();
   }
+}
+
+void readAndPublishCarChargerPzem() {
+  readAndPublishPzem(carChargerPzem, carChargerPzemSerial, CAR_CHARGER_PZEM_POWER_MQTT_TOPIC,
+                     CAR_CHARGER_PZEM_ENERGY_MQTT_TOPIC, CAR_CHARGER_PZEM_POWER_CHANGE_THRESHOLD_W,
+                     lastCarChargerPzemPublished, previousCarChargerPzemPower,
+                     hasPreviousCarChargerPzemPower, F("Car charger"));
+}
+
+void readAndPublishHomeConsumptionPzem() {
+  readAndPublishPzem(
+      homeConsumptionPzem, homeConsumptionPzemSerial, HOME_CONSUMPTION_PZEM_POWER_MQTT_TOPIC,
+      HOME_CONSUMPTION_PZEM_ENERGY_MQTT_TOPIC, HOME_CONSUMPTION_PZEM_POWER_CHANGE_THRESHOLD_W,
+      lastHomeConsumptionPzemPublished, previousHomeConsumptionPzemPower,
+      hasPreviousHomeConsumptionPzemPower, F("Home consumption"));
 }
 
 void checkMaxTime() {
@@ -431,6 +467,7 @@ void loop() {
     client.loop();
   }
   readAndPublishCarChargerPzem();
+  readAndPublishHomeConsumptionPzem();
   if (millis() - lastPublished > TIME_BETWEEN_DATA_PUBLISHED) {
     readTempSensors();
     readBatteryAndGridSensors();
