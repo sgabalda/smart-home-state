@@ -17,6 +17,8 @@ class PowerAvailableProcessorSuite extends FunSuite {
     powerAvailableItem = "PowerAvailableItem",
     powerProducedItem = "PowerProducedItem",
     powerDiscardedItem = "PowerDiscardedItem",
+    homeConsumptionItem = "HomeConsumptionItem",
+    powerFromNetworkItem = "PowerFromNetworkItem",
     readingsStatusItem = "PowerReadingsStatusItem"
   )
   val processor =
@@ -27,7 +29,9 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerAvailable: Float,
       powerProduced: Float,
       powerDiscarded: Float,
-      linesPower: List[Float]
+      linesPower: List[Float],
+      homeConsumption: Float = 0f,
+      powerFromNetwork: Float = 0f
   ): Event.Power.PowerStatusReported =
     Event.Power.PowerStatusReported(
       Some(
@@ -38,7 +42,8 @@ class PowerAvailableProcessorSuite extends FunSuite {
           linesPower
         )
       ),
-      Event.Power.PowerStatusReported.PowerGridConsumptionReported(0f)
+      homeConsumption,
+      powerFromNetwork
     )
 
   test(
@@ -53,7 +58,9 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerAvailable,
       powerProduced,
       powerDiscarded,
-      linesPower
+      linesPower,
+      80f,
+      20f
     )
     val (newState, _) = processor.process(state, event, now)
 
@@ -74,6 +81,24 @@ class PowerAvailableProcessorSuite extends FunSuite {
     assertEquals(
       newState.powerManagement.production.lastProducedPower,
       Some(now)
+    )
+    assertEquals(newState.powerManagement.homeConsumption, Some(80f))
+    assertEquals(newState.powerManagement.powerFromNetwork, Some(20f))
+  }
+
+  test("HomeConsumptionPowerReported updates the home consumption state and UI") {
+    val (newState, actions) = processor.process(
+      State(),
+      Event.Power.HomeConsumptionPowerReported(640f),
+      now
+    )
+
+    assertEquals(newState.powerManagement.homeConsumption, Some(640f))
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(dummyConfig.homeConsumptionItem, "640")
+      )
     )
   }
 
@@ -125,7 +150,9 @@ class PowerAvailableProcessorSuite extends FunSuite {
       powerAvailable,
       powerProduced,
       powerDiscarded,
-      linesPower
+      linesPower,
+      80f,
+      20f
     )
     val (_, actions) = processor.process(state, event, now)
 
@@ -159,6 +186,20 @@ class PowerAvailableProcessorSuite extends FunSuite {
 
     assert(
       actions.contains(
+        Action.SetUIItemValue(dummyConfig.homeConsumptionItem, "80")
+      ),
+      "Should set homeConsumptionItem"
+    )
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.powerFromNetworkItem, "20")
+      ),
+      "Should set powerFromNetworkItem"
+    )
+
+    assert(
+      actions.contains(
         Action.SetUIItemValue(
           dummyConfig.readingsStatusItem,
           PowerAvailableProcessor.STATUS_OK
@@ -170,8 +211,8 @@ class PowerAvailableProcessorSuite extends FunSuite {
       actions.count {
         case Action.SetUIItemValue(_, _) => true; case _ => false
       },
-      4,
-      "Should emit exactly 4 UI update actions"
+      6,
+      "Should emit exactly 6 UI update actions"
     )
   }
 
@@ -307,7 +348,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       "Should set readingsStatusItem to OK"
     )
 
-    assertEquals(actions.size, 4, "Should emit exactly 4 UI update actions")
+    assertEquals(actions.size, 6, "Should emit exactly 6 UI update actions")
   }
 
   test(
@@ -378,7 +419,7 @@ class PowerAvailableProcessorSuite extends FunSuite {
       "Should set readingsStatusItem to temporary error status"
     )
 
-    assertEquals(actions.size, 4, "Should emit exactly 4 UI update actions")
+    assertEquals(actions.size, 5, "Should emit exactly 5 UI update actions")
   }
 
   test(

@@ -95,7 +95,9 @@ object State {
 
   case class PowerManagement(
       production: PowerProduction = PowerProduction(),
-      dynamic: DynamicPower = DynamicPower()
+      dynamic: DynamicPower = DynamicPower(),
+      homeConsumption: Option[Float] = None,
+      powerFromNetwork: Option[Float] = None
   )
 
   case class PowerProduction(

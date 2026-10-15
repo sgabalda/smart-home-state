@@ -6,6 +6,8 @@ import calespiga.executor.Executor
 import calespiga.executor.ScheduledExecutor
 import calespiga.http.Endpoints
 import calespiga.model.Event
+import calespiga.model.Event.EventData
+import calespiga.model.Event.Power.HomeConsumptionPowerReported
 import calespiga.model.Event.FeedbackEventData
 import calespiga.model.State
 import calespiga.mqtt.ActionToMqttProducer
@@ -109,11 +111,7 @@ object AppResources {
       sunnyBoy <- externalInterfaces.sunnyBoyApiClient(
         appConfig.powerProduction.sunnyBoy
       )
-      powerSource = PowerDataSource(
-        appConfig.powerProduction.powerProductionSource,
-        sunnyBoy,
-        zoneId
-      )
+      powerSource = PowerDataSource(sunnyBoy)
       tariffSource = GridTariffSource(zoneId)
       inputStream = buildInputStream(
         mqttInputProcessor,
@@ -142,13 +140,23 @@ object AppResources {
       feedbackQueue: Queue[IO, FeedbackEventData],
       errorManager: ErrorManager
   ): Stream[IO, Event] = {
+    val mqttEvents: Stream[IO, Either[ErrorManager.Error, EventData]] =
+      mqttInputProcessor.inputEventsStream.flatMap {
+        case Left(error) =>
+          Stream.emit(Left(error))
+        case Right(homeConsumption: HomeConsumptionPowerReported) =>
+          Stream.emit(Right(homeConsumption)) ++
+            Stream
+              .eval(powerDataSource.getEnergyProductionInfo(homeConsumption))
+              .map(_.map(powerStatus => powerStatus: EventData))
+        case Right(event) =>
+          Stream.emit(Right(event))
+      }
+
     (Stream.emit(Right(Event.System.StartupEvent)) ++
-      mqttInputProcessor.inputEventsStream
+      mqttEvents
         .merge(
           userInterfaceManager.userInputEventsStream
-        )
-        .merge(
-          powerDataSource.getEnergyProductionInfo
         )
         .merge(
           gridTariffSource.events.map(Right(_))
