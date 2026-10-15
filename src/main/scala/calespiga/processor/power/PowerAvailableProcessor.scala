@@ -3,8 +3,8 @@ package calespiga.processor.power
 import calespiga.config.PowerAvailableProcessorConfig
 import calespiga.model.Action
 import calespiga.model.Event
-import calespiga.model.Event.Power.PowerProductionReadingError
 import calespiga.model.Event.Power.HomeConsumptionPowerReported
+import calespiga.model.Event.Power.PowerProductionReadingError
 import calespiga.model.Event.Power.PowerStatusReported
 import calespiga.model.Event.System.StartupEvent
 import calespiga.model.State

@@ -86,7 +86,9 @@ class PowerAvailableProcessorSuite extends FunSuite {
     assertEquals(newState.powerManagement.powerFromNetwork, Some(20f))
   }
 
-  test("HomeConsumptionPowerReported updates the home consumption state and UI") {
+  test(
+    "HomeConsumptionPowerReported updates the home consumption state and UI"
+  ) {
     val (newState, actions) = processor.process(
       State(),
       Event.Power.HomeConsumptionPowerReported(640f),

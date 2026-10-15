@@ -7,8 +7,8 @@ import calespiga.executor.ScheduledExecutor
 import calespiga.http.Endpoints
 import calespiga.model.Event
 import calespiga.model.Event.EventData
-import calespiga.model.Event.Power.HomeConsumptionPowerReported
 import calespiga.model.Event.FeedbackEventData
+import calespiga.model.Event.Power.HomeConsumptionPowerReported
 import calespiga.model.State
 import calespiga.mqtt.ActionToMqttProducer
 import calespiga.mqtt.InputTopicsManager

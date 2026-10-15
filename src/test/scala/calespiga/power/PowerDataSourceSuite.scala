@@ -20,10 +20,14 @@ class PowerDataSourceSuite extends CatsEffectSuite {
   test("production data is requested and combined with home consumption") {
     val homeConsumption = HomeConsumptionPowerReported(800f)
     val provider =
-      StubProvider(IO.pure(PowerProductionData(1200f, 1000f, 200f, List(500f, 500f))))
+      StubProvider(
+        IO.pure(PowerProductionData(1200f, 1000f, 200f, List(500f, 500f)))
+      )
 
     for {
-      result <- PowerDataSource(provider).getEnergyProductionInfo(homeConsumption)
+      result <- PowerDataSource(provider).getEnergyProductionInfo(
+        homeConsumption
+      )
       callCount <- IO(provider.calls)
     } yield {
       assertEquals(callCount, 1)
@@ -58,7 +62,7 @@ class PowerDataSourceSuite extends CatsEffectSuite {
         assertEquals(
           result.map {
             case status: PowerStatusReported => status.powerFromNetwork
-            case unexpected =>
+            case unexpected                  =>
               fail(s"Expected a power status event, got $unexpected")
           },
           Right(300f)
@@ -77,7 +81,7 @@ class PowerDataSourceSuite extends CatsEffectSuite {
         assertEquals(
           result.map {
             case status: PowerStatusReported => status.powerFromNetwork
-            case unexpected =>
+            case unexpected                  =>
               fail(s"Expected a power status event, got $unexpected")
           },
           Right(-300f)
