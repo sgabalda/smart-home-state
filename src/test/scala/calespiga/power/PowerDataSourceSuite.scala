@@ -1,312 +1,110 @@
 package calespiga.power
 
 import calespiga.ErrorManager
-import calespiga.config.PowerProductionSourceConfig
+import calespiga.model.Event.Power.HomeConsumptionPowerReported
 import calespiga.model.Event.Power.PowerProductionReadingError
 import calespiga.model.Event.Power.PowerStatusReported
 import cats.effect.IO
-import cats.effect.Ref
-import cats.effect.testkit.TestControl
 import munit.CatsEffectSuite
-import scala.concurrent.duration._
 
 class PowerDataSourceSuite extends CatsEffectSuite {
 
-  case class StubProvider(
-      effectsQueue: Ref[IO, List[IO[PowerProductionData]]]
-  ) extends PowerDataSource.PowerProductionOnRequestProvider {
+  case class StubProvider(result: IO[PowerProductionData])
+      extends PowerDataSource.PowerProductionOnRequestProvider {
+    var calls = 0
+
     override def getCurrentPowerData: IO[PowerProductionData] =
-      effectsQueue.modify {
-        case head :: tail => (tail, head)
-        case Nil          =>
-          (Nil, IO.raiseError(new RuntimeException("No more effects in queue")))
-      }.flatten
+      IO { calls += 1 } *> result
   }
 
-  val testConfig = PowerProductionSourceConfig(
-    pollingInterval = 15.seconds,
-    fvStartingHour = 0,
-    fvEndingHour = 23
-  )
-  val testZoneId = java.time.ZoneId.of("GMT+0")
-
-  test("provider is called every period defined in the config") {
-    val program = for {
-      callCount <- Ref.of[IO, Int](0)
-      data = PowerProductionData(100.0, 50.0, 10.0, List.empty)
-      effects = List.fill(3)(callCount.update(_ + 1).as(data))
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](effects)
-      stubProvider = StubProvider(effectsQueue)
-
-      count <- PowerDataSource(
-        testConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(3)
-        .compile
-        .drain *> callCount.get
-
-    } yield assertEquals(count, 3)
-
-    TestControl.executeEmbed(program)
-  }
-
-  test("data returned by the provider is sent via the stream") {
-    val data1 = PowerProductionData(100.0, 50.0, 10.0, List.empty)
-    val data2 = PowerProductionData(200.0, 75.0, 15.0, List.empty)
-    val data3 = PowerProductionData(150.0, 60.0, 12.0, List.empty)
-
-    val program = for {
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
-        List(IO.pure(data1), IO.pure(data2), IO.pure(data3))
+  test("production data is requested and combined with home consumption") {
+    val homeConsumption = HomeConsumptionPowerReported(800f)
+    val provider =
+      StubProvider(
+        IO.pure(PowerProductionData(1200f, 1000f, 200f, List(500f, 500f)))
       )
-      stubProvider = StubProvider(effectsQueue)
 
-      results <- PowerDataSource(
-        testConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(3)
-        .compile
-        .toList
-
-      expected = List(
+    for {
+      result <- PowerDataSource(provider).getEnergyProductionInfo(
+        homeConsumption
+      )
+      callCount <- IO(provider.calls)
+    } yield {
+      assertEquals(callCount, 1)
+      assertEquals(
+        result,
         Right(
-          PowerStatusReported.PowerProductionReported(
-            100.0,
-            50.0,
-            10.0,
-            List.empty
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            200.0,
-            75.0,
-            15.0,
-            List.empty
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            150.0,
-            60.0,
-            12.0,
-            List.empty
-          )
-        )
-      ).map(
-        _.map(p =>
           PowerStatusReported(
-            Some(p),
-            PowerStatusReported.PowerGridConsumptionReported(0.0f)
+            production = Some(
+              PowerStatusReported.PowerProductionReported(
+                1200f,
+                1000f,
+                200f,
+                List(500f, 500f)
+              )
+            ),
+            homeConsumption = 800f,
+            powerFromNetwork = -200f
           )
         )
       )
-    } yield assertEquals(results, expected)
-
-    TestControl.executeEmbed(program)
+    }
   }
 
-  test(
-    "if there is an error when calling the provider, the error and event are sent"
-  ) {
+  test("network power is positive when home consumption exceeds production") {
+    val homeConsumption = HomeConsumptionPowerReported(1300f)
+    val provider =
+      StubProvider(IO.pure(PowerProductionData(1200f, 1000f, 200f, List.empty)))
+
+    PowerDataSource(provider)
+      .getEnergyProductionInfo(homeConsumption)
+      .map { result =>
+        assertEquals(
+          result.map {
+            case status: PowerStatusReported => status.powerFromNetwork
+            case unexpected                  =>
+              fail(s"Expected a power status event, got $unexpected")
+          },
+          Right(300f)
+        )
+      }
+  }
+
+  test("network power is negative when production exceeds home consumption") {
+    val homeConsumption = HomeConsumptionPowerReported(700f)
+    val provider =
+      StubProvider(IO.pure(PowerProductionData(1200f, 1000f, 200f, List.empty)))
+
+    PowerDataSource(provider)
+      .getEnergyProductionInfo(homeConsumption)
+      .map { result =>
+        assertEquals(
+          result.map {
+            case status: PowerStatusReported => status.powerFromNetwork
+            case unexpected                  =>
+              fail(s"Expected a power status event, got $unexpected")
+          },
+          Right(-300f)
+        )
+      }
+  }
+
+  test("provider errors are returned with a power reading error event") {
     val error = new RuntimeException("Test error")
+    val provider = StubProvider(IO.raiseError(error))
 
-    val program = for {
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
-        List(IO.raiseError[PowerProductionData](error))
-      )
-      stubProvider = StubProvider(effectsQueue)
-
-      result <- PowerDataSource(
-        testConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(1)
-        .compile
-        .lastOrError
-
-    } yield assertEquals(
-      result,
-      Left(
-        ErrorManager.ErrorWithEvent(
-          PowerProductionReadingError,
-          ErrorManager.Error.PowerInputError(error)
-        )
-      )
-    )
-
-    TestControl.executeEmbed(program)
-  }
-
-  test("periodic execution continues after an error") {
-    val error = new RuntimeException("Test error")
-    val data = PowerProductionData(100.0, 50.0, 10.0, List.empty)
-
-    val program = for {
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
-        List(
-          IO.raiseError[PowerProductionData](error),
-          IO.pure(data),
-          IO.pure(data)
-        )
-      )
-      stubProvider = StubProvider(effectsQueue)
-
-      results <- PowerDataSource(
-        testConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(3)
-        .compile
-        .toList
-
-      expected = List(
-        Left(
-          ErrorManager.ErrorWithEvent(
-            PowerProductionReadingError,
-            ErrorManager.Error.PowerInputError(error)
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            100.0,
-            50.0,
-            10.0,
-            List.empty
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            100.0,
-            50.0,
-            10.0,
-            List.empty
+    PowerDataSource(provider)
+      .getEnergyProductionInfo(HomeConsumptionPowerReported(800f))
+      .map { result =>
+        assertEquals(
+          result,
+          Left(
+            ErrorManager.ErrorWithEvent(
+              PowerProductionReadingError,
+              ErrorManager.Error.PowerInputError(error)
+            )
           )
         )
-      ).map(
-        _.map(p =>
-          PowerStatusReported(
-            Some(p),
-            PowerStatusReported.PowerGridConsumptionReported(0.0f)
-          )
-        )
-      )
-    } yield assertEquals(results, expected)
-
-    TestControl.executeEmbed(program)
-  }
-
-  test("multiple errors followed by success") {
-    val error = new RuntimeException("Test error")
-    val data = PowerProductionData(100.0, 50.0, 10.0, List.empty)
-
-    val program = for {
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
-        List(
-          IO.raiseError[PowerProductionData](error),
-          IO.raiseError[PowerProductionData](error),
-          IO.pure(data),
-          IO.pure(data)
-        )
-      )
-      stubProvider = StubProvider(effectsQueue)
-
-      results <- PowerDataSource(
-        testConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(4)
-        .compile
-        .toList
-
-      expected = List(
-        Left(
-          ErrorManager.ErrorWithEvent(
-            PowerProductionReadingError,
-            ErrorManager.Error.PowerInputError(error)
-          )
-        ),
-        Left(
-          ErrorManager.ErrorWithEvent(
-            PowerProductionReadingError,
-            ErrorManager.Error.PowerInputError(error)
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            100.0,
-            50.0,
-            10.0,
-            List.empty
-          )
-        ),
-        Right(
-          PowerStatusReported.PowerProductionReported(
-            100.0,
-            50.0,
-            10.0,
-            List.empty
-          )
-        )
-      ).map(
-        _.map(p =>
-          PowerStatusReported(
-            Some(p),
-            PowerStatusReported.PowerGridConsumptionReported(0.0f)
-          )
-        )
-      )
-    } yield assertEquals(results, expected)
-
-    TestControl.executeEmbed(program)
-  }
-
-  test(
-    "no elements are emitted when current time is outside configured hours"
-  ) {
-    // Create a config with hours that will never match (future hours)
-    val outsideHoursConfig = PowerProductionSourceConfig(
-      pollingInterval = 100.millis,
-      fvStartingHour = 25,
-      fvEndingHour = 25
-    )
-    val data = PowerProductionData(100.0, 50.0, 10.0, List.empty)
-
-    val program = for {
-      effectsQueue <- Ref.of[IO, List[IO[PowerProductionData]]](
-        List.fill(5)(IO.pure(data))
-      )
-      stubProvider = StubProvider(effectsQueue)
-
-      results <- PowerDataSource(
-        outsideHoursConfig,
-        stubProvider,
-        testZoneId
-      ).getEnergyProductionInfo
-        .take(3)
-        .compile
-        .toList
-
-    } yield assertEquals(
-      results,
-      List.fill(3)(
-        Right(
-          PowerStatusReported(
-            None,
-            PowerStatusReported.PowerGridConsumptionReported(0.0f)
-          )
-        )
-      ),
-      "No elements should be emitted outside configured hours"
-    )
-
-    TestControl.executeEmbed(program)
+      }
   }
 }

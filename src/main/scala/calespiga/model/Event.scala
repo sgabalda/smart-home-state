@@ -230,6 +230,10 @@ object Event {
   object Power {
     sealed trait PowerData extends EventData
 
+    @InputEventMqtt("casa/consum/power")
+    case class HomeConsumptionPowerReported(powerConsumed: Float)
+        extends PowerData
+
     object PowerStatusReported {
       case class PowerProductionReported(
           powerAvailable: Float,
@@ -238,13 +242,11 @@ object Event {
           linesPower: List[Float]
       )
 
-      case class PowerGridConsumptionReported(
-          powerConsumed: Float
-      )
     }
     case class PowerStatusReported(
         production: Option[PowerStatusReported.PowerProductionReported],
-        gridConsumption: PowerStatusReported.PowerGridConsumptionReported
+        homeConsumption: Float,
+        powerFromNetwork: Float
     ) extends PowerData
 
     case object PowerProductionReadingError extends PowerData

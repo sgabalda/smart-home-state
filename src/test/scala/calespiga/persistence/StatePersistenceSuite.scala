@@ -106,6 +106,41 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
 
+  test("StatePersistence loads old state when new power fields are missing") {
+    val powerManagement = someState.asJson.hcursor
+      .get[Json]("powerManagement")
+      .fold(error => fail(error.getMessage), identity)
+    val legacyStateJson = someState.asJson
+      .mapObject(
+        _.add(
+          "powerManagement",
+          powerManagement.mapObject(
+            _.remove("homeConsumption").remove("powerFromNetwork")
+          )
+        )
+      )
+      .noSpaces
+    val sut = getSut(
+      config,
+      readInput = _ => IO.pure(legacyStateJson),
+      saveOutput = (_, _) =>
+        IO.raiseError(new Exception("Not expected call to save input"))
+    )
+
+    sut.use { statePersistence =>
+      statePersistence.loadState.map { loadedState =>
+        assertEquals(
+          loadedState.map(_.powerManagement.homeConsumption),
+          Right(None)
+        )
+        assertEquals(
+          loadedState.map(_.powerManagement.powerFromNetwork),
+          Right(None)
+        )
+      }
+    }
+  }
+
   test("StatePersistence should return an error if reading file fails") {
     val error = new Exception("File not found")
     val sut = getSut(

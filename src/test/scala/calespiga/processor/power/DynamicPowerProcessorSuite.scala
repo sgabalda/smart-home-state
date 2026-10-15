@@ -46,7 +46,8 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
       powerAvailable: Float,
       powerProduced: Float,
       powerDiscarded: Float,
-      linesPower: List[Float]
+      linesPower: List[Float],
+      powerFromNetwork: Float = 0f
   ): Event.Power.PowerStatusReported =
     Event.Power.PowerStatusReported(
       Some(
@@ -57,7 +58,8 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
           linesPower
         )
       ),
-      Event.Power.PowerStatusReported.PowerGridConsumptionReported(0f)
+      homeConsumption = 0f,
+      powerFromNetwork = powerFromNetwork
     )
 
   test(
@@ -425,6 +427,74 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
           powerOffered(0),
           Power.ofFv(50f) + Power.ofGrid(60f),
           "Total dynamic power should include the configured grid power and the consumer's current usage"
+        )
+      )
+  }
+
+  test(
+    "DynamicPowerProcessor uses negative network power as unused FV when no power is discarded"
+  ) {
+    val powerOffered = ListBuffer.empty[Power]
+    val consumer = DynamicPowerConsumerStub(
+      usePowerStub = (state, power, _) => {
+        powerOffered += power
+        DynamicPowerResult(state, Set.empty, Power.zero)
+      }
+    )
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq(consumer)
+    )
+    val processor =
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+    val state = State().modify(_.grid.availablePower).setTo(Some(60f))
+    val event = powerStatusEvent(
+      powerAvailable = 100f,
+      powerProduced = 100f,
+      powerDiscarded = 0f,
+      linesPower = List.empty,
+      powerFromNetwork = -30f
+    )
+
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          powerOffered.head,
+          Power.ofFv(30f) + Power.ofGrid(60f)
+        )
+      )
+  }
+
+  test(
+    "DynamicPowerProcessor reduces available grid power by positive network power when FV is not unused"
+  ) {
+    val powerOffered = ListBuffer.empty[Power]
+    val consumer = DynamicPowerConsumerStub(
+      usePowerStub = (state, power, _) => {
+        powerOffered += power
+        DynamicPowerResult(state, Set.empty, Power.zero)
+      }
+    )
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq(consumer)
+    )
+    val processor =
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+    val state = State().modify(_.grid.availablePower).setTo(Some(60f))
+    val event = powerStatusEvent(
+      powerAvailable = 100f,
+      powerProduced = 50f,
+      powerDiscarded = 0f,
+      linesPower = List.empty,
+      powerFromNetwork = 20f
+    )
+
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          powerOffered.head,
+          Power.ofGrid(40f)
         )
       )
   }

@@ -127,13 +127,17 @@ object DynamicPowerProcessor {
               }
         )
 
-      case PowerStatusReported(production, gridConsumption) =>
-        val unusedFvPower =
-          production.map(_.powerDiscarded).map(Power.ofFv).getOrElse(Power.zero)
-        val unusedGridPower = state.grid.availablePower
-          .map(
-            _ - gridConsumption.powerConsumed
-          ) // remove, of all grid available power, the power consumed from grid
+      case PowerStatusReported(production, _, powerFromNetwork) =>
+        val unusedFvWatts = production
+          .map(_.powerDiscarded)
+          .filter(_ > 0f)
+          .getOrElse(math.max(0f, -powerFromNetwork))
+        val unusedFvPower = Power.ofFv(unusedFvWatts)
+        val unusedGridWatts = state.grid.availablePower.map { availablePower =>
+          if (unusedFvWatts > 0f) availablePower
+          else availablePower - powerFromNetwork
+        }
+        val unusedGridPower = unusedGridWatts
           .map(Power.ofGrid)
           .getOrElse(Power.zero)
 

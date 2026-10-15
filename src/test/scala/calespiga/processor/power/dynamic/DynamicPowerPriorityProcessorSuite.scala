@@ -222,7 +222,8 @@ class DynamicPowerPriorityProcessorSuite extends FunSuite {
           linesPower = List.empty
         )
       ),
-      PowerStatusReported.PowerGridConsumptionReported(powerConsumed = 0f)
+      homeConsumption = 0f,
+      powerFromNetwork = 0f
     )
 
     val (newState, actions) = processor.process(state, event, now)

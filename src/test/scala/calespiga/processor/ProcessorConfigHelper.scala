@@ -115,6 +115,8 @@ object ProcessorConfigHelper {
       powerAvailableItem = "power/powerAvailable",
       powerProducedItem = "power/powerProduced",
       powerDiscardedItem = "power/powerDiscarded",
+      homeConsumptionItem = "power/homeConsumption",
+      powerFromNetworkItem = "power/powerFromNetwork",
       readingsStatusItem = "power/readingsStatus"
     )
 

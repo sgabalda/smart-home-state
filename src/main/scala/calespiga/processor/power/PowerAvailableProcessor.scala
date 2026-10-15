@@ -3,6 +3,7 @@ package calespiga.processor.power
 import calespiga.config.PowerAvailableProcessorConfig
 import calespiga.model.Action
 import calespiga.model.Event
+import calespiga.model.Event.Power.HomeConsumptionPowerReported
 import calespiga.model.Event.Power.PowerProductionReadingError
 import calespiga.model.Event.Power.PowerStatusReported
 import calespiga.model.Event.System.StartupEvent
@@ -64,6 +65,22 @@ object PowerAvailableProcessor {
         )
       )
     }
+
+    def homeConsumptionUIActions(homeConsumption: Float): Set[Action] =
+      Set(
+        Action.SetUIItemValue(
+          config.homeConsumptionItem,
+          f"$homeConsumption%.0f"
+        )
+      )
+
+    def networkPowerUIActions(powerFromNetwork: Float): Set[Action] =
+      Set(
+        Action.SetUIItemValue(
+          config.powerFromNetworkItem,
+          f"$powerFromNetwork%.0f"
+        )
+      )
     override def process(
         state: State,
         eventData: Event.EventData,
@@ -79,13 +96,26 @@ object PowerAvailableProcessor {
             .setTo(None)
             .modify(_.powerManagement.production.powerDiscarded)
             .setTo(None)
+            .modify(_.powerManagement.homeConsumption)
+            .setTo(None)
+            .modify(_.powerManagement.powerFromNetwork)
+            .setTo(None)
             .modify(_.powerManagement.production.lastError)
             .setTo(None),
-          updateUIItemActions(0f, 0f, 0f) +
+          updateUIItemActions(0f, 0f, 0f) ++
+            homeConsumptionUIActions(0f) ++
+            networkPowerUIActions(0f) +
             Action.SetUIItemValue(
               config.readingsStatusItem,
               STATUS_OK
             )
+        )
+      case HomeConsumptionPowerReported(powerConsumed) =>
+        (
+          state
+            .modify(_.powerManagement.homeConsumption)
+            .setTo(Some(powerConsumed)),
+          homeConsumptionUIActions(powerConsumed)
         )
       case PowerProductionReadingError =>
         state.powerManagement.production.lastError match
@@ -119,11 +149,14 @@ object PowerAvailableProcessor {
               .setTo(None)
               .modify(_.powerManagement.production.powerDiscarded)
               .setTo(None)
+              .modify(_.powerManagement.powerFromNetwork)
+              .setTo(None)
               .modify(_.powerManagement.production.lastError)
               .setTo(Some(timestamp))
             (
               newState,
               updateUIItemActions(0f, 0f, 0f)
+                ++ networkPowerUIActions(0f)
                 + Action.SetUIItemValue(
                   config.readingsStatusItem,
                   STATUS_TEMPORARY_ERROR
@@ -138,7 +171,8 @@ object PowerAvailableProcessor {
                 linesPower
               )
             ),
-            _
+            homeConsumption,
+            powerFromNetwork
           ) =>
         val newState = state
           .modify(_.powerManagement.production.powerAvailable)
@@ -147,6 +181,10 @@ object PowerAvailableProcessor {
           .setTo(Some(powerProduced))
           .modify(_.powerManagement.production.powerDiscarded)
           .setTo(Some(powerDiscarded))
+          .modify(_.powerManagement.homeConsumption)
+          .setTo(Some(homeConsumption))
+          .modify(_.powerManagement.powerFromNetwork)
+          .setTo(Some(powerFromNetwork))
           .modify(_.powerManagement.production.linesPower)
           .setTo(linesPower)
           .modify(_.powerManagement.production.lastError)
@@ -163,6 +201,8 @@ object PowerAvailableProcessor {
         (
           newState,
           updateUIItemActions(powerAvailable, powerProduced, powerDiscarded)
+            ++ homeConsumptionUIActions(homeConsumption)
+            ++ networkPowerUIActions(powerFromNetwork)
             ++ actionsBasedOnPower(powerAvailable) +
             Action.SetUIItemValue(
               config.readingsStatusItem,

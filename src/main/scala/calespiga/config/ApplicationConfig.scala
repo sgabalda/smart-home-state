@@ -103,6 +103,8 @@ final case class PowerAvailableProcessorConfig(
     powerAvailableItem: String,
     powerProducedItem: String,
     powerDiscardedItem: String,
+    homeConsumptionItem: String,
+    powerFromNetworkItem: String,
     readingsStatusItem: String
 ) derives ConfigReader
 
@@ -231,14 +233,7 @@ final case class GridConfig(
 ) derives ConfigReader
 
 final case class PowerProductionConfig(
-    sunnyBoy: SunnyBoyConfig,
-    powerProductionSource: PowerProductionSourceConfig
-) derives ConfigReader
-
-final case class PowerProductionSourceConfig(
-    pollingInterval: FiniteDuration,
-    fvStartingHour: Int,
-    fvEndingHour: Int
+    sunnyBoy: SunnyBoyConfig
 ) derives ConfigReader
 
 final case class SunnyBoyConfig(
