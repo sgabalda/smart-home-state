@@ -11,6 +11,7 @@ import calespiga.model.State.InfraredStove
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
 import io.circe.Decoder
+import io.circe.generic.auto._
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto._
 
@@ -99,6 +100,25 @@ object State {
       homeConsumption: Option[Float] = None,
       powerFromNetwork: Option[Float] = None
   )
+  object PowerManagement {
+    given Decoder[PowerManagement] = Decoder.instance { cursor =>
+      for {
+        production <- cursor.getOrElse[PowerProduction]("production")(
+          PowerProduction()
+        )
+        dynamic <- cursor.getOrElse[DynamicPower]("dynamic")(DynamicPower())
+        homeConsumption <-
+          cursor.getOrElse[Option[Float]]("homeConsumption")(None)
+        powerFromNetwork <-
+          cursor.getOrElse[Option[Float]]("powerFromNetwork")(None)
+      } yield PowerManagement(
+        production,
+        dynamic,
+        homeConsumption,
+        powerFromNetwork
+      )
+    }
+  }
 
   case class PowerProduction(
       powerAvailable: Option[Float] = None,
