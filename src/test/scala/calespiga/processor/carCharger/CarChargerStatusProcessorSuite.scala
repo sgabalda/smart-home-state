@@ -257,4 +257,34 @@ class CarChargerStatusProcessorSuite extends FunSuite {
       }
     )
   }
+
+  test(
+    "Power above BLOCKED_POWER updates Charging as soon as the device was previously connected"
+  ) {
+    val processor = CarChargerStatusProcessor(config)
+    val power = CarChargerStatusProcessor.BLOCKED_POWER + 1.0f
+
+    val previousState = stateWithCarCharger(
+      currentPowerWatts = Some(CarChargerStatusProcessor.IDLE_POWER),
+      chargingStatus = Some(CarChargerChargingStatus.Connected)
+    )
+
+    val (newState, actions) = processor.process(
+      previousState,
+      CarChargerPowerReported(power),
+      now
+    )
+
+    assertEquals(
+      newState.carCharger.chargingStatus,
+      Some(CarChargerChargingStatus.Charging)
+    )
+    assert(
+      actions.exists {
+        case Action.SetUIItemValue(item, value) =>
+          item == config.chargingStatusItem && value == "charging"
+        case _ => false
+      }
+    )
+  }
 }

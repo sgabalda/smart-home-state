@@ -111,6 +111,23 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
   }
 
   test(
+    "currentlyUsedDynamicPower: counts measured charging power even before the status debounce settles"
+  ) {
+    val state = stateWithCarCharger(
+      switchStatus = Some(CarChargerSignal.On),
+      lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
+      currentPowerWatts = Some(CarChargerStatusProcessor.BLOCKED_POWER + 1f),
+      chargingStatus = Some(CarChargerChargingStatus.Connected),
+      plannedDynamicFVPower = Some(1800f),
+      plannedDynamicGridPower = Some(700f)
+    )
+
+    val result = consumer.currentlyUsedDynamicPower(state, now)
+
+    result.map(assertEquals(_, Power(1800f, 700f)))
+  }
+
+  test(
     "currentlyUsedDynamicPower: treats missing stored grid power as zero in automatic grid"
   ) {
     val state = stateWithCarCharger(

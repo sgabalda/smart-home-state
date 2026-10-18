@@ -52,10 +52,22 @@ private[carCharger] object CarChargerStatusProcessor {
           val previousPowerOpt = state.carCharger.currentPowerWatts
           val previousStatusOpt = previousPowerOpt.map(statusFromPower)
 
-          // debounce: only update chargingStatus if previous power also falls
-          // into the same status bucket
-          val shouldSetChargingStatus =
-            previousStatusOpt.contains(newChargingStatus)
+          // Keep the debounce for noisy edge values, but allow an immediate
+          // transition from the connected/blocked states to Charging once the
+          // charger is actually drawing real power: otherwise the dynamic power
+          // planner never sees the load as active before the second sample lands.
+          val shouldSetChargingStatus = previousStatusOpt match
+            case Some(previousStatus) if previousStatus == newChargingStatus =>
+              true
+            case Some(
+                  CarChargerChargingStatus.Connected |
+                  CarChargerChargingStatus.Blocked
+                ) if newChargingStatus == CarChargerChargingStatus.Charging =>
+              true
+            case Some(CarChargerChargingStatus.Charging)
+                if newChargingStatus == CarChargerChargingStatus.Connected =>
+              true
+            case _ => false
 
           val stateWithPower =
             state.modify(_.carCharger.currentPowerWatts).setTo(Some(watts))
