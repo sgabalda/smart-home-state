@@ -77,11 +77,34 @@ object CarChargerDynamicPowerConsumer {
           _ > CarChargerStatusProcessor.BLOCKED_POWER
         )
 
+    private def measuredDynamicUsage(
+        state: State,
+        mode: CarChargerSignal.UserCommand
+    ): Option[Power] =
+      state.carCharger.currentPowerWatts
+        .filter(_ > CarChargerStatusProcessor.BLOCKED_POWER)
+        .map { measuredWatts =>
+          val plannedFv = state.carCharger.plannedDynamicFVPower.getOrElse(0f)
+          val plannedGrid =
+            state.carCharger.plannedDynamicGridPower.getOrElse(0f)
+          val plannedTotal = plannedFv + plannedGrid
+
+          if (plannedTotal > 0f) then
+            val fvWatts = measuredWatts * plannedFv / plannedTotal
+            Power(fvWatts, measuredWatts - fvWatts)
+          else if (mode == SetAutomaticFV) then Power.ofFv(measuredWatts)
+          else Power.ofGrid(measuredWatts)
+        }
+
     override def currentlyUsedDynamicPower(
         state: State,
         now: Instant
     ): IO[Power] =
       carChargerSyncDetector.checkIfInSync(state) match
+        case calespiga.processor.utils.SyncDetector.NotInSyncNow =>
+          logger
+            .warn("Car charger is not in sync, using zero power")
+            .as(Power.zero)
         case calespiga.processor.utils.SyncDetector.NotInSync(since)
             if now.isAfter(
               since.plusMillis(config.syncTimeoutForDynamicPower.toMillis)
@@ -96,14 +119,19 @@ object CarChargerDynamicPowerConsumer {
             ) || isActivelyCharging(state)
 
           state.carCharger.lastCommandReceived match
-            case Some(SetAutomaticFV) | Some(SetAutomaticGrid) if isCharging =>
-              val activeDynamicUsage = Power(
-                state.carCharger.plannedDynamicFVPower.getOrElse(0f),
-                state.carCharger.plannedDynamicGridPower.getOrElse(0f)
-              )
+            case Some(mode)
+                if (mode == SetAutomaticFV || mode == SetAutomaticGrid) &&
+                  isCharging =>
+              val activeDynamicUsage =
+                measuredDynamicUsage(state, mode).getOrElse(
+                  Power(
+                    state.carCharger.plannedDynamicFVPower.getOrElse(0f),
+                    state.carCharger.plannedDynamicGridPower.getOrElse(0f)
+                  )
+                )
               logger
                 .info(
-                  s"Automatic mode active, charger is charging and switched on; dynamic usage is $activeDynamicUsage"
+                  s"Automatic mode active, charger is charging and switched on; measured/planned dynamic usage is $activeDynamicUsage"
                 )
                 .as(activeDynamicUsage)
             case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
