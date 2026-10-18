@@ -500,6 +500,42 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
   }
 
   test(
+    "DynamicPowerProcessor adds currently used grid power back to grid headroom"
+  ) {
+    val powerOffered = ListBuffer.empty[Power]
+    val consumer = DynamicPowerConsumerStub(
+      currentlyUsedDynamicPowerStub = (_, _) => Power.ofGrid(2034.7f),
+      usePowerStub = (state, power, _) => {
+        powerOffered += power
+        DynamicPowerResult(state, Set.empty, Power.zero)
+      }
+    )
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq(consumer)
+    )
+    val processor =
+      getDynamicPowerProcessor(orderer, Set(consumer), processorConfig)
+    val state = State().modify(_.grid.availablePower).setTo(Some(3000f))
+    val event = powerStatusEvent(
+      powerAvailable = 100f,
+      powerProduced = 100f,
+      powerDiscarded = 0f,
+      linesPower = List.empty,
+      powerFromNetwork = 2375.5f
+    )
+
+    processor
+      .process(state, event, now)
+      .map(_ =>
+        assertEquals(
+          powerOffered.head,
+          Power.ofGrid(2659.2f),
+          "Dynamic power should include 624.5 W of grid headroom plus 2034.7 W already used"
+        )
+      )
+  }
+
+  test(
     "DynamicPowerProcessor with no consumers returns state unchanged and only total action"
   ) {
     val orderer = DynamicConsumerOrdererStub(

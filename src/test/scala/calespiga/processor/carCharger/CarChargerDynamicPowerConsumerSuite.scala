@@ -111,20 +111,28 @@ class CarChargerDynamicPowerConsumerSuite extends CatsEffectSuite {
   }
 
   test(
-    "currentlyUsedDynamicPower: counts measured charging power even before the status debounce settles"
+    "currentlyUsedDynamicPower: reports measured power in the planned FV/grid proportions"
   ) {
+    val measuredWatts = 2034.7f
+    val plannedFv = 1800f
+    val plannedGrid = 700f
+    val expectedFv = measuredWatts * plannedFv / (plannedFv + plannedGrid)
     val state = stateWithCarCharger(
       switchStatus = Some(CarChargerSignal.On),
       lastCommandReceived = Some(CarChargerSignal.SetAutomaticGrid),
-      currentPowerWatts = Some(CarChargerStatusProcessor.BLOCKED_POWER + 1f),
+      currentPowerWatts = Some(measuredWatts),
       chargingStatus = Some(CarChargerChargingStatus.Connected),
-      plannedDynamicFVPower = Some(1800f),
-      plannedDynamicGridPower = Some(700f)
+      plannedDynamicFVPower = Some(plannedFv),
+      plannedDynamicGridPower = Some(plannedGrid)
     )
 
     val result = consumer.currentlyUsedDynamicPower(state, now)
 
-    result.map(assertEquals(_, Power(1800f, 700f)))
+    result.map { usage =>
+      assert(math.abs(usage.fv - expectedFv) < 0.01f)
+      assert(math.abs(usage.grid - (measuredWatts - expectedFv)) < 0.01f)
+      assert(math.abs(usage.total - measuredWatts) < 0.01f)
+    }
   }
 
   test(

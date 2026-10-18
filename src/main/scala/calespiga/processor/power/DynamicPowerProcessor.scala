@@ -45,19 +45,13 @@ object DynamicPowerProcessor {
           .traverse(_.currentlyUsedDynamicPower(state, timestamp))
           .map(_.fold(Power.zero)(_ + _))
 
-        // as currently the available grid power is fixed and not measured,
-        // to be consistent we need to take out the grid power used by the dynamic consumers from the available grid power,
-        // otherwise we could be using more power than the available one.
-        // when the available grid power is measured, we can remove this and just use the measured available grid power that should eb in the state
-        adjustedAvailableGridPower = Power.ofGrid(
-          (unusedGridPower - dynamicUsedPower).grid
-        )
-
+        // The power meter already includes existing dynamic loads. Add their
+        // reported usage back so those loads can be kept or reassigned.
         totalDynamicPower =
-          unusedFvPower + adjustedAvailableGridPower + dynamicUsedPower
+          unusedFvPower + unusedGridPower + dynamicUsedPower
 
         _ <- logger.info(
-          s"Total dynamic power available: $totalDynamicPower (unusedFvPower: $unusedFvPower, adjustedAvailableGridPower: $adjustedAvailableGridPower, dynamicUsedPower: $dynamicUsedPower)"
+          s"Total dynamic power available: $totalDynamicPower (unusedFvPower: $unusedFvPower, unusedGridPower: $unusedGridPower, dynamicUsedPower: $dynamicUsedPower)"
         )
 
         // we can in the future save the power assigned to each consumer and at the end
