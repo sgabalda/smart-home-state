@@ -71,6 +71,12 @@ object CarChargerDynamicPowerConsumer {
       * not actually charging, we report zero consumption to avoid reserving
       * power for a device that is not drawing it.
       */
+    private def isActivelyCharging(state: State): Boolean =
+      state.carCharger.switchStatus.contains(CarChargerSignal.On) &&
+        state.carCharger.currentPowerWatts.exists(
+          _ > CarChargerStatusProcessor.BLOCKED_POWER
+        )
+
     override def currentlyUsedDynamicPower(
         state: State,
         now: Instant
@@ -84,31 +90,28 @@ object CarChargerDynamicPowerConsumer {
             .warn("Car charger is not in sync, using zero power")
             .as(Power.zero)
         case _ =>
+          val isCharging =
+            state.carCharger.chargingStatus.contains(
+              CarChargerChargingStatus.Charging
+            ) || isActivelyCharging(state)
+
           state.carCharger.lastCommandReceived match
+            case Some(SetAutomaticFV) | Some(SetAutomaticGrid) if isCharging =>
+              val activeDynamicUsage = Power(
+                state.carCharger.plannedDynamicFVPower.getOrElse(0f),
+                state.carCharger.plannedDynamicGridPower.getOrElse(0f)
+              )
+              logger
+                .info(
+                  s"Automatic mode active, charger is charging and switched on; dynamic usage is $activeDynamicUsage"
+                )
+                .as(activeDynamicUsage)
             case Some(SetAutomaticFV) | Some(SetAutomaticGrid) =>
-              (
-                state.carCharger.chargingStatus,
-                state.carCharger.switchStatus
-              ) match
-                case (
-                      Some(CarChargerChargingStatus.Charging),
-                      Some(CarChargerSignal.On)
-                    ) =>
-                  val activeDynamicUsage = Power(
-                    state.carCharger.plannedDynamicFVPower.getOrElse(0f),
-                    state.carCharger.plannedDynamicGridPower.getOrElse(0f)
-                  )
-                  logger
-                    .info(
-                      s"Automatic mode active, charger is charging and switched on; dynamic usage is $activeDynamicUsage"
-                    )
-                    .as(activeDynamicUsage)
-                case _ =>
-                  logger
-                    .info(
-                      "Automatic mode active, but the charger is not currently drawing power"
-                    )
-                    .as(Power.zero)
+              logger
+                .info(
+                  "Automatic mode active, but the charger is not currently drawing power"
+                )
+                .as(Power.zero)
             case other =>
               logger
                 .info(
@@ -210,12 +213,13 @@ object CarChargerDynamicPowerConsumer {
             case _ =>
               // When the car is already charging, the real draw is known; otherwise
               // we assume the configured charger power as a safe estimate.
+              val effectivelyCharging =
+                state.carCharger.chargingStatus.contains(
+                  CarChargerChargingStatus.Charging
+                ) || isActivelyCharging(state)
+
               val requiredChargingPower =
-                if (
-                  state.carCharger.chargingStatus.contains(
-                    CarChargerChargingStatus.Charging
-                  )
-                )
+                if (effectivelyCharging)
                   state.carCharger.currentPowerWatts.getOrElse(
                     config.chargerPowerWatts
                   )
