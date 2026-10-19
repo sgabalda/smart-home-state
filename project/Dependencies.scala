@@ -28,7 +28,7 @@ object Dependencies {
 
     val sttp = "4.1.0"
 
-    val tapir = "1.13.33"
+    val tapir = "1.14.0"
   }
 
   val dependencies: Seq[ModuleID] = Seq(
