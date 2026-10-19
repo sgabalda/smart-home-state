@@ -22,7 +22,7 @@ object Dependencies {
 
     val munit = "2.2.1"
 
-    val pureconfig = "0.17.10"
+    val pureconfig = "0.17.11"
 
     val quicklens = "1.9.15"
 
