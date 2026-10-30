@@ -16,6 +16,7 @@
 #define CAR_CHARGER_PZEM_POWER_MQTT_TOPIC "cotxe/carrega/power"
 #define CAR_CHARGER_PZEM_ENERGY_MQTT_TOPIC "cotxe/carrega/energy"
 #define CAR_CHARGER_PZEM_POWER_CHANGE_THRESHOLD_W 250.0
+#define MAX_PZEM_POWER_W 8000.0
 
 #define HOME_CONSUMPTION_PZEM_RX_PIN A3
 #define HOME_CONSUMPTION_PZEM_TX_PIN A4
@@ -257,6 +258,12 @@ void readAndPublishPzem(PZEM004Tv30 &pzem, SoftwareSerial &pzemSerial, const cha
   pzemSerial.listen();
   float power = pzem.power();
   float energyKWh = pzem.energy();
+
+  if (power > MAX_PZEM_POWER_W) {
+    Serial.print(meterName);
+    Serial.println(F(" PZEM measurement discarded: power exceeds maximum"));
+    return;
+  }
 
   if (isnan(power))
     power = 0.0;
