@@ -1,6 +1,5 @@
 package calespiga.model
 
-import calespiga.model.GridSignal
 import calespiga.mqtt.annotations.InputEventMqtt
 import calespiga.mqtt.annotations.InputTopicMapper
 import calespiga.openhab.annotations.InputEventOHItem
@@ -165,21 +164,6 @@ object Event {
   object Grid {
     sealed trait GridData extends EventData
 
-    @InputEventMqtt("grid/connection/status")
-    case class GridConnectionStatusReported(
-        status: GridSignal.ControllerState
-    ) extends GridData
-
-    @InputEventMqtt("grid/connection/action")
-    case class GridRelayStatusReported(
-        status: GridSignal.ControllerState
-    ) extends GridData
-
-    @InputEventOHItem("XarxaManualConnexioSHS")
-    case class GridManualConnectionChanged(
-        connect: Boolean
-    ) extends GridData
-
     case class GridTariffChanged(tariff: GridTariff) extends GridData
   }
 
@@ -189,13 +173,6 @@ object Event {
     @InputEventMqtt("battery/level/status")
     case class BatteryStatusReported(status: BatteryStatus) extends BatteryData
 
-    @InputEventOHItem("XarxaBateriaCarregarLowSHS")
-    case class BatteryChargeLowTariffChanged(tariff: BatteryChargeTariff)
-        extends BatteryData
-
-    @InputEventOHItem("XarxaBateriaCarregarMediumSHS")
-    case class BatteryChargeMediumTariffChanged(tariff: BatteryChargeTariff)
-        extends BatteryData
   }
 
   object CarCharger {

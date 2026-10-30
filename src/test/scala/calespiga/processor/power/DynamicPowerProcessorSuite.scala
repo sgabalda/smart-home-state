@@ -22,25 +22,12 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
 
   val processorConfig = ProcessorConfigHelper.dynamicPowerProcessorConfig
 
-  private object NoopGridConnectionManager
-      extends calespiga.processor.grid.GridConnectionManager {
-    override def requestConnection(
-        actor: calespiga.model.GridSignal.ActorsConnecting,
-        state: State
-    ) = (state, Set.empty)
-    override def releaseConnection(
-        actor: calespiga.model.GridSignal.ActorsConnecting,
-        state: State
-    ) = (state, Set.empty)
-    override def applyConnection(state: State) = (state, Set.empty)
-  }
-
   private def getDynamicPowerProcessor(
       orderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
       config: DynamicPowerProcessorConfig
   ) =
-    DynamicPowerProcessor(orderer, consumers, config, NoopGridConnectionManager)
+    DynamicPowerProcessor(orderer, consumers, config)
 
   private def powerStatusEvent(
       powerAvailable: Float,

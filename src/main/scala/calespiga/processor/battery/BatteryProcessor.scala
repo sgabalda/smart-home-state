@@ -3,16 +3,15 @@ package calespiga.processor.battery
 import calespiga.config.BatteryConfig
 import calespiga.processor.SingleProcessor
 
-/** Aggregate processor for the grid connection relay.
+/** Aggregate processor for battery status and alerts.
   */
 object BatteryProcessor {
 
   def apply(
       config: BatteryConfig,
-      manager: calespiga.processor.grid.GridConnectionManager,
       offlineConfig: calespiga.config.OfflineDetectorConfig
   ): SingleProcessor =
-    BatteryChargeProcessor(config, manager)
+    BatteryStatusProcessor(config)
       .andThen(
         BatteryOfflineDetector(
           offlineConfig,
