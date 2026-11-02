@@ -1,6 +1,5 @@
 package calespiga.processor
 
-import calespiga.processor.grid.GridConnectionManagerStub
 import cats.effect.IO
 import cats.effect.Ref
 import com.softwaremill.quicklens.*
@@ -73,8 +72,7 @@ class StateProcessorSuite extends CatsEffectSuite {
         .allButPower(
           config = ProcessorConfigHelper.processorConfig,
           mqttBlacklist = mqttBlacklist,
-          zoneId = ZoneId.systemDefault(),
-          gridManager = new GridConnectionManagerStub()
+          zoneId = ZoneId.systemDefault()
         )
         .flatMap(_.dynamicPowerConsumer)
         .toList

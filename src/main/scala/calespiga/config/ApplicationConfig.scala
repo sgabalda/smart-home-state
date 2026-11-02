@@ -66,8 +66,6 @@ final case class ProcessorConfig(
 final case class BatteryConfig(
     statusMqttTopic: String,
     statusItem: String,
-    lowChargeTariffItem: String,
-    mediumChargeTariffItem: String,
     onlineStatusItem: String,
     offlineNotification: String,
     id: String
@@ -216,19 +214,7 @@ final case class FeatureFlagsConfig(
 ) derives ConfigReader
 
 final case class GridConfig(
-    mqttTopicForCommand: String,
-    statusItem: String,
-    manualSwitchItem: String,
-    syncStatusItem: String,
-    syncRelayStatusItem: String,
-    reasonItem: String,
-    resendInterval: FiniteDuration,
-    id: String,
     tariffItem: String,
-    onlineStatusItem: String,
-    offlineNotification: String,
-    syncNotification: String,
-    syncRelayNotification: String,
     availablePower: Float // as there is the same power currently available for all the grid tariffs, we can configure it here
 ) derives ConfigReader
 

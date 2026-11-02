@@ -37,14 +37,11 @@
 #define TOPIC_FAN_BATTERIES_STATUS "fan/batteries/status"
 #define TOPIC_FAN_ELECTRONICS_SET "fan/electronics/set"
 #define TOPIC_FAN_ELECTRONICS_STATUS "fan/electronics/status"
-#define TOPIC_GRID_SET "grid/connection/set"
-#define TOPIC_GRID_RELAY_STATUS "grid/connection/action"
 #define TOPIC_CAR_CHARGER_SET "cotxe/carrega/set"
 #define TOPIC_CAR_CHARGER_STATUS "cotxe/carrega/status"
 
 // PIN SENSORS
 #define TOPIC_BATTERY_LEVEL "battery/level/status"
-#define TOPIC_GRID_STATUS "grid/connection/status"
 
 // MQTT messages received
 #define COMMAND_START "start"
@@ -57,27 +54,21 @@
 #define BATTERY_LEVEL_HIGH "high"
 #define BATTERY_LEVEL_MEDIUM "medium"
 #define BATTERY_LEVEL_LOW "low"
-#define GRID_CONNECTED "on"
-#define GRID_DISCONNECTED "off"
 
 // Relay levels
 #define RELAY_CAR_CHARGER_ON HIGH
 #define RELAY_CAR_CHARGER_OFF LOW
 #define RELAY_FAN_ON LOW
 #define RELAY_FAN_OFF HIGH
-#define RELAY_GRID_ON LOW
-#define RELAY_GRID_OFF HIGH
 
 // Used relays
 #define RELAY_CAR_CHARGER 7
 #define RELAY_FAN_BATTERIES 5
 #define RELAY_FAN_ELECTRONICS 6
-#define RELAY_GRID 4
 
-// Read pins for battery and grid status
+// Read pin for battery status
 #define PIN_BATTERY_LEVEL_MED 8
 #define PIN_BATTERY_LEVEL_LOW 9
-#define PIN_GRID_CONNECTED 3
 
 #define PIN_ACTIVE LOW
 #define PIN_INACTIVE HIGH
@@ -131,7 +122,6 @@ void reconnect() {
       Serial.println(F("Connected to MQTT, subscribing"));
       client.subscribe(TOPIC_FAN_BATTERIES_SET);
       client.subscribe(TOPIC_FAN_ELECTRONICS_SET);
-      client.subscribe(TOPIC_GRID_SET);
       client.subscribe(TOPIC_CAR_CHARGER_SET);
     } else {
       Serial.print(F("failed, rc="));
@@ -162,13 +152,11 @@ void setup() {
   // Setup default pins to off
   pinMode(RELAY_FAN_BATTERIES, OUTPUT);
   pinMode(RELAY_FAN_ELECTRONICS, OUTPUT);
-  pinMode(RELAY_GRID, OUTPUT);
   pinMode(RELAY_CAR_CHARGER, OUTPUT);
 
   // Setup sensors to input
   pinMode(PIN_BATTERY_LEVEL_LOW, INPUT);
   pinMode(PIN_BATTERY_LEVEL_MED, INPUT);
-  pinMode(PIN_GRID_CONNECTED, INPUT);
 
   Serial.begin(9600);
   sensors.begin();
@@ -354,16 +342,6 @@ void callback(char *topic, byte *payload, unsigned int length) {
       Serial.println(message);
       turnFanElectronics(false);
     }
-  } else if (strcmp(topic, TOPIC_GRID_SET) == 0) {
-    if (strcmp(message, COMMAND_START) == 0) {
-      turnRelayGrid(true);
-    } else if (strcmp(message, COMMAND_STOP) == 0) {
-      turnRelayGrid(false);
-    } else {
-      Serial.print(F("-> Error, message not valid. Setting Grid off: "));
-      Serial.println(message);
-      turnRelayGrid(false);
-    }
   } else if (strcmp(topic, TOPIC_CAR_CHARGER_SET) == 0) {
     if (strcmp(message, COMMAND_CAR_CHARGER_START) == 0) {
       turnCarCharger(true);
@@ -404,18 +382,6 @@ void turnFanBatteries(bool on) {
   }
 }
 
-void turnRelayGrid(bool on) {
-  if (on) {
-    turnRelay(RELAY_GRID, RELAY_GRID_ON);
-    client.publish(TOPIC_GRID_RELAY_STATUS, STATUS_ON);
-    Serial.println(F("Relay Grid: ON"));
-  } else {
-    turnRelay(RELAY_GRID, RELAY_GRID_OFF);
-    client.publish(TOPIC_GRID_RELAY_STATUS, STATUS_OFF);
-    Serial.println(F("Relay Grid: OFF"));
-  }
-}
-
 void turnCarCharger(bool on) {
   if (on) {
     turnRelay(RELAY_CAR_CHARGER, RELAY_CAR_CHARGER_ON);
@@ -432,7 +398,6 @@ void turnAllOff() {
   turnCarCharger(false);
   turnFanElectronics(false);
   turnFanBatteries(false);
-  turnRelayGrid(false);
   Serial.println(F("All relays to Off"));
 }
 
@@ -441,7 +406,7 @@ void turnRelay(int relay, int status) {
   delay(100);
 }
 
-void readBatteryAndGridSensors() {
+void readBatterySensor() {
   int pinValue = digitalRead(PIN_BATTERY_LEVEL_LOW);
   if (pinValue == PIN_ACTIVE) {
     Serial.println(F("Battery level is LOW"));
@@ -456,14 +421,6 @@ void readBatteryAndGridSensors() {
       client.publish(TOPIC_BATTERY_LEVEL, BATTERY_LEVEL_HIGH);
     }
   }
-  pinValue = digitalRead(PIN_GRID_CONNECTED);
-  if (pinValue == PIN_ACTIVE) {
-    Serial.println(F("Grid is connected"));
-    client.publish(TOPIC_GRID_STATUS, GRID_CONNECTED);
-  } else {
-    Serial.println(F("Grid is NOT connected"));
-    client.publish(TOPIC_GRID_STATUS, GRID_DISCONNECTED);
-  }
 }
 
 void loop() {
@@ -477,7 +434,7 @@ void loop() {
   readAndPublishHomeConsumptionPzem();
   if (millis() - lastPublished > TIME_BETWEEN_DATA_PUBLISHED) {
     readTempSensors();
-    readBatteryAndGridSensors();
+    readBatterySensor();
     lastPublished = millis();
   }
   checkMaxTime();

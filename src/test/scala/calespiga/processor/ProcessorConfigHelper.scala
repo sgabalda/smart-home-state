@@ -131,27 +131,13 @@ object ProcessorConfigHelper {
   )
 
   val gridConfig: GridConfig = GridConfig(
-    id = "grid-processor",
-    mqttTopicForCommand = "grid/command",
-    statusItem = "grid/status",
-    manualSwitchItem = "grid/manualSwitch",
-    syncStatusItem = "grid/syncStatus",
-    syncRelayStatusItem = "grid/syncRelayStatus",
-    reasonItem = "grid/connectionReason",
-    resendInterval = 20.seconds,
     tariffItem = "grid/tariff",
-    onlineStatusItem = "grid/onlineStatus",
-    offlineNotification = "El dispositiu de control de la xarxa no respon",
-    syncNotification = "El dispositiu de control de la xarxa no respon",
-    syncRelayNotification = "El dispositiu de control de la xarxa no respon",
     availablePower = 3000.0f
   )
 
   val batteryConfig: BatteryConfig = BatteryConfig(
     statusMqttTopic = "battery/level/status",
     statusItem = "grid/batteryStatus",
-    lowChargeTariffItem = "grid/batteryLowChargeTariff",
-    mediumChargeTariffItem = "grid/batteryMediumChargeTariff",
     onlineStatusItem = "grid/batteryOnlineStatus",
     id = "battery-processor",
     offlineNotification = "El dispositiu de control de la bateria no respon"

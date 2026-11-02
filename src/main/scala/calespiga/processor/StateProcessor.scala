@@ -6,7 +6,6 @@ import calespiga.model.State
 import calespiga.processor.battery.BatteryProcessor
 import calespiga.processor.carCharger.CarChargerProcessor
 import calespiga.processor.greyWater.GreyWaterProcessor
-import calespiga.processor.grid.GridConnectionManager
 import calespiga.processor.grid.GridProcessor
 import calespiga.processor.heater.HeaterProcessor
 import calespiga.processor.infraredStove.InfraredStoveProcessor
@@ -54,8 +53,7 @@ object StateProcessor {
   private[processor] def allButPower(
       config: calespiga.config.ProcessorConfig,
       mqttBlacklist: Ref[IO, Set[String]],
-      zoneId: ZoneId,
-      gridManager: GridConnectionManager
+      zoneId: ZoneId
   ): List[EffectfulProcessor] = {
     List(
       TemperaturesProcessor(
@@ -81,15 +79,9 @@ object StateProcessor {
         config.offlineDetector,
         config.syncDetector
       ).toEffectful,
-      GridProcessor(
-        config.grid,
-        config.syncDetector,
-        gridManager,
-        config.offlineDetector
-      ).toEffectful,
+      GridProcessor(config.grid).toEffectful,
       BatteryProcessor(
         config.battery,
-        gridManager,
         config.offlineDetector
       ).toEffectful,
       CarChargerProcessor(
@@ -108,16 +100,13 @@ object StateProcessor {
       zoneId: ZoneId
   ): StateProcessor = {
 
-    val gridManager = GridConnectionManager(config.grid)
-
     val allButPowerProcessors =
-      allButPower(config, mqttBlacklist, zoneId, gridManager)
+      allButPower(config, mqttBlacklist, zoneId)
 
     val power = PowerProcessor(
       config.power,
       zoneId,
-      allButPowerProcessors.flatMap(_.dynamicPowerConsumer).toSet,
-      gridManager
+      allButPowerProcessors.flatMap(_.dynamicPowerConsumer).toSet
     )
 
     this.apply(

@@ -5,10 +5,8 @@ import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.Event.Power.PowerStatusReported
 import calespiga.model.Event.System.StartupEvent
-import calespiga.model.GridSignal
 import calespiga.model.State
 import calespiga.processor.EffectfulProcessor
-import calespiga.processor.grid.GridConnectionManager
 import calespiga.processor.power.dynamic.DynamicConsumerOrderer
 import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
@@ -25,8 +23,7 @@ object DynamicPowerProcessor {
   private final case class Impl(
       consumerOrderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
-      config: DynamicPowerProcessorConfig,
-      manager: GridConnectionManager
+      config: DynamicPowerProcessorConfig
   ) extends EffectfulProcessor {
 
     private def processDynamicPower(
@@ -147,20 +144,7 @@ object DynamicPowerProcessor {
               unusedGridPower
             )
           _ <- logger.info(s"Current dynamic power usage: $totalDynamicUsed")
-          (s, mgrActs) <-
-            if (totalDynamicUsed.grid > 0) then
-              logger
-                .info("Requesting connection to grid")
-                .as(
-                  manager.requestConnection(GridSignal.DynamicPower, stateAfter)
-                )
-            else
-              logger
-                .info("Releasing connection to grid")
-                .as(
-                  manager.releaseConnection(GridSignal.DynamicPower, stateAfter)
-                )
-        } yield (s, actions ++ mgrActs)
+        } yield (stateAfter, actions)
 
       case _ =>
         IO.pure((state, Set.empty))
@@ -170,8 +154,7 @@ object DynamicPowerProcessor {
   def apply(
       consumerOrderer: DynamicConsumerOrderer,
       consumers: Set[DynamicPowerConsumer],
-      config: DynamicPowerProcessorConfig,
-      manager: GridConnectionManager
-  ): EffectfulProcessor = Impl(consumerOrderer, consumers, config, manager)
+      config: DynamicPowerProcessorConfig
+  ): EffectfulProcessor = Impl(consumerOrderer, consumers, config)
 
 }

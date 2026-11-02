@@ -1,45 +1,15 @@
 package calespiga.processor.grid
 
 import calespiga.config.GridConfig
-import calespiga.config.OfflineDetectorConfig
-import calespiga.config.SyncDetectorConfig
 import calespiga.processor.SingleProcessor
 
-/** Aggregate processor for the grid connection relay.
+/** Aggregate processor for grid tariff and available-power state.
   */
 object GridProcessor {
 
   def apply(
-      config: GridConfig,
-      syncConfig: SyncDetectorConfig,
-      manager: GridConnectionManager,
-      offlineConfig: OfflineDetectorConfig
+      config: GridConfig
   ): SingleProcessor =
     GridTariffProcessor(config)
       .andThen(GridAvailablePowerProcessor(config))
-      .andThen(GridConnectionProcessor(config, manager))
-      .andThen(
-        GridSyncDetector(
-          syncConfig,
-          config.id,
-          config.syncStatusItem,
-          config.syncNotification
-        )
-      )
-      .andThen(
-        GridRelaySyncDetector(
-          syncConfig,
-          config.id,
-          config.syncRelayStatusItem,
-          config.syncRelayNotification
-        )
-      )
-      .andThen(
-        GridOfflineDetector(
-          offlineConfig,
-          config.id,
-          config.onlineStatusItem,
-          config.offlineNotification
-        )
-      )
 }

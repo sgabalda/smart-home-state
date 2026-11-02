@@ -13,7 +13,6 @@ import calespiga.model.State.Temperatures
 import io.circe.Decoder
 import io.circe.generic.auto._
 import sttp.tapir.Schema
-import sttp.tapir.generic.auto._
 
 case class State(
     featureFlags: FeatureFlags = FeatureFlags(),
@@ -135,27 +134,12 @@ object State {
   )
 
   case class Grid(
-      statusConnection: Option[GridSignal.ControllerState] =
-        None, // the last status read from the remote grid sensor, used to detect if the grid not connected although the relay may be reporting connected
-      lastCommandSent: Option[GridSignal.ControllerState] = None,
-      statusRelay: Option[GridSignal.ControllerState] =
-        None, // the last status received directly from the relay, used to detect if the relay is not responding
-      lastSyncingConnection: Option[java.time.Instant] = None,
-      lastSyncingRelay: Option[java.time.Instant] = None,
-      devicesRequestedConnection: Set[GridSignal.ActorsConnecting] = Set.empty,
       currentTariff: Option[GridTariff] = None,
-      availablePower: Option[Float] = None,
-      online: Option[OfflineOnlineSignal] = None
+      availablePower: Option[Float] = None
   )
-  object Grid:
-    given schema: Schema[Grid] = derived[
-      Grid
-    ] // required for the set to be properly encoded in the OpenAPI docs
 
   case class Battery(
       status: Option[BatteryStatus] = None,
-      lowChargeTariff: Option[BatteryChargeTariff] = None,
-      mediumChargeTariff: Option[BatteryChargeTariff] = None,
       online: Option[OfflineOnlineSignal] = None
   )
 

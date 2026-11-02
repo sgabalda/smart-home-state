@@ -3,7 +3,6 @@ package calespiga.mqtt.annotations
 import calespiga.model.CarChargerSignal
 import calespiga.model.Event.EventData
 import calespiga.model.FanSignal
-import calespiga.model.GridSignal
 import calespiga.model.HeaterSignal
 import calespiga.model.InfraredStoveSignal
 import scala.quoted.*
@@ -126,14 +125,6 @@ object InputTopicMapper {
                 InfraredStoveSignal
                   .controllerStateFromString(valueStr)
                   .getOrElse(InfraredStoveSignal.Off)
-              }
-              getNewExpr(convertedValueExpr)
-
-            case tpe if tpe =:= TypeRepr.of[GridSignal.ControllerState] =>
-              val convertedValueExpr = '{ (valueStr: String) =>
-                GridSignal
-                  .controllerStateFromString(valueStr)
-                  .getOrElse(GridSignal.Disconnected)
               }
               getNewExpr(convertedValueExpr)
 
