@@ -115,7 +115,9 @@ class StatePersistenceSuite extends CatsEffectSuite {
         _.add(
           "powerManagement",
           powerManagement.mapObject(
-            _.remove("homeConsumption").remove("powerFromNetwork")
+            _.remove("homeConsumption")
+              .remove("powerFromNetwork")
+              .remove("energyToday")
           )
         )
       )

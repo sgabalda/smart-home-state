@@ -83,6 +83,7 @@ sitemap shs label="Ca l'espiga SHS" {
         Frame label="Potència" {
             Text item=PotenciaConsumCasaSHS icon="power" label="Consum casa: [%.0f W]"
             Text item=PotenciaXarxaSHS icon="electric_tower" label="Xarxa (+ consumida / - injectada): [%.0f W]"
+            Text item=PotenciaConsumCasaEnergiaAvuiSHS icon="energy" label="Energia consumida casa avui: [%.3f kWh]"
             Text item=PotenciaRebutjadaSHS icon="power" label="Potència rebutjada: [%.0f W]"
             Text item=PotenciaDinamicaFVSHS icon="power" label="Potència dinàmica FV: [%.0f W]"
         }
@@ -98,6 +99,14 @@ sitemap shs label="Ca l'espiga SHS" {
     {
         Frame label="Xarxa" {
             Text item=XarxaTarifaSHS icon="price" label="Tarifa: [%s]"
+            Text item=XarxaEnergiaConsumidaAvuiSHS icon="energy" label="Energia consumida avui: [%.3f kWh]"
+            Text item=XarxaEnergiaInjectadaAvuiSHS icon="energy" label="Energia injectada avui: [%.3f kWh]"
+            Text item=XarxaEnergiaConsumidaVallAvuiSHS icon="energy" label="Consum vall avui: [%.3f kWh]"
+            Text item=XarxaEnergiaConsumidaPlaAvuiSHS icon="energy" label="Consum pla avui: [%.3f kWh]"
+            Text item=XarxaEnergiaConsumidaPicAvuiSHS icon="energy" label="Consum pic avui: [%.3f kWh]"
+            Text item=XarxaEnergiaInjectadaVallAvuiSHS icon="energy" label="Injecció vall avui: [%.3f kWh]"
+            Text item=XarxaEnergiaInjectadaPlaAvuiSHS icon="energy" label="Injecció pla avui: [%.3f kWh]"
+            Text item=XarxaEnergiaInjectadaPicAvuiSHS icon="energy" label="Injecció pic avui: [%.3f kWh]"
         }
     }
 
