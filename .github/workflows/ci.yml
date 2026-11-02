@@ -32,22 +32,12 @@ jobs:
               - 'Dockerfile'
 
   test:
-    name: Format, Compile and Test
-    needs:
-      - changes
-      - docker
-    if: always()
+    name: Run Format, Compile and Test
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      - name: Require Docker build when Docker files change
-        if: needs.changes.result != 'success' || (needs.changes.outputs.docker == 'true' && needs.docker.result != 'success')
-        run: |
-          echo "The required Docker build did not complete successfully." >&2
-          exit 1
-
       - name: Checkout code
         uses: actions/checkout@v7
 
@@ -177,3 +167,37 @@ jobs:
           running=$(docker inspect --format '{{.State.Running}}' "$container_name")
           test "$running" = true
           docker stop "$container_name"
+
+  required-checks:
+    name: Format, Compile and Test
+    needs:
+      - changes
+      - test
+      - docker
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Verify required checks
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          DOCKER_CHANGED: ${{ needs.changes.outputs.docker }}
+          DOCKER_RESULT: ${{ needs.docker.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$CHANGES_RESULT" != success ]]; then
+            echo "Could not determine whether Docker build files changed." >&2
+            exit 1
+          fi
+          if [[ "$TEST_RESULT" != success ]]; then
+            echo "Format, compile, or test checks did not pass." >&2
+            exit 1
+          fi
+          if [[ "$DOCKER_CHANGED" == true && "$DOCKER_RESULT" != success ]]; then
+            echo "Docker build files changed, but the Docker build did not pass." >&2
+            exit 1
+          fi
