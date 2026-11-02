@@ -15,10 +15,13 @@ object PowerProcessor {
       dynamicConsumers: Set[DynamicPowerConsumer]
   ): EffectfulProcessor =
     PowerAvailableProcessor(config.powerAvailable, zoneId).toEffectful.andThen(
-      DynamicPowerProcessor(
-        DynamicConsumerOrderer(),
-        dynamicConsumers,
-        config.dynamicPower
-      ).andThen(DynamicPowerPriorityProcessor().toEffectful)
+      PowerEnergyTodayProcessor(config.energyToday, zoneId).toEffectful
+        .andThen(
+          DynamicPowerProcessor(
+            DynamicConsumerOrderer(),
+            dynamicConsumers,
+            config.dynamicPower
+          ).andThen(DynamicPowerPriorityProcessor().toEffectful)
+        )
     )
 }

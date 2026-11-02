@@ -74,6 +74,7 @@ Number PotenciaGeneradaSHS "Potència generada"
 Number PotenciaRebutjadaSHS "Potència rebutjada"
 Number PotenciaConsumCasaSHS "Consum casa"
 Number PotenciaXarxaSHS "Potència xarxa"
+Number PotenciaConsumCasaEnergiaAvuiSHS "Energia consumida casa avui"
 Number PotenciaDinamicaFVSHS "Potència dinàmica FV"
 String PotenciaEstatLecturesSHS "Estat lectures FV"
 
@@ -90,6 +91,14 @@ Number CarChargerPrioritatConsumSHS "Carregador VE"
 String XarxaTitle "Xarxa"
 
 String XarxaTarifaSHS "Tarifa xarxa"                 // tariff-item
+Number XarxaEnergiaConsumidaAvuiSHS "Energia consumida avui"
+Number XarxaEnergiaInjectadaAvuiSHS "Energia injectada avui"
+Number XarxaEnergiaConsumidaVallAvuiSHS "Energia consumida vall avui"
+Number XarxaEnergiaConsumidaPlaAvuiSHS "Energia consumida pla avui"
+Number XarxaEnergiaConsumidaPicAvuiSHS "Energia consumida pic avui"
+Number XarxaEnergiaInjectadaVallAvuiSHS "Energia injectada vall avui"
+Number XarxaEnergiaInjectadaPlaAvuiSHS "Energia injectada pla avui"
+Number XarxaEnergiaInjectadaPicAvuiSHS "Energia injectada pic avui"
 
 /*
 ----------------------

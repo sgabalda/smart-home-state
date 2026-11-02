@@ -92,7 +92,20 @@ final case class CarChargerConfig(
 
 final case class PowerProcessorConfig(
     powerAvailable: PowerAvailableProcessorConfig,
+    energyToday: PowerEnergyTodayConfig,
     dynamicPower: DynamicPowerProcessorConfig
+) derives ConfigReader
+
+final case class PowerEnergyTodayConfig(
+    homeConsumptionItem: String,
+    gridConsumedItem: String,
+    gridInjectedItem: String,
+    gridConsumedVallItem: String,
+    gridConsumedPlaItem: String,
+    gridConsumedPicItem: String,
+    gridInjectedVallItem: String,
+    gridInjectedPlaItem: String,
+    gridInjectedPicItem: String
 ) derives ConfigReader
 
 final case class PowerAvailableProcessorConfig(

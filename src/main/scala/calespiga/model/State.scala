@@ -11,6 +11,7 @@ import calespiga.model.State.InfraredStove
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
 import io.circe.Decoder
+import io.circe.Encoder
 import io.circe.generic.auto._
 import sttp.tapir.Schema
 
@@ -97,9 +98,12 @@ object State {
       production: PowerProduction = PowerProduction(),
       dynamic: DynamicPower = DynamicPower(),
       homeConsumption: Option[Float] = None,
-      powerFromNetwork: Option[Float] = None
+      powerFromNetwork: Option[Float] = None,
+      energyToday: PowerEnergyToday = PowerEnergyToday()
   )
   object PowerManagement {
+    given Encoder[PowerManagement] = io.circe.generic.semiauto.deriveEncoder
+
     given Decoder[PowerManagement] = Decoder.instance { cursor =>
       for {
         production <- cursor.getOrElse[PowerProduction]("production")(
@@ -110,14 +114,37 @@ object State {
           cursor.getOrElse[Option[Float]]("homeConsumption")(None)
         powerFromNetwork <-
           cursor.getOrElse[Option[Float]]("powerFromNetwork")(None)
+        energyToday <-
+          cursor.getOrElse[PowerEnergyToday]("energyToday")(
+            PowerEnergyToday()
+          )
       } yield PowerManagement(
         production,
         dynamic,
         homeConsumption,
-        powerFromNetwork
+        powerFromNetwork,
+        energyToday
       )
     }
   }
+
+  case class PowerEnergyToday(
+      day: Option[String] = None,
+      homeConsumptionWh: Float = 0f,
+      gridConsumedWh: Float = 0f,
+      gridInjectedWh: Float = 0f,
+      gridConsumedVallWh: Float = 0f,
+      gridConsumedPlaWh: Float = 0f,
+      gridConsumedPicWh: Float = 0f,
+      gridInjectedVallWh: Float = 0f,
+      gridInjectedPlaWh: Float = 0f,
+      gridInjectedPicWh: Float = 0f,
+      lastHomeMeterEnergyWh: Option[Float] = None,
+      lastHomeMeterUpdate: Option[java.time.Instant] = None,
+      lastGridPower: Option[Float] = None,
+      lastGridPowerUpdate: Option[java.time.Instant] = None,
+      lastGridTariff: Option[GridTariff] = None
+  )
 
   case class PowerProduction(
       powerAvailable: Option[Float] = None,

@@ -19,4 +19,15 @@ class InputTopicsManagerSuite extends CatsEffectSuite {
         fail(s"Conversion failed: obtained $other")
     }
   }
+
+  test("on home energy topic it should decode accumulated watt-hours") {
+    val conversions = InputTopicsManager.apply.inputTopicsConversions
+
+    conversions("casa/consum/energy")(Vector[Byte](49, 50, 48, 48)) match {
+      case Right(Event.Power.HomeConsumptionEnergyReported(energyWh)) =>
+        assertEquals(energyWh, 1200f)
+      case other =>
+        fail(s"Conversion failed: obtained $other")
+    }
+  }
 }

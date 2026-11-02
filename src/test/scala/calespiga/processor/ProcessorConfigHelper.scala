@@ -127,6 +127,17 @@ object ProcessorConfigHelper {
 
   val powerProcessorConfig: PowerProcessorConfig = PowerProcessorConfig(
     powerAvailable = powerAvailableProcessorConfig,
+    energyToday = PowerEnergyTodayConfig(
+      homeConsumptionItem = "power/homeConsumptionEnergyToday",
+      gridConsumedItem = "power/gridConsumedToday",
+      gridInjectedItem = "power/gridInjectedToday",
+      gridConsumedVallItem = "power/gridConsumedVallToday",
+      gridConsumedPlaItem = "power/gridConsumedPlaToday",
+      gridConsumedPicItem = "power/gridConsumedPicToday",
+      gridInjectedVallItem = "power/gridInjectedVallToday",
+      gridInjectedPlaItem = "power/gridInjectedPlaToday",
+      gridInjectedPicItem = "power/gridInjectedPicToday"
+    ),
     dynamicPower = dynamicPowerProcessorConfig
   )
 

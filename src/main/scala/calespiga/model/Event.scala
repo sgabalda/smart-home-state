@@ -211,6 +211,9 @@ object Event {
     case class HomeConsumptionPowerReported(powerConsumed: Float)
         extends PowerData
 
+    @InputEventMqtt("casa/consum/energy")
+    case class HomeConsumptionEnergyReported(energyWh: Float) extends PowerData
+
     object PowerStatusReported {
       case class PowerProductionReported(
           powerAvailable: Float,
