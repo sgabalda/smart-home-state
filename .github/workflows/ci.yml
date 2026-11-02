@@ -33,11 +33,21 @@ jobs:
 
   test:
     name: Format, Compile and Test
+    needs:
+      - changes
+      - docker
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
+      - name: Require Docker build when Docker files change
+        if: needs.changes.result != 'success' || (needs.changes.outputs.docker == 'true' && needs.docker.result != 'success')
+        run: |
+          echo "The required Docker build did not complete successfully." >&2
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v7
 
