@@ -71,7 +71,7 @@ jobs:
         run: sbt test
 
   firmware:
-    name: Compile Arduino Uno firmware
+    name: Compile Arduino Uno and Nano firmware
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -108,18 +108,21 @@ jobs:
             PubSubClient@2.8.0 \
             OneWire@2.3.8 \
             DallasTemperature@4.0.6 \
-            PZEM004Tv30@1.2.1
+            PZEM004Tv30@1.2.1 \
+            UIPEthernet@2.0.12
 
-      - name: Compile all Arduino Uno sketches
+      - name: Compile all Arduino Uno and Nano sketches
         run: |
           shopt -s nullglob
-          sketches=(firmware/arduino/uno/*/)
-          if (( ${#sketches[@]} == 0 )); then
-            echo "No Arduino Uno sketches found" >&2
-            exit 1
-          fi
-          for sketch in "${sketches[@]}"; do
-            arduino-cli compile --fqbn arduino:avr:uno "$sketch"
+          for board in uno nano; do
+            sketches=(firmware/arduino/"$board"/*/)
+            if (( ${#sketches[@]} == 0 )); then
+              echo "No Arduino $board sketches found" >&2
+              exit 1
+            fi
+            for sketch in "${sketches[@]}"; do
+              arduino-cli compile --fqbn "arduino:avr:$board" "$sketch"
+            done
           done
 
   docker:
