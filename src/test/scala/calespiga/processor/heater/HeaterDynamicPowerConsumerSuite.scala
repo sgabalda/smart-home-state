@@ -110,6 +110,15 @@ class HeaterDynamicPowerConsumerSuite extends CatsEffectSuite {
     assertEquals(result, Power.ofFv(500f))
   }
 
+  test("currentlyUsedDynamicPower: reports zero when heater is hot") {
+    val state = stateWithHeater(
+      status = Some(HeaterSignal.Power500),
+      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    ).modify(_.heater.isHot).setTo(HeaterSignal.Hot)
+
+    assertEquals(consumer.currentlyUsedDynamicPower(state, now), Power.zero)
+  }
+
   test(
     "currentlyUsedDynamicPower: returns Power.ofFv(1000) when automatic and status is Power1000"
   ) {
@@ -261,6 +270,28 @@ class HeaterDynamicPowerConsumerSuite extends CatsEffectSuite {
         result.powerUsed,
         Power.zero,
         "Power used should be zero"
+      )
+    }
+  }
+
+  test("usePower: forces the heater off while hot") {
+    val state = stateWithHeater(
+      status = Some(HeaterSignal.Power1000),
+      lastCommandSent = Some(HeaterSignal.Power1000),
+      lastCommandReceived = Some(HeaterSignal.SetAutomatic)
+    ).modify(_.heater.isHot).setTo(HeaterSignal.Hot)
+
+    consumer.usePower(state, Power.ofFv(2500f), now).map { result =>
+      assertEquals(result.state.heater.lastCommandSent, Some(HeaterSignal.Off))
+      assertEquals(result.powerUsed, Power.zero)
+      assertEquals(
+        result.actions,
+        CommandActions[HeaterSignal.ControllerState](
+          mqttTopic = dummyConfig.mqttTopicForCommand,
+          id = dummyConfig.id,
+          resendInterval = dummyConfig.resendInterval,
+          commandToMessage = _.power.toString
+        ).commandActionWithResend(HeaterSignal.Off)
       )
     }
   }

@@ -108,9 +108,14 @@ object Event {
         status: HeaterSignal.UserCommand
     ) extends HeaterData
 
-    @InputEventMqtt("arduino_calentador/termostat/status")
-    case class HeaterIsHotReported(
-        status: HeaterSignal.HeaterTermostateState
+    @InputEventMqtt("arduino_calentador/temperature")
+    case class HeaterTemperatureMeasured(
+        celsius: Double
+    ) extends HeaterData
+
+    @InputEventOHItem("CalentadorTemperaturaObjectiuSHS")
+    case class HeaterGoalTemperatureChanged(
+        celsius: Double
     ) extends HeaterData
   }
 

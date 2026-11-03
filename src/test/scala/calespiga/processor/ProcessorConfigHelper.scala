@@ -71,7 +71,9 @@ object ProcessorConfigHelper {
     syncStatusItem = "dummySyncStatusItem",
     lastCommandItem = "dummyLastCommandItem",
     syncTimeoutForDynamicPower = 50.seconds,
-    dynamicConsumerCode = "heater-consumer-code"
+    dynamicConsumerCode = "heater-consumer-code",
+    temperatureItem = "dummyTemperatureItem",
+    goalTemperatureItem = "dummyGoalTemperatureItem"
   )
 
   val infraredStoveConfig: InfraredStoveConfig = InfraredStoveConfig(

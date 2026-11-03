@@ -31,7 +31,9 @@ object HeaterDynamicPowerConsumer {
         state: State,
         now: Instant
     ): IO[Power] =
-      if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
+      if (state.heater.isHot == HeaterSignal.Hot) {
+        IO.pure(Power.zero)
+      } else if (state.heater.lastCommandReceived.contains(SetAutomatic)) {
         heaterSyncDetector.checkIfInSync(state) match
           case SyncDetector.NotInSync(since)
               if now.isAfter(
@@ -67,7 +69,20 @@ object HeaterDynamicPowerConsumer {
         powerToUse: Power,
         now: Instant
     ): IO[DynamicPowerResult] =
-      if (
+      if (state.heater.isHot == HeaterSignal.Hot) {
+        val newState = state
+          .modify(_.heater.lastCommandSent)
+          .setTo(Some(HeaterSignal.Off))
+        logger
+          .info("Heater is hot, setting power to Off")
+          .as(
+            DynamicPowerResult(
+              newState,
+              actions.commandActionWithResend(HeaterSignal.Off),
+              Power.zero
+            )
+          )
+      } else if (
         state.heater.lastCommandReceived.getOrElse(
           HeaterSignal.TurnOff
         ) != SetAutomatic

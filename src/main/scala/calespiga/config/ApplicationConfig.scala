@@ -189,7 +189,9 @@ final case class HeaterConfig(
     syncStatusItem: String,
     lastCommandItem: String,
     syncTimeoutForDynamicPower: FiniteDuration,
-    dynamicConsumerCode: String
+    dynamicConsumerCode: String,
+    temperatureItem: String,
+    goalTemperatureItem: String
 ) derives ConfigReader
 
 final case class InfraredStoveConfig(

@@ -9,8 +9,6 @@
 #define ARDUINO_CLIENT_ID "arduino_calentador" // Client ID for Arduino pub/sub
 #define SUB_CALENTADOR "arduino_calentador/potencia/set"
 #define PUB_CALENTADOR "arduino_calentador/potencia/status"
-#define PUB_TERMOSTAT "arduino_calentador/termostat/status"
-#define PUB_TERMOSTAT "arduino_calentador/termostat/status"
 #define PUB_TEMPERATURE "arduino_calentador/temperature"
 #define MAX_SAFE_TEMPERATURE_C 70.0
 #define MAX_TIME_BETWEEN_ORDERS 3 * 60 * 1000 // 3 minutes
@@ -31,9 +29,6 @@ DallasTemperature temperatureSensors(&oneWire);
 int RELAY_1 = 5;
 int RELAY_2 = 6;
 int RELAY_3 = 8; // 7 is not working on the nano, so using 8.
-int OPTO_READ = 4;
-byte optoHOT = HIGH;
-byte optoCOLD = LOW; // HIGH is when the optocoupler does receive 220V
 byte relayON = LOW;
 byte relayOFF = HIGH;
 
@@ -46,7 +41,6 @@ void setup() {
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
   pinMode(RELAY_3, OUTPUT);
-  pinMode(OPTO_READ, INPUT);
   calentadorOff();
   temperatureSensors.begin();
 
@@ -123,7 +117,6 @@ void loop() {
   }
   client.loop();
   checkMaxTime();
-  checkOptStatus();
   if (millis() - lastTemperaturePublished >= TEMPERATURE_PUBLISH_INTERVAL) {
     readAndPublishTemperature();
     lastTemperaturePublished = millis();
@@ -148,18 +141,6 @@ void readAndPublishTemperature() {
   client.publish(PUB_TEMPERATURE, temperatureText);
   Serial.print(F("T batteries: "));
   Serial.println(temperatureText);
-}
-
-void checkOptStatus() {
-  Serial.println(F("Checking optocuopler"));
-  byte optStatus = digitalRead(OPTO_READ);
-  if (optStatus == optoHOT) {
-    Serial.println(F("HOT, sending status"));
-    client.publish(PUB_TERMOSTAT, "HOT");
-  } else {
-    Serial.println(F("COLD, sending status"));
-    client.publish(PUB_TERMOSTAT, "COLD");
-  }
 }
 
 void checkMaxTime() {
@@ -187,7 +168,6 @@ void reconnect() {
       Serial.print(client.state());
       Serial.println(F(", retrying in 5 seconds"));
       checkMaxTime();
-      checkOptStatus();
       delay(5000); // Wait 5 seconds before retrying
     }
     Serial.println(F("done 1st try to connect"));

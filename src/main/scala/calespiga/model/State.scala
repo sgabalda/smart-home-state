@@ -67,7 +67,9 @@ object State {
       isHot: HeaterSignal.HeaterTermostateState = HeaterSignal.Cold,
       lastTimeHot: Option[java.time.Instant] = None,
       energyToday: Float = 0.0f,
-      lastSyncing: Option[java.time.Instant] = None
+      lastSyncing: Option[java.time.Instant] = None,
+      temperature: Option[Double] = None,
+      goalTemperature: Double = 40.0
   )
 
   case class InfraredStove(

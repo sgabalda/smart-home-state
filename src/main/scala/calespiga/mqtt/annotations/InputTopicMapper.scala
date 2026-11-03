@@ -110,16 +110,6 @@ object InputTopicMapper {
               getNewExpr(convertedValueExpr)
 
             case tpe
-                if tpe =:= TypeRepr
-                  .of[HeaterSignal.HeaterTermostateState] =>
-              val convertedValueExpr = '{ (valueStr: String) =>
-                HeaterSignal
-                  .heaterTermostateStateFromString(valueStr)
-                  .getOrElse(HeaterSignal.Cold)
-              }
-              getNewExpr(convertedValueExpr)
-
-            case tpe
                 if tpe =:= TypeRepr.of[InfraredStoveSignal.ControllerState] =>
               val convertedValueExpr = '{ (valueStr: String) =>
                 InfraredStoveSignal

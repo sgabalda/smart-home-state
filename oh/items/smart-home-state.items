@@ -26,6 +26,8 @@ String CalentadorTitle "Calentador"
 
 String CalentadorSetSHS "Mode calentador"
 Number CalentadorStatusSHS "Estat calentador"
+Number CalentadorTemperaturaSHS "Temperatura calentador"
+Number CalentadorTemperaturaObjectiuSHS "Temperatura objectiu calentador"
 String CalentadorCalentSHS "Estat termostat"
 String CalentadorUltimaVegadaCalentSHS "Última vegada HOT"
 Number CalentadorEnergiaAvuiSHS "Energia avui"

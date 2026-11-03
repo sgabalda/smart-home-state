@@ -30,4 +30,17 @@ class InputTopicsManagerSuite extends CatsEffectSuite {
         fail(s"Conversion failed: obtained $other")
     }
   }
+
+  test("on heater temperature topic it should decode the temperature") {
+    val conversions = InputTopicsManager.apply.inputTopicsConversions
+
+    conversions("arduino_calentador/temperature")(
+      Vector[Byte](50, 49, 46, 53)
+    ) match {
+      case Right(Event.Heater.HeaterTemperatureMeasured(temperature)) =>
+        assertEquals(temperature, 21.5)
+      case other =>
+        fail(s"Conversion failed: obtained $other")
+    }
+  }
 }
