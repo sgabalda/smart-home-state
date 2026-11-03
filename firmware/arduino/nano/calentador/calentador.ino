@@ -1,6 +1,8 @@
 /*
   Turns on the three relays for the heater
 */
+#include <DallasTemperature.h>
+#include <OneWire.h>
 #include <PubSubClient.h>
 #include <UIPEthernet.h>
 
@@ -9,7 +11,11 @@
 #define PUB_CALENTADOR "arduino_calentador/potencia/status"
 #define PUB_TERMOSTAT "arduino_calentador/termostat/status"
 #define PUB_TERMOSTAT "arduino_calentador/termostat/status"
+#define PUB_TEMPERATURE "arduino_calentador/temperature"
+#define MAX_SAFE_TEMPERATURE_C 70.0
 #define MAX_TIME_BETWEEN_ORDERS 3 * 60 * 1000 // 3 minutes
+#define ONE_WIRE_BUS 3
+#define TEMPERATURE_PUBLISH_INTERVAL 5 * 1000 // 5 seconds
 
 // Networking details
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02}; // Ethernet shield (W5100) MAC address
@@ -18,18 +24,22 @@ IPAddress server(192, 168, 2, 114);                // MTTQ server IP address
 
 EthernetClient ethClient;
 PubSubClient client(ethClient);
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature temperatureSensors(&oneWire);
 
 // Relay config
 int RELAY_1 = 5;
 int RELAY_2 = 6;
 int RELAY_3 = 8; // 7 is not working on the nano, so using 8.
-int OPTO_READ = 3;
+int OPTO_READ = 4;
 byte optoHOT = HIGH;
 byte optoCOLD = LOW; // HIGH is when the optocoupler does receive 220V
 byte relayON = LOW;
 byte relayOFF = HIGH;
 
 long lastOrder = 0; // to store the last time when an order was received
+unsigned long lastTemperaturePublished = 0;
+bool temperatureSafetyActive = true;
 
 void setup() {
   // Setup default pins to off
@@ -38,12 +48,14 @@ void setup() {
   pinMode(RELAY_3, OUTPUT);
   pinMode(OPTO_READ, INPUT);
   calentadorOff();
+  temperatureSensors.begin();
 
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
   Serial.println(F("Calentador Arduino starting"));
+  scanOneWireBus();
 
   // MTTQ parameters
   client.setServer(server, 1883);
@@ -71,6 +83,40 @@ void setup() {
   lastOrder = millis();
 }
 
+void scanOneWireBus() {
+  byte address[8];
+  int sensorCount = 0;
+
+  oneWire.reset_search();
+  while (oneWire.search(address)) {
+    sensorCount++;
+    Serial.print(F("OneWire sensor "));
+    Serial.print(sensorCount);
+    Serial.print(F(" address: "));
+
+    for (byte i = 0; i < 8; i++) {
+      if (address[i] < 0x10) {
+        Serial.print('0');
+      }
+      Serial.print(address[i], HEX);
+      if (i < 7) {
+        Serial.print(' ');
+      }
+    }
+
+    if (OneWire::crc8(address, 7) != address[7]) {
+      Serial.println(F(" (invalid CRC)"));
+    } else {
+      Serial.println(F(" (CRC OK)"));
+    }
+  }
+
+  if (sensorCount == 0) {
+    Serial.println(F("No OneWire sensors found"));
+  }
+  oneWire.reset_search();
+}
+
 void loop() {
   if (!client.connected()) {
     reconnect();
@@ -78,7 +124,30 @@ void loop() {
   client.loop();
   checkMaxTime();
   checkOptStatus();
+  if (millis() - lastTemperaturePublished >= TEMPERATURE_PUBLISH_INTERVAL) {
+    readAndPublishTemperature();
+    lastTemperaturePublished = millis();
+  }
   delay(2000);
+}
+
+void readAndPublishTemperature() {
+  const byte batteryTemperatureSensor[8] = {0x28, 0x2A, 0x27, 0x79, 0x97, 0x10, 0x03, 0xA9};
+  temperatureSensors.requestTemperatures();
+  float temperatureC = temperatureSensors.getTempC(batteryTemperatureSensor);
+
+  temperatureSafetyActive =
+      temperatureC == DEVICE_DISCONNECTED_C || temperatureC > MAX_SAFE_TEMPERATURE_C;
+  if (temperatureSafetyActive) {
+    calentadorOff();
+    Serial.println(F("Temperature safety interlock active"));
+  }
+
+  char temperatureText[16];
+  dtostrf(temperatureC, 4, 2, temperatureText);
+  client.publish(PUB_TEMPERATURE, temperatureText);
+  Serial.print(F("T batteries: "));
+  Serial.println(temperatureText);
 }
 
 void checkOptStatus() {
@@ -138,6 +207,9 @@ void callback(char *topic, byte *payload, unsigned int length) {
   message[length] = '\0';
   Serial.println(message);
   if (strcmp(message, "0") == 0) {
+    calentadorOff();
+  } else if (temperatureSafetyActive) {
+    Serial.println(F("Command blocked by temperature safety interlock"));
     calentadorOff();
   } else if (strcmp(message, "500") == 0) {
     calentador500W();
