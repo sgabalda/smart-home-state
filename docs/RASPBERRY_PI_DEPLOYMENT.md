@@ -106,10 +106,7 @@ OPENHAB_HOST=your-openhab-server
 OPENHAB_API_TOKEN=your_secret_api_token_here
 
 # Email notifications for updates (optional but recommended)
-NOTIFICATION_EMAIL_FROM=your-email@gmail.com
-NOTIFICATION_EMAIL_TO=your-email@gmail.com
-NOTIFICATION_EMAIL_USER=your-email@gmail.com
-NOTIFICATION_EMAIL_PASSWORD=your-gmail-app-password
+NOTIFICATION_EMAIL_URL=smtp://user@example.com:secret@smtp.example.com:587/?fromaddress=sender@example.com&toaddresses=recipient@example.com&encryption=ExplicitTLS&usestarttls=yes
 NOTIFICATION_EMAIL_SUBJECT_TAG=[Smart Home]
 
 # Optional: Adjust log level
@@ -121,7 +118,6 @@ STATE_PERSISTENCE_INTERVAL=10 seconds
 To use Gmail for notifications, you need to create an App Password:
 
 1. **Enable 2-Step Verification:**
-
    - Go to [Google Account Security](https://myaccount.google.com/security)
    - Under "Signing in to Google", enable "2-Step Verification" if not already enabled
 
@@ -129,7 +125,7 @@ To use Gmail for notifications, you need to create an App Password:
    - Go to [App passwords](https://myaccount.google.com/apppasswords)
    - Select "Mail" as the app
    - Copy the generated 16-character password (without spaces)
-   - Use this as your `NOTIFICATION_EMAIL_PASSWORD`
+   - Use this to build the URL with the format smtp://${USER}:${PASSWORD}@smtp.gmail.com:587/?fromaddress=${FROM}&toaddresses=${TO}&encryption=ExplicitTLS&usestarttls=yes&timeout=30s
 
 **Security Note:** Never commit the `.env` file to version control. It contains sensitive credentials.
 
