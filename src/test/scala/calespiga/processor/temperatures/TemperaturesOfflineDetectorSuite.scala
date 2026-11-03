@@ -16,9 +16,9 @@ class TemperaturesOfflineDetectorSuite extends FunSuite {
 
   val detector = TemperaturesOfflineDetector(config, id, statusItem)
 
-  test("BatteryTemperatureMeasured sets online and schedules offline") {
+  test("BatteryClosetTemperatureMeasured sets online and schedules offline") {
     val state = State()
-    val event = Event.Temperature.BatteryTemperatureMeasured(25.0)
+    val event = Event.Temperature.BatteryClosetTemperatureMeasured(25.0)
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),

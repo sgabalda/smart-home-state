@@ -18,7 +18,7 @@ class BatteryFanSyncDetectorSuite extends FunSuite {
   val detector = BatteryFanSyncDetector(config, id, statusItem)
   val dummyEvent =
     Event.Temperature.Fans.BatteryFanStatus(calespiga.model.FanSignal.On)
-  val nonRelevantEvent = Event.Temperature.BatteryTemperatureMeasured(0.0)
+  val nonRelevantEvent = Event.Temperature.ExternalTemperatureMeasured(0.0)
 
   test(
     "Already in sync: sets SYNC and cancels delayed action, clears lastSyncing"

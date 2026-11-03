@@ -6,15 +6,15 @@ import munit.CatsEffectSuite
 class InputTopicsManagerSuite extends CatsEffectSuite {
 
   test(
-    "on batteries temperature topic it should properly decode the temperature"
+    "on batteries closet temperature topic it should decode the temperature"
   ) {
     val conversions = InputTopicsManager.apply.inputTopicsConversions
 
-    conversions("diposit1/temperature/batteries")(
+    conversions("diposit1/temperature/batteriescloset")(
       Vector[Byte](49, 54, 46, 57, 52)
     ) match {
-      case Right(Event.Temperature.BatteryTemperatureMeasured(temperature)) =>
-        assertEquals(temperature, 16.94)
+      case Right(Event.Temperature.BatteryClosetTemperatureMeasured(temp)) =>
+        assertEquals(temp, 16.94)
       case other =>
         fail(s"Conversion failed: obtained $other")
     }

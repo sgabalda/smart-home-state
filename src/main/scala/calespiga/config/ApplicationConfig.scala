@@ -132,7 +132,6 @@ final case class TemperatureFansConfig(
 
 final case class TemperaturesItemsConfig(
     // OpenHAB item names for temperature readings
-    batteryTemperatureItem: String,
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,

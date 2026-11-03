@@ -28,7 +28,6 @@
 
 // temp sensors
 #define TOPIC_TEMPERATURE_ELECTRONICS "diposit1/temperature/electronics"
-#define TOPIC_TEMPERATURE_BATTERIES "diposit1/temperature/batteries"
 #define TOPIC_TEMPERATURE_BATTERIES_CLOSET "diposit1/temperature/batteriescloset"
 #define TOPIC_TEMPERATURE_OUTDOOR "diposit1/temperature/outdoor"
 
@@ -204,7 +203,6 @@ void setup() {
 
 void readTempSensors() {
 
-  byte sensorBateries[8] = {0x28, 0x2A, 0x27, 0x79, 0x97, 0x10, 0x03, 0xA9};    // 1st on index
   byte sensorExterior[8] = {0x28, 0x07, 0x49, 0x79, 0x97, 0x10, 0x03, 0xE6};    // 2nd on o¡index
   byte sensorElectronica[8] = {0x28, 0xCF, 0x72, 0x79, 0x97, 0x11, 0x03, 0xE8}; // 3rd on index
   byte sensorArmariBat[8] = {0x28, 0xEF, 0x6F, 0x79, 0x97, 0x10, 0x03, 0x0A};   // 4th on index
@@ -224,12 +222,6 @@ void readTempSensors() {
   dtostrf(tempC, 4, 2, cstr);
   client.publish(TOPIC_TEMPERATURE_BATTERIES_CLOSET, cstr);
   Serial.print(F("T armari bat: "));
-  Serial.println(cstr);
-
-  tempC = sensors.getTempC(sensorBateries);
-  dtostrf(tempC, 4, 2, cstr);
-  client.publish(TOPIC_TEMPERATURE_BATTERIES, cstr);
-  Serial.print(F("T for bat: "));
   Serial.println(cstr);
 
   tempC = sensors.getTempC(sensorExterior);

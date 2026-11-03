@@ -58,18 +58,6 @@ private object TemperaturesUpdater {
             )
           )
         )
-      case BatteryTemperatureMeasured(celsius) =>
-        (
-          state
-            .modify(_.temperatures.batteriesTemperature)
-            .setTo(Some(celsius)),
-          Set(
-            Action.SetUIItemValue(
-              config.batteryTemperatureItem,
-              celsius.toString
-            )
-          ) ++ notifyIfThresholdExceeded(celsius, "Bateria")
-        )
       case BatteryClosetTemperatureMeasured(celsius) =>
         (
           state

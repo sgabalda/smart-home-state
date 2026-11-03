@@ -18,11 +18,11 @@ class OfflineDetectorSuite extends FunSuite {
   // Use config from helper
   val config = ProcessorConfigHelper.offlineDetectorConfig
 
-  // Use an existing event type for matching, e.g. BatteryTemperatureMeasured
-  val matchingEvent = Event.Temperature.BatteryTemperatureMeasured(42.0)
+  // Use an existing event type for matching.
+  val matchingEvent = Event.Temperature.ExternalTemperatureMeasured(42.0)
   val matcher: Event.EventData => Boolean = {
-    case Event.Temperature.BatteryTemperatureMeasured(_) => true
-    case _                                               => false
+    case Event.Temperature.ExternalTemperatureMeasured(_) => true
+    case _                                                => false
   }
 
   val detector = OfflineDetector(config, originalId, matcher, statusItem)

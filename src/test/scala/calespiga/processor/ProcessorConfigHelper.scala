@@ -7,7 +7,6 @@ object ProcessorConfigHelper {
 
   val temperaturesItemsConfig: TemperaturesItemsConfig =
     TemperaturesItemsConfig(
-      batteryTemperatureItem = "BatteryTempItem",
       batteryClosetTemperatureItem = "BatteryClosetTempItem",
       electronicsTemperatureItem = "ElectronicsTempItem",
       externalTemperatureItem = "ExternalTempItem",

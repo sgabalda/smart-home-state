@@ -50,11 +50,6 @@ object Event {
   object Temperature {
     sealed trait TemperatureData extends EventData
 
-    @InputEventMqtt("diposit1/temperature/batteries")
-    case class BatteryTemperatureMeasured(
-        celsius: Double
-    ) extends TemperatureData
-
     @InputEventMqtt("diposit1/temperature/batteriescloset")
     case class BatteryClosetTemperatureMeasured(
         celsius: Double

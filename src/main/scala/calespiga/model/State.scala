@@ -42,7 +42,6 @@ object State {
 
   case class Temperatures(
       externalTemperature: Option[Double] = None,
-      batteriesTemperature: Option[Double] = None,
       batteriesClosetTemperature: Option[Double] = None,
       electronicsTemperature: Option[Double] = None,
       goalTemperature: Double = 20.0

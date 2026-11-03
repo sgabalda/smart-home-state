@@ -6,8 +6,6 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=ElectronicaTemperaturaSHS label="T. arm. electronica: [%.1f]" icon="temperature"
             Text item=BateriesTemperaturaSHS label="T. arm. bateries: [%.1f]" icon="temperature"
             Text item=ExteriorArmarisTemperaturaSHS label="T. fora: [%.1f]" icon="temperature"
-            Text item=BateriesTemperaturaAdosadaSHS label="T. bateries: [%.1f]" icon="temperature"
-
             Setpoint item=TemperaturaObjectiuSHS icon="dial_heater" label="T. objectiu [%.1f]" minValue=5 maxValue=35 step=1
         }
         Frame label="Ventiladors" {

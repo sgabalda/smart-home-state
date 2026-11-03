@@ -8,7 +8,6 @@ String TemperaturesTitle "Temperatures"
 Number ElectronicaTemperaturaSHS      "T. arm. electronica"           // electronics-temperature-item
 Number BateriesTemperaturaSHS         "T. arm. bateries"              // battery-closet-temperature-item
 Number ExteriorArmarisTemperaturaSHS  "T. fora"                       // external-temperature-item
-Number BateriesTemperaturaAdosadaSHS  "T. bateries"                   // battery-temperature-item
 Number TemperaturaObjectiuSHS         "T. objectiu"                   // goal-temperature-item
 
 String VentiladorBateriesStatusSHS        "Estat vent. bat."      // battery-fan-status-item

@@ -29,7 +29,6 @@ class StatePersistenceSuite extends CatsEffectSuite {
   private val someState: State = State(
     temperatures = State.Temperatures(
       externalTemperature = Some(20.0),
-      batteriesTemperature = Some(30.0),
       electronicsTemperature = Some(40.0),
       goalTemperature = 20.0
     )
