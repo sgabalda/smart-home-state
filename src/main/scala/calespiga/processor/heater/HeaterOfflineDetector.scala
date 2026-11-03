@@ -9,7 +9,7 @@ import calespiga.processor.utils.OfflineDetector
 private object HeaterOfflineDetector {
 
   private val eventMatcher: EventData => Boolean = {
-    case Event.Heater.HeaterIsHotReported(_)       => true
+    case Event.Heater.HeaterTemperatureMeasured(_) => true
     case Event.Heater.HeaterPowerStatusReported(_) => true
     case Event.System.StartupEvent                 => true
     case _                                         => false

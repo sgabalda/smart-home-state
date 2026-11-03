@@ -29,8 +29,8 @@ class SyncDetectorSuite extends FunSuite {
     state.copy(heater = state.heater.copy(lastSyncing = v))
 
   def isEventRelevant(eventData: Event.EventData): Boolean = eventData match {
-    case Event.Temperature.BatteryTemperatureMeasured(_) => true
-    case _                                               => false
+    case Event.Temperature.ExternalTemperatureMeasured(_) => true
+    case _                                                => false
   }
 
   val detector = SyncDetector(
@@ -57,7 +57,7 @@ class SyncDetectorSuite extends FunSuite {
     Some(message)
   )
 
-  val dummyEvent = Event.Temperature.BatteryTemperatureMeasured(0.0)
+  val dummyEvent = Event.Temperature.ExternalTemperatureMeasured(0.0)
 
   test(
     "Already in sync: sets SYNC and cancels delayed action, clears lastSyncing"

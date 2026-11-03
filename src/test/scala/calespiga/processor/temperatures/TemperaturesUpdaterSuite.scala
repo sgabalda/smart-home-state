@@ -41,23 +41,6 @@ class TemperaturesUpdaterSuite extends FunSuite {
     assertEquals(actions, Set.empty)
   }
 
-  test("BatteryTemperatureMeasured updates state and emits action") {
-    val temp = 21.5
-    val state = State()
-    val event = Event.Temperature.BatteryTemperatureMeasured(temp)
-    val (newState, actions) = updater.process(state, event, now)
-    assertEquals(newState.temperatures.batteriesTemperature, Some(temp))
-    assertEquals(
-      actions,
-      Set[Action](
-        Action.SetUIItemValue(
-          dummyConfig.batteryTemperatureItem,
-          temp.toString
-        )
-      )
-    )
-  }
-
   test("BatteryClosetTemperatureMeasured updates state and emits action") {
     val temp = 19.0
     val state = State()
@@ -90,45 +73,6 @@ class TemperaturesUpdaterSuite extends FunSuite {
         )
       )
     )
-  }
-
-  test(
-    "BatteryTemperatureMeasured emits notification if under lower threshold"
-  ) {
-    val temp = 4.0
-    val state = State()
-    val event = Event.Temperature.BatteryTemperatureMeasured(temp)
-    val (_, actions) = updater.process(state, event, now)
-    assert(actions.find {
-      case Action.SendNotification(id, msg, repeat)
-          if id.endsWith(
-            TemperaturesUpdater.LOW_TEMPERATURE_NOTIFICATION_ID_SUFFIX
-          )
-            && msg.contains("Bateria")
-            && repeat.contains(2.hours) =>
-        true
-      case _ => false
-    }.isDefined)
-
-  }
-
-  test(
-    "BatteryTemperatureMeasured emits notification if above high threshold"
-  ) {
-    val temp = 44.0
-    val state = State()
-    val event = Event.Temperature.BatteryTemperatureMeasured(temp)
-    val (_, actions) = updater.process(state, event, now)
-    assert(actions.find {
-      case Action.SendNotification(id, msg, repeat)
-          if id.endsWith(
-            TemperaturesUpdater.HIGH_TEMPERATURE_NOTIFICATION_ID_SUFFIX
-          )
-            && msg.contains("Bateria")
-            && repeat.contains(2.hours) =>
-        true
-      case _ => false
-    }.isDefined)
   }
 
   test(

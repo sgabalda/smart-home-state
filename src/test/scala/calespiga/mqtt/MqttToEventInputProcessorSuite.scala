@@ -85,7 +85,7 @@ class MqttToEventInputProcessorSuite extends CatsEffectSuite {
     )
 
     val resultEventData =
-      Event.Temperature.BatteryTemperatureMeasured(42.0)
+      Event.Temperature.ElectronicsTemperatureMeasured(42.0)
     val converter: TopicMessagesConverter =
       Map(topic -> (_ => Right(resultEventData)))
     val sut = MqttToEventInputProcessor(consumer, converter)
@@ -95,7 +95,7 @@ class MqttToEventInputProcessorSuite extends CatsEffectSuite {
       last match {
         case Some(
               Right(
-                Event.Temperature.BatteryTemperatureMeasured(42.0)
+                Event.Temperature.ElectronicsTemperatureMeasured(42.0)
               )
             ) =>
           () // Test passed

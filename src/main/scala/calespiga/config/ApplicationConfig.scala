@@ -132,7 +132,6 @@ final case class TemperatureFansConfig(
 
 final case class TemperaturesItemsConfig(
     // OpenHAB item names for temperature readings
-    batteryTemperatureItem: String,
     batteryClosetTemperatureItem: String,
     electronicsTemperatureItem: String,
     externalTemperatureItem: String,
@@ -190,7 +189,9 @@ final case class HeaterConfig(
     syncStatusItem: String,
     lastCommandItem: String,
     syncTimeoutForDynamicPower: FiniteDuration,
-    dynamicConsumerCode: String
+    dynamicConsumerCode: String,
+    temperatureItem: String,
+    goalTemperatureItem: String
 ) derives ConfigReader
 
 final case class InfraredStoveConfig(

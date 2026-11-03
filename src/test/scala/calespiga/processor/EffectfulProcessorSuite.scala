@@ -10,7 +10,7 @@ import munit.CatsEffectSuite
 
 class EffectfulProcessorSuite extends CatsEffectSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
-  val event = Event.Temperature.BatteryTemperatureMeasured(42.0)
+  val event = Event.Temperature.ExternalTemperatureMeasured(42.0)
 
   // Dummy effectful processors
   class AddFlagProcessor(fieldValue: Double, action: Action)

@@ -42,7 +42,6 @@ object State {
 
   case class Temperatures(
       externalTemperature: Option[Double] = None,
-      batteriesTemperature: Option[Double] = None,
       batteriesClosetTemperature: Option[Double] = None,
       electronicsTemperature: Option[Double] = None,
       goalTemperature: Double = 20.0
@@ -68,7 +67,9 @@ object State {
       isHot: HeaterSignal.HeaterTermostateState = HeaterSignal.Cold,
       lastTimeHot: Option[java.time.Instant] = None,
       energyToday: Float = 0.0f,
-      lastSyncing: Option[java.time.Instant] = None
+      lastSyncing: Option[java.time.Instant] = None,
+      temperature: Option[Double] = None,
+      goalTemperature: Double = 40.0
   )
 
   case class InfraredStove(

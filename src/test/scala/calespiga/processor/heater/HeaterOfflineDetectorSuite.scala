@@ -2,7 +2,6 @@ package calespiga.processor.heater
 
 import calespiga.model.Action
 import calespiga.model.Event
-import calespiga.model.HeaterSignal
 import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.OfflineDetector
@@ -17,9 +16,9 @@ class HeaterOfflineDetectorSuite extends FunSuite {
 
   val detector = HeaterOfflineDetector(config, id, statusItem)
 
-  test("HeaterIsHotReported sets online and schedules offline") {
+  test("HeaterTemperatureMeasured sets online and schedules offline") {
     val state = State()
-    val event = Event.Heater.HeaterIsHotReported(HeaterSignal.Hot)
+    val event = Event.Heater.HeaterTemperatureMeasured(25.0)
     val (newState, actions) = detector.process(state, event, now)
     val expectedActions = Set(
       Action.SetUIItemValue(statusItem, config.onlineText),

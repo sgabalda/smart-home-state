@@ -9,7 +9,7 @@ import munit.FunSuite
 
 class SingleProcessorSuite extends FunSuite {
   val now = Instant.parse("2023-08-17T10:00:00Z")
-  val dummyEvent = Event.Temperature.BatteryTemperatureMeasured(0.0)
+  val dummyEvent = Event.Temperature.ExternalTemperatureMeasured(0.0)
 
   // Dummy processors for testing
   class AddFieldProcessor(action: Action) extends SingleProcessor {

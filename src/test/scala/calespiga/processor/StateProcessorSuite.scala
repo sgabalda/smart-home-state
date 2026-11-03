@@ -13,10 +13,10 @@ class StateProcessorSuite extends CatsEffectSuite {
   import java.time.Instant
 
   val now = Instant.parse("2023-08-17T10:00:00Z")
-  val event = Event.Temperature.BatteryTemperatureMeasured(42.0)
+  val event = Event.Temperature.ElectronicsTemperatureMeasured(42.0)
 
   val initialState =
-    State().modify(_.temperatures.batteriesTemperature).setTo(Some(0d))
+    State().modify(_.temperatures.electronicsTemperature).setTo(Some(0d))
   val action1 = Action.SetUIItemValue("item1", "value1")
   val action2 = Action.SetUIItemValue("item2", "value2")
   // Dummy processors
@@ -28,7 +28,7 @@ class StateProcessorSuite extends CatsEffectSuite {
     ): IO[(State, Set[Action])] = {
       if (eventData != event) fail("Event not correct")
       val newState =
-        state.modify(_.temperatures.batteriesTemperature).setTo(Some(10d))
+        state.modify(_.temperatures.electronicsTemperature).setTo(Some(10d))
       IO.pure((newState, Set(action1)))
     }
   }
@@ -40,7 +40,7 @@ class StateProcessorSuite extends CatsEffectSuite {
     ): IO[(State, Set[Action])] = {
       if (eventData != event) fail("Event not correct")
       val newState =
-        state.modify(_.temperatures.batteriesTemperature).using(_.map(_ + 5))
+        state.modify(_.temperatures.electronicsTemperature).using(_.map(_ + 5))
       IO.pure((newState, Set(action2)))
     }
   }
@@ -62,7 +62,7 @@ class StateProcessorSuite extends CatsEffectSuite {
     stateProcessor.process(initialState, Event(now, event)).map {
       case (finalState, _) =>
         // State should reflect both changes, in order
-        assertEquals(finalState.temperatures.batteriesTemperature, Some(15d))
+        assertEquals(finalState.temperatures.electronicsTemperature, Some(15d))
     }
   }
 

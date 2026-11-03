@@ -190,15 +190,16 @@ class HeaterPowerProcessorSuite extends FunSuite {
     assertEquals(actions, expectedActions)
   }
 
-  test(
-    "HeaterIsHotReported(On) sets isHot, lastTimeHot, sends Off command and UI update"
-  ) {
-    val initialState = stateWithHeater(isHot = HeaterSignal.Cold)
-    val event = HeaterIsHotReported(HeaterSignal.Hot)
+  test("Heater temperature at goal marks hot and sends Off") {
+    val initialState = stateWithHeater(
+      lastCommandReceived = Some(HeaterSignal.SetPower1000)
+    ).modify(_.heater.temperature).setTo(Some(39.0))
+    val event = HeaterTemperatureMeasured(40.0)
     val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, HeaterSignal.Hot)
     assertEquals(newState.heater.lastTimeHot, Some(now))
+    assertEquals(newState.heater.temperature, Some(40.0))
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
     val expectedActions = Set(
       Action.SendMqttStringMessage("dummy/topic", "0"),
@@ -214,22 +215,24 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action.SetUIItemValue(
         dummyConfig.isHotItem,
         HeaterSignal.Hot.toString
-      )
+      ),
+      Action.SetUIItemValue(dummyConfig.temperatureItem, "40.0")
     )
     assertEquals(actions, expectedActions)
   }
 
   test(
-    "HeaterIsHotReported(Off) sets isHot, sends last user command and no UI update"
+    "Heater temperature below goal marks cold and restores requested power"
   ) {
     val initialState = stateWithHeater(
       isHot = HeaterSignal.Hot,
       lastCommandReceived = Some(HeaterSignal.SetPower500)
-    )
-    val event = HeaterIsHotReported(HeaterSignal.Cold)
+    ).modify(_.heater.temperature).setTo(Some(20.0))
+    val event = HeaterTemperatureMeasured(19.0)
     val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, HeaterSignal.Cold)
+    assertEquals(newState.heater.temperature, Some(19.0))
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Power500))
     val expectedActions = Set(
       Action.SendMqttStringMessage("dummy/topic", "500"),
@@ -239,15 +242,78 @@ class HeaterPowerProcessorSuite extends FunSuite {
         scala.concurrent.duration.DurationInt(20).seconds
       ),
       Action.SetUIItemValue(
-        dummyConfig.lastTimeHotItem,
-        ProcessorFormatter.format(now, zone)
-      ),
-      Action.SetUIItemValue(
         dummyConfig.isHotItem,
         HeaterSignal.Cold.toString
-      )
+      ),
+      Action.SetUIItemValue(dummyConfig.temperatureItem, "19.0")
     )
     assertEquals(actions, expectedActions)
+  }
+
+  test("Changing goal temperature updates state and thermostat status") {
+    val initialState = stateWithHeater(
+      isHot = HeaterSignal.Cold,
+      lastCommandReceived = Some(HeaterSignal.SetPower500)
+    ).modify(_.heater.temperature).setTo(Some(21.0))
+    val event = HeaterGoalTemperatureChanged(21.0)
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(initialState, event, now)
+
+    assertEquals(newState.heater.goalTemperature, 21.0)
+    assertEquals(newState.heater.isHot, HeaterSignal.Hot)
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(dummyConfig.goalTemperatureItem, "21.0")
+      )
+    )
+    assert(
+      actions.contains(Action.SetUIItemValue(dummyConfig.isHotItem, "Hot"))
+    )
+    assert(actions.contains(Action.SendMqttStringMessage("dummy/topic", "0")))
+  }
+
+  test("Power command received while hot is stored but remains off") {
+    val initialState = stateWithHeater(
+      isHot = HeaterSignal.Hot,
+      lastCommandReceived = Some(HeaterSignal.TurnOff)
+    ).modify(_.heater.temperature).setTo(Some(25.0))
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      HeaterPowerCommandChanged(HeaterSignal.SetPower1000),
+      now
+    )
+
+    assertEquals(
+      newState.heater.lastCommandReceived,
+      Some(HeaterSignal.SetPower1000)
+    )
+    assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
+    assert(actions.contains(Action.SendMqttStringMessage("dummy/topic", "0")))
+  }
+
+  test("Disconnected sensor reading does not mark the heater cold") {
+    val initialState = stateWithHeater(
+      isHot = HeaterSignal.Hot,
+      lastCommandReceived = Some(HeaterSignal.SetPower500)
+    ).modify(_.heater.temperature).setTo(Some(25.0))
+    val processor = HeaterPowerProcessor(dummyConfig, zone)
+    val (newState, actions) = processor.process(
+      initialState,
+      HeaterTemperatureMeasured(-127.0),
+      now
+    )
+
+    assertEquals(newState.heater.isHot, HeaterSignal.Hot)
+    assertEquals(newState.heater.temperature, Some(25.0))
+    assertEquals(newState.heater.lastCommandSent, None)
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.SetUIItemValue(dummyConfig.temperatureItem, "-127.0")
+      )
+    )
   }
 
   test("StartupEvent sends last user command or Off if none") {
@@ -271,7 +337,8 @@ class HeaterPowerProcessorSuite extends FunSuite {
       Action.SetUIItemValue(
         dummyConfig.lastCommandItem,
         HeaterSignal.userCommandToString(HeaterSignal.SetPower2000)
-      )
+      ),
+      Action.SetUIItemValue(dummyConfig.goalTemperatureItem, "40.0")
     )
     assertEquals(actions, expectedActions)
   }
