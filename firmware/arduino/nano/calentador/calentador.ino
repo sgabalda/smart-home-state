@@ -14,6 +14,11 @@
 #define MAX_TIME_BETWEEN_ORDERS 3 * 60 * 1000 // 3 minutes
 #define ONE_WIRE_BUS 3
 #define TEMPERATURE_PUBLISH_INTERVAL 5 * 1000 // 5 seconds
+#define RELAY_1_PIN 5
+#define RELAY_2_PIN 6
+#define RELAY_3_PIN 8 // 7 is not working on the nano, so using 8.
+#define RELAY_ON LOW
+#define RELAY_OFF HIGH
 
 // Networking details
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02}; // Ethernet shield (W5100) MAC address
@@ -25,22 +30,15 @@ PubSubClient client(ethClient);
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature temperatureSensors(&oneWire);
 
-// Relay config
-int RELAY_1 = 5;
-int RELAY_2 = 6;
-int RELAY_3 = 8; // 7 is not working on the nano, so using 8.
-byte relayON = LOW;
-byte relayOFF = HIGH;
-
 long lastOrder = 0; // to store the last time when an order was received
 unsigned long lastTemperaturePublished = 0;
 bool temperatureSafetyActive = true;
 
 void setup() {
   // Setup default pins to off
-  pinMode(RELAY_1, OUTPUT);
-  pinMode(RELAY_2, OUTPUT);
-  pinMode(RELAY_3, OUTPUT);
+  pinMode(RELAY_1_PIN, OUTPUT);
+  pinMode(RELAY_2_PIN, OUTPUT);
+  pinMode(RELAY_3_PIN, OUTPUT);
   calentadorOff();
   temperatureSensors.begin();
 
@@ -178,24 +176,23 @@ void reconnect() {
 // sub callback function
 void callback(char *topic, byte *payload, unsigned int length) {
   lastOrder = millis();
-  Serial.print("[sub: ");
+  Serial.print(F("[sub: "));
   Serial.print(topic);
-  Serial.print("] ");
-  char message[length + 1] = "";
-  for (int i = 0; i < length; i++)
-    message[i] = (char)payload[i];
-  message[length] = '\0';
-  Serial.println(message);
-  if (strcmp(message, "0") == 0) {
+  Serial.print(F("] "));
+  Serial.write(payload, length);
+  Serial.println();
+  if (length == 1 && payload[0] == '0') {
     calentadorOff();
   } else if (temperatureSafetyActive) {
     Serial.println(F("Command blocked by temperature safety interlock"));
     calentadorOff();
-  } else if (strcmp(message, "500") == 0) {
+  } else if (length == 3 && payload[0] == '5' && payload[1] == '0' && payload[2] == '0') {
     calentador500W();
-  } else if (strcmp(message, "1000") == 0) {
+  } else if (length == 4 && payload[0] == '1' && payload[1] == '0' && payload[2] == '0' &&
+             payload[3] == '0') {
     calentador1000W();
-  } else if (strcmp(message, "2000") == 0) {
+  } else if (length == 4 && payload[0] == '2' && payload[1] == '0' && payload[2] == '0' &&
+             payload[3] == '0') {
     calentador2000W();
   } else {
     Serial.println(F("Error, message not valid:"));
@@ -205,34 +202,34 @@ void callback(char *topic, byte *payload, unsigned int length) {
 
 void calentadorOff() {
   turnRelay(
-      RELAY_3,
-      relayOFF); // turn off in the opposite order, thus relay_1 does not receive a lot of current
-  turnRelay(RELAY_2, relayOFF);
-  turnRelay(RELAY_1, relayOFF);
+      RELAY_3_PIN,
+      RELAY_OFF); // turn off in the opposite order, thus relay_1 does not receive a lot of current
+  turnRelay(RELAY_2_PIN, RELAY_OFF);
+  turnRelay(RELAY_1_PIN, RELAY_OFF);
   client.publish(PUB_CALENTADOR, "OFF");
   Serial.println(F("Calentador: Off"));
 }
 
 void calentador500W() {
-  turnRelay(RELAY_1, relayON);
-  turnRelay(RELAY_2, relayOFF);
-  turnRelay(RELAY_3, relayOFF);
+  turnRelay(RELAY_1_PIN, RELAY_ON);
+  turnRelay(RELAY_2_PIN, RELAY_OFF);
+  turnRelay(RELAY_3_PIN, RELAY_OFF);
   client.publish(PUB_CALENTADOR, "500");
   Serial.println(F("Calentador: 500"));
 }
 
 void calentador1000W() {
-  turnRelay(RELAY_1, relayON);
-  turnRelay(RELAY_2, relayON);
-  turnRelay(RELAY_3, relayOFF);
+  turnRelay(RELAY_1_PIN, RELAY_ON);
+  turnRelay(RELAY_2_PIN, RELAY_ON);
+  turnRelay(RELAY_3_PIN, RELAY_OFF);
   client.publish(PUB_CALENTADOR, "1000");
   Serial.println(F("Calentador: 1000"));
 }
 
 void calentador2000W() {
-  turnRelay(RELAY_1, relayON);
-  turnRelay(RELAY_2, relayON);
-  turnRelay(RELAY_3, relayON);
+  turnRelay(RELAY_1_PIN, RELAY_ON);
+  turnRelay(RELAY_2_PIN, RELAY_ON);
+  turnRelay(RELAY_3_PIN, RELAY_ON);
   client.publish(PUB_CALENTADOR, "2000");
   Serial.println(F("Calentador: 2000"));
 }
