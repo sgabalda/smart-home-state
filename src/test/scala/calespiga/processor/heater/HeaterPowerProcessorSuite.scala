@@ -193,13 +193,13 @@ class HeaterPowerProcessorSuite extends FunSuite {
   test("Heater temperature at goal marks hot and sends Off") {
     val initialState = stateWithHeater(
       lastCommandReceived = Some(HeaterSignal.SetPower1000)
-    ).modify(_.heater.temperature).setTo(Some(19.0))
-    val event = HeaterTemperatureMeasured(20.0)
+    ).modify(_.heater.temperature).setTo(Some(39.0))
+    val event = HeaterTemperatureMeasured(40.0)
     val processor = HeaterPowerProcessor(dummyConfig, zone)
     val (newState, actions) = processor.process(initialState, event, now)
     assertEquals(newState.heater.isHot, HeaterSignal.Hot)
     assertEquals(newState.heater.lastTimeHot, Some(now))
-    assertEquals(newState.heater.temperature, Some(20.0))
+    assertEquals(newState.heater.temperature, Some(40.0))
     assertEquals(newState.heater.lastCommandSent, Some(HeaterSignal.Off))
     val expectedActions = Set(
       Action.SendMqttStringMessage("dummy/topic", "0"),
@@ -216,7 +216,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
         dummyConfig.isHotItem,
         HeaterSignal.Hot.toString
       ),
-      Action.SetUIItemValue(dummyConfig.temperatureItem, "20.0")
+      Action.SetUIItemValue(dummyConfig.temperatureItem, "40.0")
     )
     assertEquals(actions, expectedActions)
   }
@@ -338,7 +338,7 @@ class HeaterPowerProcessorSuite extends FunSuite {
         dummyConfig.lastCommandItem,
         HeaterSignal.userCommandToString(HeaterSignal.SetPower2000)
       ),
-      Action.SetUIItemValue(dummyConfig.goalTemperatureItem, "20.0")
+      Action.SetUIItemValue(dummyConfig.goalTemperatureItem, "40.0")
     )
     assertEquals(actions, expectedActions)
   }
