@@ -59,16 +59,7 @@ final case class ProcessorConfig(
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
     grid: GridConfig,
-    battery: BatteryConfig,
     carCharger: CarChargerConfig
-) derives ConfigReader
-
-final case class BatteryConfig(
-    statusMqttTopic: String,
-    statusItem: String,
-    onlineStatusItem: String,
-    offlineNotification: String,
-    id: String
 ) derives ConfigReader
 
 final case class CarChargerConfig(

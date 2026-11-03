@@ -147,14 +147,6 @@ object ProcessorConfigHelper {
     availablePower = 3000.0f
   )
 
-  val batteryConfig: BatteryConfig = BatteryConfig(
-    statusMqttTopic = "battery/level/status",
-    statusItem = "grid/batteryStatus",
-    onlineStatusItem = "grid/batteryOnlineStatus",
-    id = "battery-processor",
-    offlineNotification = "El dispositiu de control de la bateria no respon"
-  )
-
   val carCharger = CarChargerConfig(
     statusItem = "carcharger/statusItem",
     powerItem = "carcharger/powerItem",
@@ -184,7 +176,6 @@ object ProcessorConfigHelper {
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,
-    battery = batteryConfig,
     carCharger = carCharger
   )
 }

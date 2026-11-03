@@ -75,7 +75,7 @@ class GridTariffProcessorSuite extends FunSuite {
     val (newState, actions) =
       processor.process(
         state,
-        Event.Battery.BatteryStatusReported(calespiga.model.BatteryStatus.Low),
+        Event.CarCharger.CarChargerPowerReported(0.0f),
         now
       )
 

@@ -3,7 +3,6 @@ package calespiga.processor
 import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.State
-import calespiga.processor.battery.BatteryProcessor
 import calespiga.processor.carCharger.CarChargerProcessor
 import calespiga.processor.greyWater.GreyWaterProcessor
 import calespiga.processor.grid.GridProcessor
@@ -80,10 +79,6 @@ object StateProcessor {
         config.syncDetector
       ).toEffectful,
       GridProcessor(config.grid).toEffectful,
-      BatteryProcessor(
-        config.battery,
-        config.offlineDetector
-      ).toEffectful,
       CarChargerProcessor(
         config.carCharger,
         zoneId,

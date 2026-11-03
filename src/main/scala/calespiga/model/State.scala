@@ -1,6 +1,5 @@
 package calespiga.model
 
-import calespiga.model.State.Battery
 import calespiga.model.State.CarCharger
 import calespiga.model.State.Fans
 import calespiga.model.State.FeatureFlags
@@ -24,7 +23,6 @@ case class State(
     greyWater: GreyWater = GreyWater(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
-    battery: Battery = Battery(),
     carCharger: CarCharger = CarCharger()
 )
 
@@ -164,11 +162,6 @@ object State {
   case class Grid(
       currentTariff: Option[GridTariff] = None,
       availablePower: Option[Float] = None
-  )
-
-  case class Battery(
-      status: Option[BatteryStatus] = None,
-      online: Option[OfflineOnlineSignal] = None
   )
 
   case class CarCharger(

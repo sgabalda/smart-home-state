@@ -39,9 +39,6 @@
 #define TOPIC_CAR_CHARGER_SET "cotxe/carrega/set"
 #define TOPIC_CAR_CHARGER_STATUS "cotxe/carrega/status"
 
-// PIN SENSORS
-#define TOPIC_BATTERY_LEVEL "battery/level/status"
-
 // MQTT messages received
 #define COMMAND_START "start"
 #define COMMAND_STOP "stop"
@@ -50,9 +47,6 @@
 // MQTT messages sent
 #define STATUS_ON "on"
 #define STATUS_OFF "off"
-#define BATTERY_LEVEL_HIGH "high"
-#define BATTERY_LEVEL_MEDIUM "medium"
-#define BATTERY_LEVEL_LOW "low"
 
 // Relay levels
 #define RELAY_CAR_CHARGER_ON HIGH
@@ -64,13 +58,6 @@
 #define RELAY_CAR_CHARGER 7
 #define RELAY_FAN_BATTERIES 5
 #define RELAY_FAN_ELECTRONICS 6
-
-// Read pin for battery status
-#define PIN_BATTERY_LEVEL_MED 8
-#define PIN_BATTERY_LEVEL_LOW 9
-
-#define PIN_ACTIVE LOW
-#define PIN_INACTIVE HIGH
 
 // Data wire is conntected to the Arduino digital pin 4
 #define ONE_WIRE_BUS 2
@@ -152,10 +139,6 @@ void setup() {
   pinMode(RELAY_FAN_BATTERIES, OUTPUT);
   pinMode(RELAY_FAN_ELECTRONICS, OUTPUT);
   pinMode(RELAY_CAR_CHARGER, OUTPUT);
-
-  // Setup sensors to input
-  pinMode(PIN_BATTERY_LEVEL_LOW, INPUT);
-  pinMode(PIN_BATTERY_LEVEL_MED, INPUT);
 
   Serial.begin(9600);
   sensors.begin();
@@ -398,23 +381,6 @@ void turnRelay(int relay, int status) {
   delay(100);
 }
 
-void readBatterySensor() {
-  int pinValue = digitalRead(PIN_BATTERY_LEVEL_LOW);
-  if (pinValue == PIN_ACTIVE) {
-    Serial.println(F("Battery level is LOW"));
-    client.publish(TOPIC_BATTERY_LEVEL, BATTERY_LEVEL_LOW);
-  } else {
-    pinValue = digitalRead(PIN_BATTERY_LEVEL_MED);
-    if (pinValue == PIN_ACTIVE) {
-      Serial.println(F("Battery level is MEDIUM"));
-      client.publish(TOPIC_BATTERY_LEVEL, BATTERY_LEVEL_MEDIUM);
-    } else {
-      Serial.println(F("Battery level is HIGH"));
-      client.publish(TOPIC_BATTERY_LEVEL, BATTERY_LEVEL_HIGH);
-    }
-  }
-}
-
 void loop() {
   if (mqttEnabled) {
     if (!client.connected()) {
@@ -426,7 +392,6 @@ void loop() {
   readAndPublishHomeConsumptionPzem();
   if (millis() - lastPublished > TIME_BETWEEN_DATA_PUBLISHED) {
     readTempSensors();
-    readBatterySensor();
     lastPublished = millis();
   }
   checkMaxTime();
