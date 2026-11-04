@@ -123,7 +123,8 @@ object ProcessorConfigHelper {
 
   val dynamicPowerProcessorConfig: DynamicPowerProcessorConfig =
     DynamicPowerProcessorConfig(
-      dynamicFVPowerUsedItem = "dynamicFVPowerUsed"
+      dynamicFVPowerUsedItem = "dynamicFVPowerUsed",
+      debouncePeriod = 2.seconds
     )
 
   val powerProcessorConfig: PowerProcessorConfig = PowerProcessorConfig(

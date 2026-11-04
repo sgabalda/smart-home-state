@@ -119,7 +119,6 @@ void loop() {
     readAndPublishTemperature();
     lastTemperaturePublished = millis();
   }
-  delay(2000);
 }
 
 void readAndPublishTemperature() {
@@ -142,8 +141,6 @@ void readAndPublishTemperature() {
 }
 
 void checkMaxTime() {
-  Serial.print(F("ms since last order: "));
-  Serial.println(millis() - lastOrder);
   if (millis() - lastOrder > MAX_TIME_BETWEEN_ORDERS) {
     Serial.println(F("Too much time between orders, turning off calentador:"));
     calentadorOff();
@@ -201,36 +198,36 @@ void callback(char *topic, byte *payload, unsigned int length) {
 }
 
 void calentadorOff() {
+  client.publish(PUB_CALENTADOR, "OFF");
   turnRelay(
       RELAY_3_PIN,
       RELAY_OFF); // turn off in the opposite order, thus relay_1 does not receive a lot of current
   turnRelay(RELAY_2_PIN, RELAY_OFF);
   turnRelay(RELAY_1_PIN, RELAY_OFF);
-  client.publish(PUB_CALENTADOR, "OFF");
   Serial.println(F("Calentador: Off"));
 }
 
 void calentador500W() {
+  client.publish(PUB_CALENTADOR, "500");
   turnRelay(RELAY_1_PIN, RELAY_ON);
   turnRelay(RELAY_2_PIN, RELAY_OFF);
   turnRelay(RELAY_3_PIN, RELAY_OFF);
-  client.publish(PUB_CALENTADOR, "500");
   Serial.println(F("Calentador: 500"));
 }
 
 void calentador1000W() {
+  client.publish(PUB_CALENTADOR, "1000");
   turnRelay(RELAY_1_PIN, RELAY_ON);
   turnRelay(RELAY_2_PIN, RELAY_ON);
   turnRelay(RELAY_3_PIN, RELAY_OFF);
-  client.publish(PUB_CALENTADOR, "1000");
   Serial.println(F("Calentador: 1000"));
 }
 
 void calentador2000W() {
+  client.publish(PUB_CALENTADOR, "2000");
   turnRelay(RELAY_1_PIN, RELAY_ON);
   turnRelay(RELAY_2_PIN, RELAY_ON);
   turnRelay(RELAY_3_PIN, RELAY_ON);
-  client.publish(PUB_CALENTADOR, "2000");
   Serial.println(F("Calentador: 2000"));
 }
 

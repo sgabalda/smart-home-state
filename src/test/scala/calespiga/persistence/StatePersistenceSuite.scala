@@ -109,6 +109,9 @@ class StatePersistenceSuite extends CatsEffectSuite {
     val powerManagement = someState.asJson.hcursor
       .get[Json]("powerManagement")
       .fold(error => fail(error.getMessage), identity)
+    val dynamicPower = powerManagement.hcursor
+      .get[Json]("dynamic")
+      .fold(error => fail(error.getMessage), identity)
     val legacyStateJson = someState.asJson
       .mapObject(
         _.add(
@@ -117,6 +120,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
             _.remove("homeConsumption")
               .remove("powerFromNetwork")
               .remove("energyToday")
+              .add("dynamic", dynamicPower.mapObject(_.remove("lastCycleAt")))
           )
         )
       )

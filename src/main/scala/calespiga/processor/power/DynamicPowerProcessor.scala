@@ -12,6 +12,7 @@ import calespiga.processor.power.dynamic.DynamicPowerConsumer
 import calespiga.processor.power.dynamic.Power
 import cats.effect.IO
 import cats.implicits.*
+import com.softwaremill.quicklens.*
 import java.time.Instant
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -119,32 +120,46 @@ object DynamicPowerProcessor {
         )
 
       case PowerStatusReported(production, _, powerFromNetwork) =>
-        val unusedFvWatts = production
-          .map(_.powerDiscarded)
-          .filter(_ > 0f)
-          .getOrElse(math.max(0f, -powerFromNetwork))
-        val unusedFvPower = Power.ofFv(unusedFvWatts)
-        val unusedGridWatts = state.grid.availablePower.map { availablePower =>
-          if (unusedFvWatts > 0f) availablePower
-          else availablePower - powerFromNetwork
-        }
-        val unusedGridPower = unusedGridWatts
-          .map(Power.ofGrid)
-          .getOrElse(Power.zero)
-
-        for {
-          _ <- logger.info(
-            s"Starting a dynamic power cycle: unusedFvPower: $unusedFvPower, unusedGridPower: $unusedGridPower"
-          )
-          (stateAfter, actions, totalDynamicUsed) <-
-            processDynamicPower(
-              state,
-              timestamp,
-              unusedFvPower,
-              unusedGridPower
+        val debounceUntil = state.powerManagement.dynamic.lastCycleAt
+          .map(_.plusMillis(config.debouncePeriod.toMillis))
+        if (debounceUntil.exists(timestamp.isBefore)) {
+          logger
+            .info(
+              s"Skipping dynamic power cycle due to debounce period until $debounceUntil"
             )
-          _ <- logger.info(s"Current dynamic power usage: $totalDynamicUsed")
-        } yield (stateAfter, actions)
+            .as((state, Set.empty))
+        } else {
+          val unusedFvWatts = production
+            .map(_.powerDiscarded)
+            .filter(_ > 0f)
+            .getOrElse(math.max(0f, -powerFromNetwork))
+          val unusedFvPower = Power.ofFv(unusedFvWatts)
+          val unusedGridWatts = state.grid.availablePower.map {
+            availablePower =>
+              if (unusedFvWatts > 0f) availablePower
+              else availablePower - powerFromNetwork
+          }
+          val unusedGridPower = unusedGridWatts
+            .map(Power.ofGrid)
+            .getOrElse(Power.zero)
+
+          for {
+            _ <- logger.info(
+              s"Starting a dynamic power cycle: unusedFvPower: $unusedFvPower, unusedGridPower: $unusedGridPower"
+            )
+            (stateAfter, actions, totalDynamicUsed) <-
+              processDynamicPower(
+                state,
+                timestamp,
+                unusedFvPower,
+                unusedGridPower
+              )
+            stateWithLastCycle = stateAfter
+              .modify(_.powerManagement.dynamic.lastCycleAt)
+              .setTo(Some(timestamp))
+            _ <- logger.info(s"Current dynamic power usage: $totalDynamicUsed")
+          } yield (stateWithLastCycle, actions)
+        }
 
       case _ =>
         IO.pure((state, Set.empty))
