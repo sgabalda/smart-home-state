@@ -15,6 +15,7 @@ import com.softwaremill.quicklens.*
 import java.time.Instant
 import munit.CatsEffectSuite
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration.*
 
 class DynamicPowerProcessorSuite extends CatsEffectSuite {
 
@@ -533,6 +534,9 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
       getDynamicPowerProcessor(orderer, Set.empty, processorConfig)
 
     val state = State()
+    val expectedState = state
+      .modify(_.powerManagement.dynamic.lastCycleAt)
+      .setTo(Some(now))
     val event = powerStatusEvent(
       powerAvailable = 100f,
       powerProduced = 50f,
@@ -546,7 +550,7 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
 
         assertEquals(
           finalState,
-          state,
+          expectedState,
           "State should remain unchanged when there are no consumers"
         )
         assertEquals(
@@ -725,5 +729,48 @@ class DynamicPowerProcessorSuite extends CatsEffectSuite {
           "Should generate reset action and priority actions with values 1, 2, and 3"
         )
       })
+  }
+
+  test("DynamicPowerProcessor debounces repeated power reports") {
+    val consumerCalls = ListBuffer.empty[Instant]
+    val consumer = DynamicPowerConsumerStub(
+      usePowerStub = (state, _, timestamp) => {
+        consumerCalls += timestamp
+        DynamicPowerResult(state, Set.empty, Power.zero)
+      }
+    )
+    val orderer = DynamicConsumerOrdererStub(
+      orderConsumersStub = (_, _) => Seq(consumer)
+    )
+    val config = processorConfig.copy(debouncePeriod = 2.seconds)
+    val processor =
+      getDynamicPowerProcessor(orderer, Set(consumer), config)
+    val event = powerStatusEvent(
+      powerAvailable = 100f,
+      powerProduced = 50f,
+      powerDiscarded = 30f,
+      linesPower = List.empty
+    )
+
+    for {
+      first <- processor.process(State(), event, now)
+      withinDebounce <- processor.process(first._1, event, now.plusSeconds(1))
+      atDebounceBoundary <- processor.process(
+        withinDebounce._1,
+        event,
+        now.plusSeconds(2)
+      )
+    } yield {
+      assertEquals(consumerCalls.toList, List(now, now.plusSeconds(2)))
+      assertEquals(
+        withinDebounce._1.powerManagement.dynamic.lastCycleAt,
+        Some(now)
+      )
+      assertEquals(
+        atDebounceBoundary._1.powerManagement.dynamic.lastCycleAt,
+        Some(now.plusSeconds(2))
+      )
+      assertEquals(withinDebounce._2, Set.empty)
+    }
   }
 }

@@ -111,7 +111,8 @@ final case class PowerAvailableProcessorConfig(
 ) derives ConfigReader
 
 final case class DynamicPowerProcessorConfig(
-    dynamicFVPowerUsedItem: String
+    dynamicFVPowerUsedItem: String,
+    debouncePeriod: FiniteDuration
 ) derives ConfigReader
 
 final case class TemperatureFansConfig(

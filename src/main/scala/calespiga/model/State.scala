@@ -156,8 +156,19 @@ object State {
   )
 
   case class DynamicPower(
-      consumersOrder: Seq[String] = Seq.empty
+      consumersOrder: Seq[String] = Seq.empty,
+      lastCycleAt: Option[java.time.Instant] = None
   )
+  object DynamicPower {
+    given Decoder[DynamicPower] = Decoder.instance { cursor =>
+      for {
+        consumersOrder <-
+          cursor.getOrElse[Seq[String]]("consumersOrder")(Seq.empty)
+        lastCycleAt <-
+          cursor.getOrElse[Option[java.time.Instant]]("lastCycleAt")(None)
+      } yield DynamicPower(consumersOrder, lastCycleAt)
+    }
+  }
 
   case class Grid(
       currentTariff: Option[GridTariff] = None,
