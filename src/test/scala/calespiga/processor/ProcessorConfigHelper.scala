@@ -104,6 +104,19 @@ object ProcessorConfigHelper {
     onlineStatusItem = "greyWater/onlineStatus"
   )
 
+  val gardenWateringConfig: GardenWateringConfig = GardenWateringConfig(
+    mqttTopicForCommand = "garden/watering/set",
+    resendInterval = 20.seconds,
+    id = "garden-watering-processor",
+    statusItem = "garden/watering/status",
+    manualDurationItem = "garden/watering/manualDuration",
+    manualStartItem = "garden/watering/manualStart",
+    scheduledDurationItem = "garden/watering/scheduledDuration",
+    periodHoursItem = "garden/watering/periodHours",
+    startHourItem = "garden/watering/startHour",
+    lastWateringItem = "garden/watering/lastWatering"
+  )
+
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
     greyWaterMqttTopic = Set("greyWater/command"),
     setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled"
@@ -174,6 +187,7 @@ object ProcessorConfigHelper {
     heater = heaterConfig,
     infraredStove = infraredStoveConfig,
     greyWater = greyWaterConfig,
+    gardenWatering = gardenWateringConfig,
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,

@@ -78,6 +78,19 @@ sitemap shs label="Ca l'espiga SHS" {
         }
     }
 
+    Text item=RegarHortTitle label="Reg del jardí" icon="water"
+    {
+        Frame label="Bomba de reg" {
+            Setpoint item=RegarHortDuradaManualSHS label="Durada reg manual [%d min]" minValue=1 maxValue=60 step=1
+            Switch item=RegarHortIniciarSHS label="Iniciar reg manual"
+            Setpoint item=RegarHortDuradaProgramadaSHS label="Durada reg programat [%d min]" minValue=1 maxValue=60 step=1
+            Setpoint item=RegarHortIntervalProgramatSHS label="Interval reg programat [%d h]" minValue=1 maxValue=72 step=1
+            Setpoint item=RegarHortHoraIniciSHS label="Hora inici [%d h]" minValue=0 maxValue=23 step=1
+            Text item=RegarHortStatusSHS label="Estat bomba: [%s]"
+            Text item=RegarHortUltimRegSHS label="Últim reg: [%s]"
+        }
+    }
+
     Text item=PotenciaTitle label="Potència" icon="solar_panel"
     {
         Frame label="Potència" {

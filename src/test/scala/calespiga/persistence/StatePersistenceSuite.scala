@@ -146,6 +146,26 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
 
+  test("StatePersistence loads old state when garden watering is missing") {
+    val legacyStateJson =
+      someState.asJson.mapObject(_.remove("gardenWatering")).noSpaces
+    val sut = getSut(
+      config,
+      readInput = _ => IO.pure(legacyStateJson),
+      saveOutput = (_, _) =>
+        IO.raiseError(new Exception("Not expected call to save input"))
+    )
+
+    sut.use { statePersistence =>
+      statePersistence.loadState.map { loadedState =>
+        assertEquals(
+          loadedState.map(_.gardenWatering),
+          Right(State.GardenWatering())
+        )
+      }
+    }
+  }
+
   test("StatePersistence should return an error if reading file fails") {
     val error = new Exception("File not found")
     val sut = getSut(

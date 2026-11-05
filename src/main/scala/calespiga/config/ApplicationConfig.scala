@@ -56,6 +56,7 @@ final case class ProcessorConfig(
     heater: HeaterConfig,
     infraredStove: InfraredStoveConfig,
     greyWater: GreyWaterConfig,
+    gardenWatering: GardenWateringConfig,
     featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
     grid: GridConfig,
@@ -212,6 +213,19 @@ final case class GreyWaterConfig(
     scheduleDescriptionItem: String,
     syncStatusItem: String,
     onlineStatusItem: String
+) derives ConfigReader
+
+final case class GardenWateringConfig(
+    mqttTopicForCommand: String,
+    resendInterval: FiniteDuration,
+    id: String,
+    statusItem: String,
+    manualDurationItem: String,
+    manualStartItem: String,
+    scheduledDurationItem: String,
+    periodHoursItem: String,
+    startHourItem: String,
+    lastWateringItem: String
 ) derives ConfigReader
 
 final case class FeatureFlagsConfig(

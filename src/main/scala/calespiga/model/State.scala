@@ -3,6 +3,7 @@ package calespiga.model
 import calespiga.model.State.CarCharger
 import calespiga.model.State.Fans
 import calespiga.model.State.FeatureFlags
+import calespiga.model.State.GardenWatering
 import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
 import calespiga.model.State.Heater
@@ -21,12 +22,50 @@ case class State(
     heater: Heater = Heater(),
     infraredStove: InfraredStove = InfraredStove(),
     greyWater: GreyWater = GreyWater(),
+    gardenWatering: GardenWatering = GardenWatering(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     carCharger: CarCharger = CarCharger()
 )
 
 object State {
+
+  given Decoder[State] = Decoder.instance { cursor =>
+    for {
+      featureFlags <- cursor.getOrElse[FeatureFlags]("featureFlags")(
+        FeatureFlags()
+      )
+      temperatures <- cursor.getOrElse[Temperatures]("temperatures")(
+        Temperatures()
+      )
+      fans <- cursor.getOrElse[Fans]("fans")(Fans())
+      heater <- cursor.getOrElse[Heater]("heater")(Heater())
+      infraredStove <- cursor.getOrElse[InfraredStove]("infraredStove")(
+        InfraredStove()
+      )
+      greyWater <- cursor.getOrElse[GreyWater]("greyWater")(GreyWater())
+      gardenWatering <- cursor.getOrElse[GardenWatering]("gardenWatering")(
+        GardenWatering()
+      )
+      powerManagement <-
+        cursor.getOrElse[PowerManagement]("powerManagement")(
+          PowerManagement()
+        )
+      grid <- cursor.getOrElse[Grid]("grid")(Grid())
+      carCharger <- cursor.getOrElse[CarCharger]("carCharger")(CarCharger())
+    } yield State(
+      featureFlags,
+      temperatures,
+      fans,
+      heater,
+      infraredStove,
+      greyWater,
+      gardenWatering,
+      powerManagement,
+      grid,
+      carCharger
+    )
+  }
 
   /** tapir's built-in schemaForSet returns Schema[collection.Set[T]], not
     * Schema[immutable.Set[T]]. This given bridges the gap for any Set field in
@@ -91,6 +130,18 @@ object State {
       lastCommandSent: Option[Boolean] = None,
       lastSyncing: Option[java.time.Instant] = None,
       online: Option[OfflineOnlineSignal] = None
+  )
+
+  case class GardenWatering(
+      pumpOn: Option[Boolean] = None,
+      lastCommandSent: Option[Boolean] = None,
+      manualDurationMinutes: Int = 10,
+      scheduledDurationMinutes: Int = 10,
+      periodHours: Int = 24,
+      startHour: Int = 22,
+      activeUntil: Option[java.time.Instant] = None,
+      lastWatering: Option[java.time.Instant] = None,
+      nextScheduledAt: Option[java.time.Instant] = None
   )
 
   case class PowerManagement(

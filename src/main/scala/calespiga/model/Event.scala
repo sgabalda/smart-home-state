@@ -161,6 +161,37 @@ object Event {
     case object ScheduleTransition extends FeedbackEventData with GreyWaterData
   }
 
+  object GardenWatering {
+    sealed trait GardenWateringData extends EventData
+
+    @InputEventMqtt("bassa/reg/status")
+    case class PumpStatusReported(status: String) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortIniciarSHS")
+    case class ManualWateringRequested(command: String)
+        extends GardenWateringData
+
+    @InputEventOHItem("RegarHortDuradaManualSHS")
+    case class ManualDurationChanged(minutes: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortDuradaProgramadaSHS")
+    case class ScheduledDurationChanged(minutes: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortIntervalProgramatSHS")
+    case class PeriodHoursChanged(hours: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortHoraIniciSHS")
+    case class StartHourChanged(hour: Int) extends GardenWateringData
+
+    case object ScheduledWateringDue
+        extends FeedbackEventData
+        with GardenWateringData
+
+    case object WateringFinished
+        extends FeedbackEventData
+        with GardenWateringData
+  }
+
   object Grid {
     sealed trait GridData extends EventData
 

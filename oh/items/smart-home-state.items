@@ -64,6 +64,20 @@ String BassaAiguaGrisaMicroControladorEstatSHS "Estat microcontrolador aigua gri
 
 /*
 ----------------------
+ GARDEN WATERING
+----------------------
+*/
+String RegarHortTitle "Reg del jardí"
+String RegarHortStatusSHS "Estat bomba reg jardí"
+Number RegarHortDuradaManualSHS "Durada reg manual (minuts)"
+Switch RegarHortIniciarSHS "Iniciar reg manual"
+Number RegarHortDuradaProgramadaSHS "Durada reg programat (minuts)"
+Number RegarHortIntervalProgramatSHS "Interval reg programat (hores)"
+Number RegarHortHoraIniciSHS "Hora inici reg programat"
+String RegarHortUltimRegSHS "Últim reg jardí"
+
+/*
+----------------------
  POWER 
 ----------------------
 */
