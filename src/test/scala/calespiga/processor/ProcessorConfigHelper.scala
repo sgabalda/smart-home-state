@@ -125,7 +125,9 @@ object ProcessorConfigHelper {
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
     greyWaterMqttTopic = Set("greyWater/command"),
-    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled"
+    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled",
+    gardenWateringMqttTopic = Set("pond/pump/set"),
+    setGardenWateringEnabledItem = "featureFlags/setGardenWateringEnabled"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =

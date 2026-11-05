@@ -263,12 +263,19 @@ object State {
   )
 
   case class FeatureFlags(
-      greyWaterEnabled: Boolean = false
+      greyWaterEnabled: Boolean = false,
+      gardenWateringEnabled: Boolean = false
   )
   object FeatureFlags:
     given Decoder[FeatureFlags] = Decoder.instance { cursor =>
-      cursor
-        .get[Option[Boolean]]("greyWaterEnabled")
-        .map(enabled => FeatureFlags(enabled.getOrElse(false)))
+      for {
+        greyWaterEnabled <-
+          cursor.get[Option[Boolean]]("greyWaterEnabled")
+        gardenWateringEnabled <-
+          cursor.get[Option[Boolean]]("gardenWateringEnabled")
+      } yield FeatureFlags(
+        greyWaterEnabled.getOrElse(false),
+        gardenWateringEnabled.getOrElse(false)
+      )
     }
 }

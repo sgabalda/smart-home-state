@@ -237,7 +237,9 @@ final case class PondPumpConfig(
 
 final case class FeatureFlagsConfig(
     greyWaterMqttTopic: Set[String],
-    setGreyWaterEnabledItem: String
+    setGreyWaterEnabledItem: String,
+    gardenWateringMqttTopic: Set[String],
+    setGardenWateringEnabledItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

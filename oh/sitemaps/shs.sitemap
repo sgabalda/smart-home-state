@@ -84,6 +84,7 @@ sitemap shs label="Ca l'espiga SHS" {
         }
 
         Frame label="Reg del jardí" {
+            Selection item=RegarHortEnabledSHS icon="network" label="Control del reg [%s]" mappings=["true"="SHS", "false"="OH"]
             Setpoint item=RegarHortDuradaManualSHS label="Durada reg manual [%d min]" minValue=1 maxValue=60 step=1
             Switch item=RegarHortIniciarSHS label="Iniciar reg manual"
             Setpoint item=RegarHortDuradaProgramadaSHS label="Durada reg programat [%d min]" minValue=1 maxValue=60 step=1

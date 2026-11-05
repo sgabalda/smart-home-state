@@ -45,6 +45,10 @@ object Event {
 
     @InputEventOHItem("BassaAiguaGrisaEnabledSHS")
     case class SetGreyWaterEnabled(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("RegarHortEnabledSHS")
+    case class SetGardenWateringEnabled(enable: Boolean)
+        extends FeatureFlagEvent
   }
 
   object Temperature {

@@ -84,6 +84,7 @@ Number RegarHortDuradaProgramadaSHS "Durada reg programat (minuts)"
 Number RegarHortIntervalProgramatSHS "Interval reg programat (hores)"
 Number RegarHortHoraIniciSHS "Hora inici reg programat"
 String RegarHortUltimRegSHS "Últim reg jardí"
+String RegarHortEnabledSHS "Habilitar control de reg del jardí per SHS"
 
 /*
 ----------------------
