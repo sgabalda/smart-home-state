@@ -8,6 +8,7 @@ import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
 import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
+import calespiga.model.State.PondPump
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
 import io.circe.Decoder
@@ -23,6 +24,7 @@ case class State(
     infraredStove: InfraredStove = InfraredStove(),
     greyWater: GreyWater = GreyWater(),
     gardenWatering: GardenWatering = GardenWatering(),
+    pondPump: PondPump = PondPump(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     carCharger: CarCharger = CarCharger()
@@ -47,6 +49,7 @@ object State {
       gardenWatering <- cursor.getOrElse[GardenWatering]("gardenWatering")(
         GardenWatering()
       )
+      pondPump <- cursor.getOrElse[PondPump]("pondPump")(PondPump())
       powerManagement <-
         cursor.getOrElse[PowerManagement]("powerManagement")(
           PowerManagement()
@@ -61,6 +64,7 @@ object State {
       infraredStove,
       greyWater,
       gardenWatering,
+      pondPump,
       powerManagement,
       grid,
       carCharger
@@ -133,8 +137,6 @@ object State {
   )
 
   case class GardenWatering(
-      pumpOn: Option[Boolean] = None,
-      lastCommandSent: Option[Boolean] = None,
       manualDurationMinutes: Int = 10,
       scheduledDurationMinutes: Int = 10,
       periodHours: Int = 24,
@@ -142,6 +144,13 @@ object State {
       activeUntil: Option[java.time.Instant] = None,
       lastWatering: Option[java.time.Instant] = None,
       nextScheduledAt: Option[java.time.Instant] = None
+  )
+
+  case class PondPump(
+      status: Option[Boolean] = None,
+      lastCommandSent: Option[Boolean] = None,
+      lastSyncing: Option[java.time.Instant] = None,
+      online: Option[OfflineOnlineSignal] = None
   )
 
   case class PowerManagement(
@@ -152,6 +161,8 @@ object State {
       energyToday: PowerEnergyToday = PowerEnergyToday()
   )
   object PowerManagement {
+    // Keep this nested state schema derivation bounded as the top-level state grows.
+    given Schema[PowerManagement] = Schema.derived
     given Encoder[PowerManagement] = io.circe.generic.semiauto.deriveEncoder
 
     given Decoder[PowerManagement] = Decoder.instance { cursor =>
@@ -195,6 +206,9 @@ object State {
       lastGridPowerUpdate: Option[java.time.Instant] = None,
       lastGridTariff: Option[GridTariff] = None
   )
+  object PowerEnergyToday {
+    given Schema[PowerEnergyToday] = Schema.derived
+  }
 
   case class PowerProduction(
       powerAvailable: Option[Float] = None,
@@ -205,12 +219,16 @@ object State {
       lastProducedPower: Option[java.time.Instant] = None,
       lastError: Option[java.time.Instant] = None
   )
+  object PowerProduction {
+    given Schema[PowerProduction] = Schema.derived
+  }
 
   case class DynamicPower(
       consumersOrder: Seq[String] = Seq.empty,
       lastCycleAt: Option[java.time.Instant] = None
   )
   object DynamicPower {
+    given Schema[DynamicPower] = Schema.derived
     given Decoder[DynamicPower] = Decoder.instance { cursor =>
       for {
         consumersOrder <-

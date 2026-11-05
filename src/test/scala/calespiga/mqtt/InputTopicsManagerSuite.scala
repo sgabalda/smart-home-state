@@ -48,7 +48,7 @@ class InputTopicsManagerSuite extends CatsEffectSuite {
     val conversions = InputTopicsManager.apply.inputTopicsConversions
 
     conversions("bassa/reg/status")(Vector[Byte](111, 110)) match {
-      case Right(Event.GardenWatering.PumpStatusReported(status)) =>
+      case Right(Event.PondPump.StatusReported(status)) =>
         assertEquals(status, "on")
       case other =>
         fail(s"Conversion failed: obtained $other")

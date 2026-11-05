@@ -3,6 +3,7 @@ package calespiga.processor.gardenWatering
 import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.Event.GardenWatering.*
+import calespiga.model.Event.Pump.CommandRequested
 import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import com.softwaremill.quicklens.*
@@ -17,21 +18,13 @@ class GardenWateringProcessorSuite extends FunSuite {
   private val zone = ZoneId.of("UTC")
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val processor = GardenWateringProcessor(config, zone)
-  private val commandId = config.id + "-command"
-
-  private def expectedCommand(pumpOn: Boolean): Set[Action] =
+  private def expectedPumpCommand(
+      pumpOn: Boolean,
+      force: Boolean = true
+  ): Set[Action] =
     Set(
-      Action.SendMqttStringMessage(
-        config.mqttTopicForCommand,
-        if pumpOn then "start" else "stop"
-      ),
-      Action.Periodic(
-        commandId,
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          if pumpOn then "start" else "stop"
-        ),
-        config.resendInterval
+      Action.SendFeedbackEvent(
+        CommandRequested(config.pumpId, pumpOn, force)
       )
     )
 
@@ -46,7 +39,7 @@ class GardenWateringProcessorSuite extends FunSuite {
     assertEquals(newState.gardenWatering.lastWatering, Some(now))
     assertEquals(
       actions,
-      expectedCommand(pumpOn = true) ++ Set(
+      expectedPumpCommand(pumpOn = true) ++ Set(
         Action.Delayed(
           GardenWateringProcessor.STOP_ID,
           Action.SendFeedbackEvent(WateringFinished),
@@ -156,9 +149,8 @@ class GardenWateringProcessorSuite extends FunSuite {
     )
     assert(
       actions.contains(
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          "start"
+        Action.SendFeedbackEvent(
+          CommandRequested(config.pumpId, on = true, force = true)
         )
       )
     )
@@ -183,7 +175,7 @@ class GardenWateringProcessorSuite extends FunSuite {
       processor.process(runningState, WateringFinished, now)
 
     assertEquals(newState.gardenWatering.activeUntil, None)
-    assertEquals(actions, expectedCommand(pumpOn = false))
+    assertEquals(actions, expectedPumpCommand(pumpOn = false))
   }
 
   test("startup restores schedule and issues a safe pump command") {
@@ -205,9 +197,8 @@ class GardenWateringProcessorSuite extends FunSuite {
     )
     assert(
       actions.contains(
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          "stop"
+        Action.SendFeedbackEvent(
+          CommandRequested(config.pumpId, on = false, force = true)
         )
       )
     )
@@ -239,34 +230,8 @@ class GardenWateringProcessorSuite extends FunSuite {
     )
     assert(
       actions.contains(
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          "start"
-        )
-      )
-    )
-  }
-
-  test("status reports update the visible status and last watering time") {
-    val (newState, actions) =
-      processor.process(State(), PumpStatusReported("on"), now)
-
-    assertEquals(newState.gardenWatering.pumpOn, Some(true))
-    assertEquals(newState.gardenWatering.lastWatering, Some(now))
-    assert(actions.contains(Action.SetUIItemValue(config.statusItem, "on")))
-    assert(
-      actions.contains(
-        Action.SetUIItemValue(
-          config.lastWateringItem,
-          "2023-08-17 10:00"
-        )
-      )
-    )
-    assert(
-      actions.contains(
-        Action.SendMqttStringMessage(
-          config.mqttTopicForCommand,
-          "stop"
+        Action.SendFeedbackEvent(
+          CommandRequested(config.pumpId, on = true, force = true)
         )
       )
     )

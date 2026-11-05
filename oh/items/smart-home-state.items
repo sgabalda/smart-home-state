@@ -64,11 +64,20 @@ String BassaAiguaGrisaMicroControladorEstatSHS "Estat microcontrolador aigua gri
 
 /*
 ----------------------
+ POND PUMP
+----------------------
+*/
+String BassaRegTitle "Bomba de la bassa"
+String BassaRegStatusSHS "Estat bomba bassa reg"
+String BassaRegSincronitzacioSHS "Estat sincronització bomba bassa reg"
+String BassaRegMicroControladorEstatSHS "Estat microcontrolador bomba bassa reg"
+
+/*
+----------------------
  GARDEN WATERING
 ----------------------
 */
 String RegarHortTitle "Reg del jardí"
-String RegarHortStatusSHS "Estat bomba reg jardí"
 Number RegarHortDuradaManualSHS "Durada reg manual (minuts)"
 Switch RegarHortIniciarSHS "Iniciar reg manual"
 Number RegarHortDuradaProgramadaSHS "Durada reg programat (minuts)"

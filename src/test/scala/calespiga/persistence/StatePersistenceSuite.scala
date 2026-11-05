@@ -166,6 +166,41 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
 
+  test("StatePersistence migrates garden pump fields to the pond pump state") {
+    val legacyStateJson = someState.asJson
+      .mapObject(
+        _.add(
+          "gardenWatering",
+          io.circe.Json.obj(
+            "pumpOn" -> io.circe.Json.fromBoolean(true),
+            "lastCommandSent" -> io.circe.Json.fromBoolean(true),
+            "manualDurationMinutes" -> io.circe.Json.fromInt(10),
+            "scheduledDurationMinutes" -> io.circe.Json.fromInt(10),
+            "periodHours" -> io.circe.Json.fromInt(24),
+            "startHour" -> io.circe.Json.fromInt(22)
+          )
+        )
+          .remove("pondPump")
+      )
+      .noSpaces
+    val sut = getSut(
+      config,
+      readInput = _ => IO.pure(legacyStateJson),
+      saveOutput = (_, _) =>
+        IO.raiseError(new Exception("Not expected call to save input"))
+    )
+
+    sut.use { statePersistence =>
+      statePersistence.loadState.map { loadedState =>
+        assertEquals(
+          loadedState.map(_.gardenWatering),
+          Right(State.GardenWatering())
+        )
+        assertEquals(loadedState.map(_.pondPump), Right(State.PondPump()))
+      }
+    }
+  }
+
   test("StatePersistence should return an error if reading file fails") {
     val error = new Exception("File not found")
     val sut = getSut(

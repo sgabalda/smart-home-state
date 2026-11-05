@@ -105,16 +105,22 @@ object ProcessorConfigHelper {
   )
 
   val gardenWateringConfig: GardenWateringConfig = GardenWateringConfig(
-    mqttTopicForCommand = "garden/watering/set",
-    resendInterval = 20.seconds,
-    id = "garden-watering-processor",
-    statusItem = "garden/watering/status",
+    pumpId = "pond-pump",
     manualDurationItem = "garden/watering/manualDuration",
     manualStartItem = "garden/watering/manualStart",
     scheduledDurationItem = "garden/watering/scheduledDuration",
     periodHoursItem = "garden/watering/periodHours",
     startHourItem = "garden/watering/startHour",
     lastWateringItem = "garden/watering/lastWatering"
+  )
+
+  val pondPumpConfig: PondPumpConfig = PondPumpConfig(
+    id = "pond-pump",
+    mqttTopicForCommand = "pond/pump/set",
+    resendInterval = 20.seconds,
+    statusItem = "pond/pump/status",
+    syncStatusItem = "pond/pump/syncStatus",
+    onlineStatusItem = "pond/pump/onlineStatus"
   )
 
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
@@ -188,6 +194,7 @@ object ProcessorConfigHelper {
     infraredStove = infraredStoveConfig,
     greyWater = greyWaterConfig,
     gardenWatering = gardenWateringConfig,
+    pondPump = pondPumpConfig,
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,

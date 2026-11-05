@@ -164,9 +164,6 @@ object Event {
   object GardenWatering {
     sealed trait GardenWateringData extends EventData
 
-    @InputEventMqtt("bassa/reg/status")
-    case class PumpStatusReported(status: String) extends GardenWateringData
-
     @InputEventOHItem("RegarHortIniciarSHS")
     case class ManualWateringRequested(command: String)
         extends GardenWateringData
@@ -190,6 +187,24 @@ object Event {
     case object WateringFinished
         extends FeedbackEventData
         with GardenWateringData
+  }
+
+  object Pump {
+    sealed trait PumpEvent extends EventData
+
+    case class CommandRequested(
+        pumpId: String,
+        on: Boolean,
+        force: Boolean = false
+    ) extends FeedbackEventData
+        with PumpEvent
+  }
+
+  object PondPump {
+    sealed trait PondPumpEvent extends EventData
+
+    @InputEventMqtt("bassa/reg/status")
+    case class StatusReported(status: String) extends PondPumpEvent
   }
 
   object Grid {

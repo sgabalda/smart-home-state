@@ -4,9 +4,9 @@ import calespiga.config.GardenWateringConfig
 import calespiga.model.Action
 import calespiga.model.Event
 import calespiga.model.Event.GardenWatering.*
+import calespiga.model.Event.Pump.CommandRequested
 import calespiga.model.State
 import calespiga.processor.SingleProcessor
-import calespiga.processor.utils.CommandActions
 import calespiga.processor.utils.ProcessorFormatter
 import com.softwaremill.quicklens.*
 import java.time.Duration
@@ -27,13 +27,6 @@ object GardenWateringProcessor {
       config: GardenWateringConfig,
       zone: ZoneId
   ) extends SingleProcessor {
-
-    private val commands = CommandActions[Boolean](
-      mqttTopic = config.mqttTopicForCommand,
-      id = config.id,
-      resendInterval = config.resendInterval,
-      commandToMessage = pumpOn => if pumpOn then "start" else "stop"
-    )
 
     private def delayUntil(timestamp: Instant, dueAt: Instant): FiniteDuration =
       Math.max(Duration.between(timestamp, dueAt).toNanos, 0L).nanos
@@ -81,17 +74,10 @@ object GardenWateringProcessor {
       next
     }
 
-    private def setPumpCommand(
-        state: State,
-        pumpOn: Boolean,
-        force: Boolean
-    ): (State, Set[Action]) =
-      if force || state.gardenWatering.lastCommandSent != Some(pumpOn) then
-        (
-          state.modify(_.gardenWatering.lastCommandSent).setTo(Some(pumpOn)),
-          commands.commandActionWithResend(pumpOn)
-        )
-      else (state, Set.empty)
+    private def pumpCommandAction(pumpOn: Boolean, force: Boolean): Action =
+      Action.SendFeedbackEvent(
+        CommandRequested(config.pumpId, pumpOn, force)
+      )
 
     private def startWatering(
         state: State,
@@ -105,11 +91,10 @@ object GardenWateringProcessor {
         .setTo(Some(activeUntil))
         .modify(_.gardenWatering.lastWatering)
         .setTo(Some(timestamp))
-      val (commandState, commandActions) =
-        setPumpCommand(newState, pumpOn = true, force = true)
       (
-        commandState,
-        commandActions ++ Set(
+        newState,
+        Set(
+          pumpCommandAction(pumpOn = true, force = true),
           stopAction(timestamp, activeUntil),
           Action.SetUIItemValue(
             config.lastWateringItem,
@@ -124,9 +109,7 @@ object GardenWateringProcessor {
     ): (State, Set[Action]) = {
       val newState =
         state.modify(_.gardenWatering.activeUntil).setTo(None)
-      val (commandState, commandActions) =
-        setPumpCommand(newState, pumpOn = false, force = true)
-      (commandState, commandActions)
+      (newState, Set(pumpCommandAction(pumpOn = false, force = true)))
     }
 
     private def updateSchedule(
@@ -176,12 +159,7 @@ object GardenWateringProcessor {
             .map(ProcessorFormatter.format(_, zone))
             .getOrElse("")
         )
-      ) ++ state.gardenWatering.pumpOn.map { pumpOn =>
-        Action.SetUIItemValue(
-          config.statusItem,
-          if pumpOn then "on" else "off"
-        )
-      }
+      )
 
     private def displayValue(item: String, value: Int): Action =
       Action.SetUIItemValue(item, value.toString)
@@ -272,46 +250,6 @@ object GardenWateringProcessor {
       case ManualWateringRequested(_) =>
         (state, Set.empty)
 
-      case PumpStatusReported(rawStatus) =>
-        rawStatus.trim.toLowerCase match {
-          case "on" | "off" =>
-            val pumpOn = rawStatus.trim.equalsIgnoreCase("on")
-            val lastWatering =
-              if pumpOn && state.gardenWatering.pumpOn != Some(true) then
-                Some(timestamp)
-              else state.gardenWatering.lastWatering
-            val newState = state
-              .modify(_.gardenWatering.pumpOn)
-              .setTo(Some(pumpOn))
-              .modify(_.gardenWatering.lastWatering)
-              .setTo(lastWatering)
-            val desiredPumpOn =
-              newState.gardenWatering.activeUntil.exists(_.isAfter(timestamp))
-            val (commandState, commandActions) =
-              setPumpCommand(
-                newState,
-                desiredPumpOn,
-                force = desiredPumpOn != pumpOn
-              )
-            val lastWateringAction =
-              lastWatering.map { wateredAt =>
-                Action.SetUIItemValue(
-                  config.lastWateringItem,
-                  ProcessorFormatter.format(wateredAt, zone)
-                )
-              }
-            (
-              commandState,
-              Set(
-                Action.SetUIItemValue(
-                  config.statusItem,
-                  if pumpOn then "on" else "off"
-                )
-              ) ++ commandActions ++ lastWateringAction
-            )
-          case _ => (state, Set.empty)
-        }
-
       case Event.System.StartupEvent =>
         val activeUntil =
           state.gardenWatering.activeUntil.filter(_.isAfter(timestamp))
@@ -334,21 +272,19 @@ object GardenWateringProcessor {
         val scheduledState = restoredState
           .modify(_.gardenWatering.nextScheduledAt)
           .setTo(nextScheduledAt)
-        val (commandState, commandActions) =
-          setPumpCommand(
-            scheduledState,
-            pumpOn = activeUntil.isDefined,
-            force = true
-          )
+        val pumpCommand = pumpCommandAction(
+          pumpOn = activeUntil.isDefined,
+          force = true
+        )
         val scheduleActions =
           nextScheduledAt.map(scheduleAction(_, timestamp)).toSet
         val stopActions =
           activeUntil.map(stopAction(timestamp, _)).toSet
         (
-          commandState,
-          displaySettings(commandState) ++
+          scheduledState,
+          displaySettings(scheduledState) ++
             Set(Action.SetUIItemValue(config.manualStartItem, "OFF")) ++
-            commandActions ++ scheduleActions ++ stopActions
+            Set(pumpCommand) ++ scheduleActions ++ stopActions
         )
 
       case ScheduledWateringDue
