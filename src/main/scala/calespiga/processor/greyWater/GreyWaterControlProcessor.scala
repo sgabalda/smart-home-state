@@ -112,8 +112,18 @@ private[greyWater] object GreyWaterControlProcessor {
         case GreyWaterMode.Horari =>
           s"Encesa de ${state.greyWater.startHour}h a ${state.greyWater.endHour}h"
 
-    private def displaySettings(state: State): Set[Action] =
+    private def displayControlSettings(state: State): Set[Action] =
       Set(
+        Action.SetUIItemValue(
+          config.scheduleDescriptionItem,
+          scheduleDescription(state)
+        )
+      ) ++ state.greyWater.pumpOn.map { pumpOn =>
+        Action.SetUIItemValue(config.statusItem, if pumpOn then "on" else "off")
+      }
+
+    private def displaySettings(state: State): Set[Action] =
+      displayControlSettings(state) ++ Set(
         Action.SetUIItemValue(
           config.modeItem,
           GreyWaterMode.toString(state.greyWater.mode)
@@ -125,24 +135,20 @@ private[greyWater] object GreyWaterControlProcessor {
         Action.SetUIItemValue(
           config.endHourItem,
           state.greyWater.endHour.toString
-        ),
-        Action.SetUIItemValue(
-          config.scheduleDescriptionItem,
-          scheduleDescription(state)
         )
-      ) ++ state.greyWater.pumpOn.map { pumpOn =>
-        Action.SetUIItemValue(config.statusItem, if pumpOn then "on" else "off")
-      }
+      )
 
     private def updateSettings(
         state: State,
         timestamp: Instant,
-        force: Boolean
+        force: Boolean,
+        displayInputSettings: Boolean = false
     ): (State, Set[Action]) =
       val (newState, commandActions) = reconcilePump(state, timestamp, force)
       (
         newState,
-        displaySettings(newState) ++ commandActions ++
+        (if displayInputSettings then displaySettings(newState)
+         else displayControlSettings(newState)) ++ commandActions ++
           scheduleAction(newState, timestamp)
       )
 
@@ -167,6 +173,11 @@ private[greyWater] object GreyWaterControlProcessor {
               )
             )
 
+      case StartHourChanged(hour)
+          if hour >= 0 && hour <= 23 &&
+            hour == state.greyWater.startHour =>
+        (state, Set.empty)
+
       case StartHourChanged(hour) if hour >= 0 && hour <= 23 =>
         val newState = state.modify(_.greyWater.startHour).setTo(hour)
         updateSettings(newState, timestamp, force = true)
@@ -181,6 +192,11 @@ private[greyWater] object GreyWaterControlProcessor {
             )
           )
         )
+
+      case EndHourChanged(hour)
+          if hour >= 0 && hour <= 23 &&
+            hour == state.greyWater.endHour =>
+        (state, Set.empty)
 
       case EndHourChanged(hour) if hour >= 0 && hour <= 23 =>
         val newState = state.modify(_.greyWater.endHour).setTo(hour)
@@ -216,7 +232,12 @@ private[greyWater] object GreyWaterControlProcessor {
           case _ => (state, Set.empty)
 
       case Event.System.StartupEvent =>
-        updateSettings(state, timestamp, force = true)
+        updateSettings(
+          state,
+          timestamp,
+          force = true,
+          displayInputSettings = true
+        )
 
       case ScheduleTransition =>
         val (newState, commandActions) =
