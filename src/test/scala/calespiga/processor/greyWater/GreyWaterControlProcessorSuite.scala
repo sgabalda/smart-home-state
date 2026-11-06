@@ -403,4 +403,37 @@ class GreyWaterControlProcessorSuite extends FunSuite {
       )
     )
   }
+
+  test("accepted setting changes do not write input items back to OpenHAB") {
+    val (_, modeActions) =
+      processor.process(State(), ModeChanged("on"), now)
+    val (_, hourActions) =
+      processor.process(State(), StartHourChanged(17), now)
+    val inputItems =
+      Set(config.modeItem, config.startHourItem, config.endHourItem)
+
+    assertEquals(
+      (modeActions ++ hourActions).collect {
+        case Action.SetUIItemValue(item, _) if inputItems.contains(item) =>
+          item
+      },
+      Set.empty[String]
+    )
+  }
+
+  test("same-value setting events are ignored") {
+    val initialState = State()
+      .modify(_.greyWater.mode)
+      .setTo(GreyWaterMode.Horari)
+    val sameValueEvents = List(
+      StartHourChanged(initialState.greyWater.startHour),
+      EndHourChanged(initialState.greyWater.endHour)
+    )
+
+    sameValueEvents.foreach { event =>
+      val (newState, actions) = processor.process(initialState, event, now)
+      assertEquals(newState, initialState)
+      assertEquals(actions, Set.empty[Action])
+    }
+  }
 }
