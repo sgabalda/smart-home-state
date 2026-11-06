@@ -109,6 +109,7 @@ object ProcessorConfigHelper {
     manualDurationItem = "garden/watering/manualDuration",
     manualStartItem = "garden/watering/manualStart",
     scheduledDurationItem = "garden/watering/scheduledDuration",
+    scheduledEnabledItem = "garden/watering/scheduledEnabled",
     periodHoursItem = "garden/watering/periodHours",
     startHourItem = "garden/watering/startHour",
     lastWateringItem = "garden/watering/lastWatering"
