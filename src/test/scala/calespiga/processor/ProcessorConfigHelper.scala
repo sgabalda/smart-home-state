@@ -104,9 +104,30 @@ object ProcessorConfigHelper {
     onlineStatusItem = "greyWater/onlineStatus"
   )
 
+  val gardenWateringConfig: GardenWateringConfig = GardenWateringConfig(
+    pumpId = "pond-pump",
+    manualDurationItem = "garden/watering/manualDuration",
+    manualStartItem = "garden/watering/manualStart",
+    scheduledDurationItem = "garden/watering/scheduledDuration",
+    periodHoursItem = "garden/watering/periodHours",
+    startHourItem = "garden/watering/startHour",
+    lastWateringItem = "garden/watering/lastWatering"
+  )
+
+  val pondPumpConfig: PondPumpConfig = PondPumpConfig(
+    id = "pond-pump",
+    mqttTopicForCommand = "pond/pump/set",
+    resendInterval = 20.seconds,
+    statusItem = "pond/pump/status",
+    syncStatusItem = "pond/pump/syncStatus",
+    onlineStatusItem = "pond/pump/onlineStatus"
+  )
+
   val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
     greyWaterMqttTopic = Set("greyWater/command"),
-    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled"
+    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled",
+    gardenWateringMqttTopic = Set("pond/pump/set"),
+    setGardenWateringEnabledItem = "featureFlags/setGardenWateringEnabled"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
@@ -174,6 +195,8 @@ object ProcessorConfigHelper {
     heater = heaterConfig,
     infraredStove = infraredStoveConfig,
     greyWater = greyWaterConfig,
+    gardenWatering = gardenWateringConfig,
+    pondPump = pondPumpConfig,
     featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,

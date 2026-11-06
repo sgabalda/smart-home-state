@@ -3,10 +3,12 @@ package calespiga.model
 import calespiga.model.State.CarCharger
 import calespiga.model.State.Fans
 import calespiga.model.State.FeatureFlags
+import calespiga.model.State.GardenWatering
 import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
 import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
+import calespiga.model.State.PondPump
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
 import io.circe.Decoder
@@ -21,12 +23,53 @@ case class State(
     heater: Heater = Heater(),
     infraredStove: InfraredStove = InfraredStove(),
     greyWater: GreyWater = GreyWater(),
+    gardenWatering: GardenWatering = GardenWatering(),
+    pondPump: PondPump = PondPump(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     carCharger: CarCharger = CarCharger()
 )
 
 object State {
+
+  given Decoder[State] = Decoder.instance { cursor =>
+    for {
+      featureFlags <- cursor.getOrElse[FeatureFlags]("featureFlags")(
+        FeatureFlags()
+      )
+      temperatures <- cursor.getOrElse[Temperatures]("temperatures")(
+        Temperatures()
+      )
+      fans <- cursor.getOrElse[Fans]("fans")(Fans())
+      heater <- cursor.getOrElse[Heater]("heater")(Heater())
+      infraredStove <- cursor.getOrElse[InfraredStove]("infraredStove")(
+        InfraredStove()
+      )
+      greyWater <- cursor.getOrElse[GreyWater]("greyWater")(GreyWater())
+      gardenWatering <- cursor.getOrElse[GardenWatering]("gardenWatering")(
+        GardenWatering()
+      )
+      pondPump <- cursor.getOrElse[PondPump]("pondPump")(PondPump())
+      powerManagement <-
+        cursor.getOrElse[PowerManagement]("powerManagement")(
+          PowerManagement()
+        )
+      grid <- cursor.getOrElse[Grid]("grid")(Grid())
+      carCharger <- cursor.getOrElse[CarCharger]("carCharger")(CarCharger())
+    } yield State(
+      featureFlags,
+      temperatures,
+      fans,
+      heater,
+      infraredStove,
+      greyWater,
+      gardenWatering,
+      pondPump,
+      powerManagement,
+      grid,
+      carCharger
+    )
+  }
 
   /** tapir's built-in schemaForSet returns Schema[collection.Set[T]], not
     * Schema[immutable.Set[T]]. This given bridges the gap for any Set field in
@@ -93,6 +136,23 @@ object State {
       online: Option[OfflineOnlineSignal] = None
   )
 
+  case class GardenWatering(
+      manualDurationMinutes: Int = 10,
+      scheduledDurationMinutes: Int = 10,
+      periodHours: Int = 24,
+      startHour: Int = 22,
+      activeUntil: Option[java.time.Instant] = None,
+      lastWatering: Option[java.time.Instant] = None,
+      nextScheduledAt: Option[java.time.Instant] = None
+  )
+
+  case class PondPump(
+      status: Option[Boolean] = None,
+      lastCommandSent: Option[Boolean] = None,
+      lastSyncing: Option[java.time.Instant] = None,
+      online: Option[OfflineOnlineSignal] = None
+  )
+
   case class PowerManagement(
       production: PowerProduction = PowerProduction(),
       dynamic: DynamicPower = DynamicPower(),
@@ -101,6 +161,8 @@ object State {
       energyToday: PowerEnergyToday = PowerEnergyToday()
   )
   object PowerManagement {
+    // Keep this nested state schema derivation bounded as the top-level state grows.
+    given Schema[PowerManagement] = Schema.derived
     given Encoder[PowerManagement] = io.circe.generic.semiauto.deriveEncoder
 
     given Decoder[PowerManagement] = Decoder.instance { cursor =>
@@ -144,6 +206,9 @@ object State {
       lastGridPowerUpdate: Option[java.time.Instant] = None,
       lastGridTariff: Option[GridTariff] = None
   )
+  object PowerEnergyToday {
+    given Schema[PowerEnergyToday] = Schema.derived
+  }
 
   case class PowerProduction(
       powerAvailable: Option[Float] = None,
@@ -154,12 +219,16 @@ object State {
       lastProducedPower: Option[java.time.Instant] = None,
       lastError: Option[java.time.Instant] = None
   )
+  object PowerProduction {
+    given Schema[PowerProduction] = Schema.derived
+  }
 
   case class DynamicPower(
       consumersOrder: Seq[String] = Seq.empty,
       lastCycleAt: Option[java.time.Instant] = None
   )
   object DynamicPower {
+    given Schema[DynamicPower] = Schema.derived
     given Decoder[DynamicPower] = Decoder.instance { cursor =>
       for {
         consumersOrder <-
@@ -194,12 +263,19 @@ object State {
   )
 
   case class FeatureFlags(
-      greyWaterEnabled: Boolean = false
+      greyWaterEnabled: Boolean = false,
+      gardenWateringEnabled: Boolean = false
   )
   object FeatureFlags:
     given Decoder[FeatureFlags] = Decoder.instance { cursor =>
-      cursor
-        .get[Option[Boolean]]("greyWaterEnabled")
-        .map(enabled => FeatureFlags(enabled.getOrElse(false)))
+      for {
+        greyWaterEnabled <-
+          cursor.get[Option[Boolean]]("greyWaterEnabled")
+        gardenWateringEnabled <-
+          cursor.get[Option[Boolean]]("gardenWateringEnabled")
+      } yield FeatureFlags(
+        greyWaterEnabled.getOrElse(false),
+        gardenWateringEnabled.getOrElse(false)
+      )
     }
 }

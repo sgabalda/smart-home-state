@@ -45,6 +45,10 @@ object Event {
 
     @InputEventOHItem("BassaAiguaGrisaEnabledSHS")
     case class SetGreyWaterEnabled(enable: Boolean) extends FeatureFlagEvent
+
+    @InputEventOHItem("RegarHortEnabledSHS")
+    case class SetGardenWateringEnabled(enable: Boolean)
+        extends FeatureFlagEvent
   }
 
   object Temperature {
@@ -159,6 +163,52 @@ object Event {
     case class EndHourChanged(hour: Int) extends GreyWaterData
 
     case object ScheduleTransition extends FeedbackEventData with GreyWaterData
+  }
+
+  object GardenWatering {
+    sealed trait GardenWateringData extends EventData
+
+    @InputEventOHItem("RegarHortIniciarSHS")
+    case class ManualWateringRequested(command: String)
+        extends GardenWateringData
+
+    @InputEventOHItem("RegarHortDuradaManualSHS")
+    case class ManualDurationChanged(minutes: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortDuradaProgramadaSHS")
+    case class ScheduledDurationChanged(minutes: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortIntervalProgramatSHS")
+    case class PeriodHoursChanged(hours: Int) extends GardenWateringData
+
+    @InputEventOHItem("RegarHortHoraIniciSHS")
+    case class StartHourChanged(hour: Int) extends GardenWateringData
+
+    case object ScheduledWateringDue
+        extends FeedbackEventData
+        with GardenWateringData
+
+    case object WateringFinished
+        extends FeedbackEventData
+        with GardenWateringData
+  }
+
+  object Pump {
+    sealed trait PumpEvent extends EventData
+
+    case class CommandRequested(
+        pumpId: String,
+        on: Boolean,
+        force: Boolean = false
+    ) extends FeedbackEventData
+        with PumpEvent
+  }
+
+  object PondPump {
+    sealed trait PondPumpEvent extends EventData
+
+    @InputEventMqtt("bassa/reg/status")
+    case class StatusReported(status: String) extends PondPumpEvent
   }
 
   object Grid {

@@ -31,16 +31,23 @@ object FeatureFlagsProcessor {
         case Event.System.StartupEvent =>
           mqttBlacklist
             .update { bl =>
-              if (state.featureFlags.greyWaterEnabled) bl
-              else bl ++ config.greyWaterMqttTopic
+              val withGreyWater =
+                if (state.featureFlags.greyWaterEnabled) bl
+                else bl ++ config.greyWaterMqttTopic
+              if (state.featureFlags.gardenWateringEnabled) withGreyWater
+              else withGreyWater ++ config.gardenWateringMqttTopic
             }
             .as(
               (
                 state,
-                Set(
+                Set[Action](
                   Action.SetUIItemValue(
                     config.setGreyWaterEnabledItem,
                     state.featureFlags.greyWaterEnabled.toString
+                  ),
+                  Action.SetUIItemValue(
+                    config.setGardenWateringEnabledItem,
+                    state.featureFlags.gardenWateringEnabled.toString
                   )
                 )
               )
@@ -63,6 +70,25 @@ object FeatureFlagsProcessor {
               )
             ) <* logger.info(
             "Grey water MQTT feature flag set to " + enable
+          )
+
+        case Event.FeatureFlagEvents.SetGardenWateringEnabled(enable) =>
+          val modifier = if (enable) { (bl: Set[String]) =>
+            bl -- config.gardenWateringMqttTopic
+          } else { (bl: Set[String]) =>
+            bl ++ config.gardenWateringMqttTopic
+          }
+          mqttBlacklist
+            .update(modifier)
+            .as(
+              (
+                state
+                  .modify(_.featureFlags.gardenWateringEnabled)
+                  .setTo(enable),
+                Set.empty
+              )
+            ) <* logger.info(
+            "Garden watering MQTT feature flag set to " + enable
           )
 
         case _ =>

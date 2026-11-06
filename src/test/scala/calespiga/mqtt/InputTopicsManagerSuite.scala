@@ -43,4 +43,15 @@ class InputTopicsManagerSuite extends CatsEffectSuite {
         fail(s"Conversion failed: obtained $other")
     }
   }
+
+  test("on garden pump status topic it should decode the reported status") {
+    val conversions = InputTopicsManager.apply.inputTopicsConversions
+
+    conversions("bassa/reg/status")(Vector[Byte](111, 110)) match {
+      case Right(Event.PondPump.StatusReported(status)) =>
+        assertEquals(status, "on")
+      case other =>
+        fail(s"Conversion failed: obtained $other")
+    }
+  }
 }
