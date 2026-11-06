@@ -245,6 +245,41 @@ object GardenWateringProcessor {
           )
         )
 
+      case ScheduledWateringEnabledChanged(command) =>
+        val normalized = command.trim
+        if normalized.equalsIgnoreCase("ON") ||
+          normalized.equalsIgnoreCase("true")
+        then
+          updateSchedule(
+            state.modify(_.gardenWatering.scheduledEnabled).setTo(true),
+            timestamp
+          )
+        else if normalized.equalsIgnoreCase("OFF") ||
+          normalized.equalsIgnoreCase("false")
+        then
+          val disabledState = state
+            .modify(_.gardenWatering.scheduledEnabled)
+            .setTo(false)
+            .modify(_.gardenWatering.nextScheduledAt)
+            .setTo(None)
+          (
+            disabledState,
+            Set(
+              Action.Cancel(SCHEDULE_ID),
+              Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
+            )
+          )
+        else
+          (
+            state,
+            Set(
+              Action.SetUIItemValue(
+                config.scheduledEnabledItem,
+                if state.gardenWatering.scheduledEnabled then "ON" else "OFF"
+              )
+            )
+          )
+
       case ManualWateringRequested(command)
           if command.trim.equalsIgnoreCase("ON") ||
             command.trim.equalsIgnoreCase("true") =>
@@ -260,41 +295,6 @@ object GardenWateringProcessor {
 
       case ManualWateringRequested(_) =>
         (state, Set.empty)
-
-      case ScheduledWateringEnabledChanged(command)
-          if command.trim.equalsIgnoreCase("ON") ||
-            command.trim.equalsIgnoreCase("true") =>
-        updateSchedule(
-          state.modify(_.gardenWatering.scheduledEnabled).setTo(true),
-          timestamp
-        )
-
-      case ScheduledWateringEnabledChanged(command)
-          if command.trim.equalsIgnoreCase("OFF") ||
-            command.trim.equalsIgnoreCase("false") =>
-        val disabledState = state
-          .modify(_.gardenWatering.scheduledEnabled)
-          .setTo(false)
-          .modify(_.gardenWatering.nextScheduledAt)
-          .setTo(None)
-        (
-          disabledState,
-          Set(
-            Action.Cancel(SCHEDULE_ID),
-            Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
-          )
-        )
-
-      case ScheduledWateringEnabledChanged(_) =>
-        (
-          state,
-          Set(
-            Action.SetUIItemValue(
-              config.scheduledEnabledItem,
-              if state.gardenWatering.scheduledEnabled then "ON" else "OFF"
-            )
-          )
-        )
 
       case Event.System.StartupEvent =>
         val activeUntil =

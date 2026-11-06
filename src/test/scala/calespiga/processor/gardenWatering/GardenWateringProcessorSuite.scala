@@ -341,6 +341,49 @@ class GardenWateringProcessorSuite extends FunSuite {
     )
   }
 
+  test("scheduled watering events are ignored when scheduling is disabled") {
+    val state = State()
+      .modify(_.gardenWatering.scheduledEnabled)
+      .setTo(false)
+      .modify(_.gardenWatering.nextScheduledAt)
+      .setTo(Some(now))
+
+    val (newState, actions) =
+      processor.process(state, ScheduledWateringDue, now)
+
+    assertEquals(newState, state)
+    assertEquals(actions, Set.empty)
+  }
+
+  test(
+    "disabling scheduled watering cancels its timer but keeps manual settings"
+  ) {
+    val state = State()
+      .modify(_.gardenWatering.nextScheduledAt)
+      .setTo(Some(now.plusSeconds(3600)))
+    val (newState, actions) =
+      processor.process(state, ScheduledWateringEnabledChanged("OFF"), now)
+
+    assertEquals(newState.gardenWatering.scheduledEnabled, false)
+    assertEquals(newState.gardenWatering.nextScheduledAt, None)
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.Cancel(GardenWateringProcessor.SCHEDULE_ID),
+        Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
+      )
+    )
+  }
+
+  test("OpenHAB scheduled watering switch is decoded") {
+    val converter = Event.eventsOpenHabInputItemsConverter
+      .find(_._1 == "RegarHortProgramacioSHS")
+      .map(_._2)
+      .getOrElse(fail("Scheduled watering item has no input converter"))
+
+    assertEquals(converter("OFF"), ScheduledWateringEnabledChanged("OFF"))
+  }
+
   test("OpenHAB manual switch ON is decoded as a manual watering request") {
     val converter = Event.eventsOpenHabInputItemsConverter
       .find(_._1 == "RegarHortIniciarSHS")
