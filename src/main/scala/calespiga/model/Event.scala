@@ -178,6 +178,10 @@ object Event {
     @InputEventOHItem("RegarHortDuradaProgramadaSHS")
     case class ScheduledDurationChanged(minutes: Int) extends GardenWateringData
 
+    @InputEventOHItem("RegarHortProgramacioSHS")
+    case class ScheduledWateringEnabledChanged(command: String)
+        extends GardenWateringData
+
     @InputEventOHItem("RegarHortIntervalProgramatSHS")
     case class PeriodHoursChanged(hours: Int) extends GardenWateringData
 

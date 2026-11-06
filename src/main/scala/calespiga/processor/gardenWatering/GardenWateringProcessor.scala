@@ -116,22 +116,29 @@ object GardenWateringProcessor {
         state: State,
         timestamp: Instant
     ): (State, Set[Action]) = {
-      val next = nextStartTime(timestamp, state.gardenWatering.startHour)
+      val next =
+        Option.when(state.gardenWatering.scheduledEnabled)(
+          nextStartTime(timestamp, state.gardenWatering.startHour)
+        )
       val newState =
-        state.modify(_.gardenWatering.nextScheduledAt).setTo(Some(next))
+        state.modify(_.gardenWatering.nextScheduledAt).setTo(next)
       (
         newState,
-        Set(
-          scheduleAction(next, timestamp),
-          Action.SetUIItemValue(
-            config.periodHoursItem,
-            state.gardenWatering.periodHours.toString
-          ),
-          Action.SetUIItemValue(
-            config.startHourItem,
-            state.gardenWatering.startHour.toString
+        next.map(scheduleAction(_, timestamp)).toSet ++
+          Option.when(next.isEmpty)(Action.Cancel(SCHEDULE_ID)).toSet ++ Set(
+            Action.SetUIItemValue(
+              config.scheduledEnabledItem,
+              if state.gardenWatering.scheduledEnabled then "ON" else "OFF"
+            ),
+            Action.SetUIItemValue(
+              config.periodHoursItem,
+              state.gardenWatering.periodHours.toString
+            ),
+            Action.SetUIItemValue(
+              config.startHourItem,
+              state.gardenWatering.startHour.toString
+            )
           )
-        )
       )
     }
 
@@ -144,6 +151,10 @@ object GardenWateringProcessor {
         Action.SetUIItemValue(
           config.scheduledDurationItem,
           state.gardenWatering.scheduledDurationMinutes.toString
+        ),
+        Action.SetUIItemValue(
+          config.scheduledEnabledItem,
+          if state.gardenWatering.scheduledEnabled then "ON" else "OFF"
         ),
         Action.SetUIItemValue(
           config.periodHoursItem,
@@ -250,25 +261,66 @@ object GardenWateringProcessor {
       case ManualWateringRequested(_) =>
         (state, Set.empty)
 
+      case ScheduledWateringEnabledChanged(command)
+          if command.trim.equalsIgnoreCase("ON") ||
+            command.trim.equalsIgnoreCase("true") =>
+        updateSchedule(
+          state.modify(_.gardenWatering.scheduledEnabled).setTo(true),
+          timestamp
+        )
+
+      case ScheduledWateringEnabledChanged(command)
+          if command.trim.equalsIgnoreCase("OFF") ||
+            command.trim.equalsIgnoreCase("false") =>
+        val disabledState = state
+          .modify(_.gardenWatering.scheduledEnabled)
+          .setTo(false)
+          .modify(_.gardenWatering.nextScheduledAt)
+          .setTo(None)
+        (
+          disabledState,
+          Set(
+            Action.Cancel(SCHEDULE_ID),
+            Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
+          )
+        )
+
+      case ScheduledWateringEnabledChanged(_) =>
+        (
+          state,
+          Set(
+            Action.SetUIItemValue(
+              config.scheduledEnabledItem,
+              if state.gardenWatering.scheduledEnabled then "ON" else "OFF"
+            )
+          )
+        )
+
       case Event.System.StartupEvent =>
         val activeUntil =
           state.gardenWatering.activeUntil.filter(_.isAfter(timestamp))
         val restoredState = state
           .modify(_.gardenWatering.activeUntil)
           .setTo(activeUntil)
-        val nextScheduledAt = restoredState.gardenWatering.nextScheduledAt
-          .map(
-            nextFutureSchedule(
-              _,
-              restoredState.gardenWatering.periodHours,
-              timestamp
-            )
-          )
-          .orElse(
-            Some(
-              nextStartTime(timestamp, restoredState.gardenWatering.startHour)
-            )
-          )
+        val nextScheduledAt =
+          if restoredState.gardenWatering.scheduledEnabled then
+            restoredState.gardenWatering.nextScheduledAt
+              .map(
+                nextFutureSchedule(
+                  _,
+                  restoredState.gardenWatering.periodHours,
+                  timestamp
+                )
+              )
+              .orElse(
+                Some(
+                  nextStartTime(
+                    timestamp,
+                    restoredState.gardenWatering.startHour
+                  )
+                )
+              )
+          else None
         val scheduledState = restoredState
           .modify(_.gardenWatering.nextScheduledAt)
           .setTo(nextScheduledAt)
@@ -277,7 +329,10 @@ object GardenWateringProcessor {
           force = true
         )
         val scheduleActions =
-          nextScheduledAt.map(scheduleAction(_, timestamp)).toSet
+          nextScheduledAt.map(scheduleAction(_, timestamp)).toSet ++
+            Option
+              .when(nextScheduledAt.isEmpty)(Action.Cancel(SCHEDULE_ID))
+              .toSet
         val stopActions =
           activeUntil.map(stopAction(timestamp, _)).toSet
         (
@@ -286,6 +341,9 @@ object GardenWateringProcessor {
             Set(Action.SetUIItemValue(config.manualStartItem, "OFF")) ++
             Set(pumpCommand) ++ scheduleActions ++ stopActions
         )
+
+      case ScheduledWateringDue if !state.gardenWatering.scheduledEnabled =>
+        (state, Set.empty)
 
       case ScheduledWateringDue
           if state.gardenWatering.nextScheduledAt.exists(

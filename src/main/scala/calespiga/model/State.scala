@@ -139,12 +139,52 @@ object State {
   case class GardenWatering(
       manualDurationMinutes: Int = 10,
       scheduledDurationMinutes: Int = 10,
+      scheduledEnabled: Boolean = true,
       periodHours: Int = 24,
       startHour: Int = 22,
       activeUntil: Option[java.time.Instant] = None,
       lastWatering: Option[java.time.Instant] = None,
       nextScheduledAt: Option[java.time.Instant] = None
   )
+  object GardenWatering {
+    given Decoder[GardenWatering] = Decoder.instance { cursor =>
+      val defaults = GardenWatering()
+      for {
+        manualDurationMinutes <- cursor.getOrElse[Int]("manualDurationMinutes")(
+          defaults.manualDurationMinutes
+        )
+        scheduledDurationMinutes <-
+          cursor.getOrElse[Int]("scheduledDurationMinutes")(
+            defaults.scheduledDurationMinutes
+          )
+        scheduledEnabled <- cursor.getOrElse[Boolean]("scheduledEnabled")(
+          defaults.scheduledEnabled
+        )
+        periodHours <- cursor.getOrElse[Int]("periodHours")(
+          defaults.periodHours
+        )
+        startHour <- cursor.getOrElse[Int]("startHour")(defaults.startHour)
+        activeUntil <- cursor.getOrElse[Option[java.time.Instant]](
+          "activeUntil"
+        )(defaults.activeUntil)
+        lastWatering <- cursor.getOrElse[Option[java.time.Instant]](
+          "lastWatering"
+        )(defaults.lastWatering)
+        nextScheduledAt <- cursor.getOrElse[Option[java.time.Instant]](
+          "nextScheduledAt"
+        )(defaults.nextScheduledAt)
+      } yield GardenWatering(
+        manualDurationMinutes,
+        scheduledDurationMinutes,
+        scheduledEnabled,
+        periodHours,
+        startHour,
+        activeUntil,
+        lastWatering,
+        nextScheduledAt
+      )
+    }
+  }
 
   case class PondPump(
       status: Option[Boolean] = None,

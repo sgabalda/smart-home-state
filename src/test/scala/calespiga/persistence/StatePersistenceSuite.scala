@@ -166,6 +166,37 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
 
+  test(
+    "StatePersistence defaults scheduled watering to enabled for old state"
+  ) {
+    val gardenWateringJson = someState.asJson.hcursor
+      .get[Json]("gardenWatering")
+      .fold(error => fail(error.getMessage), identity)
+    val legacyStateJson = someState.asJson
+      .mapObject(
+        _.add(
+          "gardenWatering",
+          gardenWateringJson.mapObject(_.remove("scheduledEnabled"))
+        )
+      )
+      .noSpaces
+    val sut = getSut(
+      config,
+      readInput = _ => IO.pure(legacyStateJson),
+      saveOutput = (_, _) =>
+        IO.raiseError(new Exception("Not expected call to save input"))
+    )
+
+    sut.use { statePersistence =>
+      statePersistence.loadState.map { loadedState =>
+        assertEquals(
+          loadedState.map(_.gardenWatering.scheduledEnabled),
+          Right(true)
+        )
+      }
+    }
+  }
+
   test("StatePersistence migrates garden pump fields to the pond pump state") {
     val legacyStateJson = someState.asJson
       .mapObject(

@@ -60,6 +60,21 @@ class GardenWateringProcessorSuite extends FunSuite {
   }
 
   test(
+    "manual watering remains available when scheduled watering is disabled"
+  ) {
+    val disabledState =
+      State().modify(_.gardenWatering.scheduledEnabled).setTo(false)
+    val (newState, actions) =
+      processor.process(disabledState, ManualWateringRequested("ON"), now)
+
+    assertEquals(
+      newState.gardenWatering.activeUntil,
+      Some(now.plusSeconds(600))
+    )
+    assert(actions.contains(expectedPumpCommand(pumpOn = true).head))
+  }
+
+  test(
     "manual duration settings accept positive values and reject invalid ones"
   ) {
     val (updatedState, updateActions) =
@@ -168,6 +183,66 @@ class GardenWateringProcessorSuite extends FunSuite {
     assertEquals(actions, Set.empty)
   }
 
+  test("scheduled watering events are ignored when scheduling is disabled") {
+    val state = State()
+      .modify(_.gardenWatering.scheduledEnabled)
+      .setTo(false)
+      .modify(_.gardenWatering.nextScheduledAt)
+      .setTo(Some(now))
+
+    val (newState, actions) =
+      processor.process(state, ScheduledWateringDue, now)
+
+    assertEquals(newState, state)
+    assertEquals(actions, Set.empty)
+  }
+
+  test(
+    "disabling scheduled watering cancels its timer but keeps manual settings"
+  ) {
+    val state = State()
+      .modify(_.gardenWatering.nextScheduledAt)
+      .setTo(Some(now.plusSeconds(3600)))
+    val (newState, actions) =
+      processor.process(state, ScheduledWateringEnabledChanged("OFF"), now)
+
+    assertEquals(newState.gardenWatering.scheduledEnabled, false)
+    assertEquals(newState.gardenWatering.nextScheduledAt, None)
+    assertEquals(
+      actions,
+      Set[Action](
+        Action.Cancel(GardenWateringProcessor.SCHEDULE_ID),
+        Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
+      )
+    )
+  }
+
+  test("enabling scheduled watering schedules the next configured start") {
+    val state = State()
+      .modify(_.gardenWatering.scheduledEnabled)
+      .setTo(false)
+    val (newState, actions) =
+      processor.process(state, ScheduledWateringEnabledChanged("ON"), now)
+
+    assertEquals(newState.gardenWatering.scheduledEnabled, true)
+    assertEquals(
+      newState.gardenWatering.nextScheduledAt,
+      Some(Instant.parse("2023-08-17T22:00:00Z"))
+    )
+    assert(
+      actions.contains(Action.SetUIItemValue(config.scheduledEnabledItem, "ON"))
+    )
+    assert(
+      actions.contains(
+        Action.Delayed(
+          GardenWateringProcessor.SCHEDULE_ID,
+          Action.SendFeedbackEvent(ScheduledWateringDue),
+          12.hours
+        )
+      )
+    )
+  }
+
   test("watering completion stops the pump and periodically resends stop") {
     val runningState =
       State().modify(_.gardenWatering.activeUntil).setTo(Some(now))
@@ -204,6 +279,35 @@ class GardenWateringProcessorSuite extends FunSuite {
     )
     assert(
       actions.contains(Action.SetUIItemValue(config.manualStartItem, "OFF"))
+    )
+    assert(
+      actions.contains(Action.SetUIItemValue(config.scheduledEnabledItem, "ON"))
+    )
+  }
+
+  test(
+    "startup does not schedule watering when scheduled watering is disabled"
+  ) {
+    val state = State()
+      .modify(_.gardenWatering.scheduledEnabled)
+      .setTo(false)
+      .modify(_.gardenWatering.nextScheduledAt)
+      .setTo(Some(now.plusSeconds(3600)))
+    val (newState, actions) =
+      processor.process(state, Event.System.StartupEvent, now)
+
+    assertEquals(newState.gardenWatering.nextScheduledAt, None)
+    assert(actions.contains(Action.Cancel(GardenWateringProcessor.SCHEDULE_ID)))
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(config.scheduledEnabledItem, "OFF")
+      )
+    )
+    assert(
+      !actions.exists {
+        case Action.Delayed(GardenWateringProcessor.SCHEDULE_ID, _, _) => true
+        case _                                                         => false
+      }
     )
   }
 
@@ -247,5 +351,14 @@ class GardenWateringProcessorSuite extends FunSuite {
       converter("ON"),
       ManualWateringRequested("ON")
     )
+  }
+
+  test("OpenHAB scheduled watering switch is decoded") {
+    val converter = Event.eventsOpenHabInputItemsConverter
+      .find(_._1 == "RegarHortProgramacioSHS")
+      .map(_._2)
+      .getOrElse(fail("Scheduled watering item has no input converter"))
+
+    assertEquals(converter("OFF"), ScheduledWateringEnabledChanged("OFF"))
   }
 }

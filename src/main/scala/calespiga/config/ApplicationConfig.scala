@@ -221,6 +221,7 @@ final case class GardenWateringConfig(
     manualDurationItem: String,
     manualStartItem: String,
     scheduledDurationItem: String,
+    scheduledEnabledItem: String,
     periodHoursItem: String,
     startHourItem: String,
     lastWateringItem: String
