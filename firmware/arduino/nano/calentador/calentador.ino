@@ -10,7 +10,7 @@
 #define SUB_CALENTADOR "arduino_calentador/potencia/set"
 #define PUB_CALENTADOR "arduino_calentador/potencia/status"
 #define PUB_TEMPERATURE "arduino_calentador/temperature"
-#define MAX_SAFE_TEMPERATURE_C 70.0
+#define MAX_SAFE_TEMPERATURE_C 80.0
 #define MAX_TIME_BETWEEN_ORDERS 3 * 60 * 1000 // 3 minutes
 #define ONE_WIRE_BUS 3
 #define TEMPERATURE_PUBLISH_INTERVAL 5 * 1000 // 5 seconds
