@@ -8,6 +8,7 @@
 **/project/.bloop
 logs/**
 state.json
+**/esp32/secrets.h
 
 # Docker and deployment
 .env
