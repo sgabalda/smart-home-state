@@ -202,6 +202,15 @@ object Event {
 
     @InputEventMqtt("bassa/reg/status")
     case class StatusReported(status: String) extends PondPumpEvent
+
+    @InputEventMqtt("bassa/percentage")
+    case class PercentageReported(percentage: Double) extends PondPumpEvent
+
+    @InputEventMqtt("bassa/liters")
+    case class LitersReported(liters: Double) extends PondPumpEvent
+
+    @InputEventMqtt("bassa/height")
+    case class HeightReported(height: Double) extends PondPumpEvent
   }
 
   object Grid {

@@ -77,10 +77,13 @@ sitemap shs label="Ca l'espiga SHS" {
             Text item=BassaAiguaGrisaMicroControladorEstatSHS label="Microcontrolador: [%s]"
         }
 
-        Frame label="Bomba de la bassa" {
+        Frame label="Bassa" {
             Text item=BassaRegStatusSHS label="Estat bomba: [%s]"
             Text item=BassaRegSincronitzacioSHS label="Sincronització: [%s]"
             Text item=BassaRegMicroControladorEstatSHS label="Microcontrolador: [%s]"
+            Text item=BassaPercentatgeSHS label="Percentatge: [%.1f %%]"
+            Text item=BassaLitresSHS label="Litres: [%.1f L]"
+            Text item=BassaAlcadaSHS label="Alçada: [%.1f]"
         }
 
         Frame label="Reg del jardí" {

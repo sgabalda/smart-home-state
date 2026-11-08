@@ -232,7 +232,10 @@ final case class PondPumpConfig(
     resendInterval: FiniteDuration,
     statusItem: String,
     syncStatusItem: String,
-    onlineStatusItem: String
+    onlineStatusItem: String,
+    percentageItem: String,
+    litersItem: String,
+    heightItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

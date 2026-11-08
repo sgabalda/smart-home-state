@@ -13,6 +13,7 @@ object PondPumpProcessor {
       syncConfig: SyncDetectorConfig
   ): SingleProcessor =
     PondPumpControlProcessor(config)
+      .andThen(PondMeasurementsProcessor(config))
       .andThen(
         PondPumpOfflineDetector(
           offlineConfig,

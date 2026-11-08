@@ -54,4 +54,21 @@ class InputTopicsManagerSuite extends CatsEffectSuite {
         fail(s"Conversion failed: obtained $other")
     }
   }
+
+  test("on pond measurement topics it should decode the reported values") {
+    val conversions = InputTopicsManager.apply.inputTopicsConversions
+
+    assertEquals(
+      conversions("bassa/percentage")(Vector[Byte](55, 48, 46, 53)),
+      Right(Event.PondPump.PercentageReported(70.5))
+    )
+    assertEquals(
+      conversions("bassa/liters")(Vector[Byte](49, 50, 51, 46, 52)),
+      Right(Event.PondPump.LitersReported(123.4))
+    )
+    assertEquals(
+      conversions("bassa/height")(Vector[Byte](52, 50, 46, 48)),
+      Right(Event.PondPump.HeightReported(42.0))
+    )
+  }
 }

@@ -67,10 +67,13 @@ String BassaAiguaGrisaMicroControladorEstatSHS "Estat microcontrolador aigua gri
  POND PUMP
 ----------------------
 */
-String BassaRegTitle "Bomba de la bassa"
+String BassaRegTitle "Bassa"
 String BassaRegStatusSHS "Estat bomba bassa reg"
 String BassaRegSincronitzacioSHS "Estat sincronització bomba bassa reg"
 String BassaRegMicroControladorEstatSHS "Estat microcontrolador bomba bassa reg"
+Number BassaPercentatgeSHS "Percentatge bassa"
+Number BassaLitresSHS "Litres bassa"
+Number BassaAlcadaSHS "Alçada bassa"
 
 /*
 ----------------------

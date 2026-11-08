@@ -2,6 +2,9 @@ package calespiga.processor.pondPump
 
 import calespiga.model.Action
 import calespiga.model.Event
+import calespiga.model.Event.PondPump.HeightReported
+import calespiga.model.Event.PondPump.LitersReported
+import calespiga.model.Event.PondPump.PercentageReported
 import calespiga.model.Event.PondPump.StatusReported
 import calespiga.model.Event.Pump.CommandRequested
 import calespiga.model.OfflineOnlineSignal
@@ -147,6 +150,31 @@ class PondPumpProcessorSuite extends FunSuite {
           ProcessorConfigHelper.offlineDetectorConfig.offlineText
         )
       )
+    )
+  }
+
+  test("pond measurement reports update state and their UI items") {
+    val (afterPercentage, percentageActions) =
+      processor.process(State(), PercentageReported(70.5), now)
+    val (afterLiters, litersActions) =
+      processor.process(afterPercentage, LitersReported(123.4), now)
+    val (afterHeight, heightActions) =
+      processor.process(afterLiters, HeightReported(42.0), now)
+
+    assertEquals(afterHeight.pond.percentage, Some(70.5))
+    assertEquals(afterHeight.pond.liters, Some(123.4))
+    assertEquals(afterHeight.pond.height, Some(42.0))
+    assertEquals(
+      percentageActions,
+      Set[Action](Action.SetUIItemValue(config.percentageItem, "70.5"))
+    )
+    assertEquals(
+      litersActions,
+      Set[Action](Action.SetUIItemValue(config.litersItem, "123.4"))
+    )
+    assertEquals(
+      heightActions,
+      Set[Action](Action.SetUIItemValue(config.heightItem, "42.0"))
     )
   }
 }

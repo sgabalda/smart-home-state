@@ -121,7 +121,10 @@ object ProcessorConfigHelper {
     resendInterval = 20.seconds,
     statusItem = "pond/pump/status",
     syncStatusItem = "pond/pump/syncStatus",
-    onlineStatusItem = "pond/pump/onlineStatus"
+    onlineStatusItem = "pond/pump/onlineStatus",
+    percentageItem = "pond/percentage",
+    litersItem = "pond/liters",
+    heightItem = "pond/height"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
