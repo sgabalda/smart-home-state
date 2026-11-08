@@ -13,7 +13,6 @@ import calespiga.processor.pondPump.PondPumpProcessor
 import calespiga.processor.power.PowerProcessor
 import calespiga.processor.temperatures.TemperaturesProcessor
 import cats.effect.IO
-import cats.effect.Ref
 import java.time.ZoneId
 
 trait StateProcessor {
@@ -53,7 +52,6 @@ object StateProcessor {
   // private to package to ease testing but ensure there are no duplicates in the dynamic consumer codes
   private[processor] def allButPower(
       config: calespiga.config.ProcessorConfig,
-      mqttBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
   ): List[EffectfulProcessor] = {
     List(
@@ -92,19 +90,17 @@ object StateProcessor {
         zoneId,
         config.offlineDetector,
         config.syncDetector
-      ).toEffectful,
-      FeatureFlagsProcessor(mqttBlacklist, config.featureFlags)
+      ).toEffectful
     )
   }
 
   def apply(
       config: calespiga.config.ProcessorConfig,
-      mqttBlacklist: Ref[IO, Set[String]],
       zoneId: ZoneId
   ): StateProcessor = {
 
     val allButPowerProcessors =
-      allButPower(config, mqttBlacklist, zoneId)
+      allButPower(config, zoneId)
 
     val power = PowerProcessor(
       config.power,

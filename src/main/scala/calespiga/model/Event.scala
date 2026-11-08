@@ -40,17 +40,6 @@ object Event {
         with SystemData
   }
 
-  object FeatureFlagEvents {
-    sealed trait FeatureFlagEvent extends EventData
-
-    @InputEventOHItem("BassaAiguaGrisaEnabledSHS")
-    case class SetGreyWaterEnabled(enable: Boolean) extends FeatureFlagEvent
-
-    @InputEventOHItem("RegarHortEnabledSHS")
-    case class SetGardenWateringEnabled(enable: Boolean)
-        extends FeatureFlagEvent
-  }
-
   object Temperature {
     sealed trait TemperatureData extends EventData
 

@@ -1,7 +1,6 @@
 package calespiga.processor
 
 import cats.effect.IO
-import cats.effect.Ref
 import com.softwaremill.quicklens.*
 import java.time.ZoneId
 import munit.CatsEffectSuite
@@ -67,22 +66,19 @@ class StateProcessorSuite extends CatsEffectSuite {
   }
 
   test("configured dynamic consumers do not have duplicate codes") {
-    Ref.of[IO, Set[String]](Set.empty[String]).map { mqttBlacklist =>
-      val allDynConsumers = StateProcessor
-        .allButPower(
-          config = ProcessorConfigHelper.processorConfig,
-          mqttBlacklist = mqttBlacklist,
-          zoneId = ZoneId.systemDefault()
-        )
-        .flatMap(_.dynamicPowerConsumer)
-        .toList
-        .map(_.uniqueCode)
-
-      assertEquals(
-        allDynConsumers.size,
-        allDynConsumers.toSet.size,
-        "There are duplicate dynamic consumer codes: " + allDynConsumers
+    val allDynConsumers = StateProcessor
+      .allButPower(
+        config = ProcessorConfigHelper.processorConfig,
+        zoneId = ZoneId.systemDefault()
       )
-    }
+      .flatMap(_.dynamicPowerConsumer)
+      .toList
+      .map(_.uniqueCode)
+
+    assertEquals(
+      allDynConsumers.size,
+      allDynConsumers.toSet.size,
+      "There are duplicate dynamic consumer codes: " + allDynConsumers
+    )
   }
 }

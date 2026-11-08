@@ -124,13 +124,6 @@ object ProcessorConfigHelper {
     onlineStatusItem = "pond/pump/onlineStatus"
   )
 
-  val featureFlagsConfig: FeatureFlagsConfig = FeatureFlagsConfig(
-    greyWaterMqttTopic = Set("greyWater/command"),
-    setGreyWaterEnabledItem = "featureFlags/setGreyWaterEnabled",
-    gardenWateringMqttTopic = Set("pond/pump/set"),
-    setGardenWateringEnabledItem = "featureFlags/setGardenWateringEnabled"
-  )
-
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
     PowerAvailableProcessorConfig(
       periodAlarmWithError = 10.minutes,
@@ -198,7 +191,6 @@ object ProcessorConfigHelper {
     greyWater = greyWaterConfig,
     gardenWatering = gardenWateringConfig,
     pondPump = pondPumpConfig,
-    featureFlags = featureFlagsConfig,
     power = powerProcessorConfig,
     grid = gridConfig,
     carCharger = carCharger

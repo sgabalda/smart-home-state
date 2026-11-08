@@ -58,7 +58,6 @@ final case class ProcessorConfig(
     greyWater: GreyWaterConfig,
     gardenWatering: GardenWateringConfig,
     pondPump: PondPumpConfig,
-    featureFlags: FeatureFlagsConfig,
     power: PowerProcessorConfig,
     grid: GridConfig,
     carCharger: CarChargerConfig
@@ -234,13 +233,6 @@ final case class PondPumpConfig(
     statusItem: String,
     syncStatusItem: String,
     onlineStatusItem: String
-) derives ConfigReader
-
-final case class FeatureFlagsConfig(
-    greyWaterMqttTopic: Set[String],
-    setGreyWaterEnabledItem: String,
-    gardenWateringMqttTopic: Set[String],
-    setGardenWateringEnabledItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

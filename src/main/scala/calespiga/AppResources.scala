@@ -66,9 +66,8 @@ object AppResources {
         mqttConsumer,
         inputTopicsManager.inputTopicsConversions
       )
-      mqttBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
       uiBlacklist <- Ref.of[IO, Set[String]](Set.empty).toResource
-      mqttActionToProducer = ActionToMqttProducer(mqttProducer, mqttBlacklist)
+      mqttActionToProducer = ActionToMqttProducer(mqttProducer)
       openHabApiClient <- externalInterfaces.apiClient(
         appConfig.uiConfig.openHabConfig,
         healthStatusManager.componentHealthManager(
@@ -104,7 +103,6 @@ object AppResources {
       zoneId = ZoneId.of(appConfig.system.timezone)
       processor = StateProcessor(
         appConfig.processor,
-        mqttBlacklist,
         zoneId
       )
       _ <- Endpoints(stateRef, healthStatusManager, appConfig.httpServerConfig)

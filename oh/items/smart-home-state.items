@@ -85,7 +85,6 @@ Switch RegarHortProgramacioSHS "Programar reg automàtic"
 Number RegarHortIntervalProgramatSHS "Interval reg programat (hores)"
 Number RegarHortHoraIniciSHS "Hora inici reg programat"
 String RegarHortUltimRegSHS "Últim reg jardí"
-String RegarHortEnabledSHS "Habilitar control de reg del jardí per SHS"
 
 /*
 ----------------------
@@ -154,6 +153,3 @@ String SystemTitle "Estat"
 String TemperaturesMicroControladorEstat "Estat microcontrolador temperatures"
 String CalentadorMicroControladorEstatSHS "Estat microcontrolador calentador"
 String EstufaInfrarrojosMicroControladorEstatSHS "Estat microcontrolador estufa"
-
-/* feature flags */
-String BassaAiguaGrisaEnabledSHS "Habilitar control d'aigua grisa per SHS"

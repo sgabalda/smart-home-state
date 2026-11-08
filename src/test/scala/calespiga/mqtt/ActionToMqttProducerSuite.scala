@@ -13,11 +13,10 @@ class ActionToMqttProducerSuite extends CatsEffectSuite {
     val expected = Some(topic, message.getBytes("UTF-8").toVector)
     for {
       storage <- IO.ref[Option[(String, Vector[Byte])]](None)
-      topicsBlacklist <- IO.ref[Set[String]](Set.empty)
       producer = ProducerStub((topic: String, payload: Vector[Byte]) =>
         storage.set(Some((topic, payload)))
       )
-      actionToMqtt = ActionToMqttProducer(producer, topicsBlacklist)
+      actionToMqtt = ActionToMqttProducer(producer)
       _ <- actionToMqtt.actionToMqtt(action)
       result <- storage.get
     } yield {
@@ -25,23 +24,20 @@ class ActionToMqttProducerSuite extends CatsEffectSuite {
     }
   }
 
-  test(
-    "Action to MqttProducer does not call producer if topic is blacklisted (exact match)"
-  ) {
+  test("Action to MqttProducer publishes messages for every topic") {
     val topic = "blacklisted/topic"
     val message = "message"
     val action = Action.SendMqttStringMessage(topic, message)
     for {
       storage <- IO.ref[Option[(String, Vector[Byte])]](None)
-      topicsBlacklist <- IO.ref[Set[String]](Set(topic))
       producer = ProducerStub((topic: String, payload: Vector[Byte]) =>
         storage.set(Some((topic, payload)))
       )
-      actionToMqtt = ActionToMqttProducer(producer, topicsBlacklist)
+      actionToMqtt = ActionToMqttProducer(producer)
       _ <- actionToMqtt.actionToMqtt(action)
       result <- storage.get
     } yield {
-      assertEquals(result, None)
+      assertEquals(result, Some((topic, message.getBytes("UTF-8").toVector)))
     }
   }
 
