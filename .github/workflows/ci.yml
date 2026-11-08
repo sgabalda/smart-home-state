@@ -71,7 +71,7 @@ jobs:
         run: sbt test
 
   firmware:
-    name: Compile Arduino Uno and Nano firmware
+    name: Compile Arduino Uno, Nano, and ESP32 firmware
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,7 +88,7 @@ jobs:
       - name: Install clang-format
         run: python -m pip install clang-format==18.1.8
 
-      - name: Check Arduino formatting
+      - name: Check firmware formatting
         run: find firmware -type f -name '*.ino' -exec clang-format --dry-run --Werror --style=file {} +
 
       - name: Set up Arduino CLI
@@ -100,6 +100,12 @@ jobs:
         run: |
           arduino-cli core update-index
           arduino-cli core install arduino:avr@1.8.6
+
+      - name: Install Espressif ESP32 platform
+        run: |
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@3.3.12
 
       - name: Install Arduino libraries
         run: |
@@ -124,6 +130,11 @@ jobs:
               arduino-cli compile --fqbn "arduino:avr:$board" "$sketch"
             done
           done
+
+      - name: Compile ESP32 sketch
+        run: |
+          cp firmware/arduino/esp32/secrets.example.h firmware/arduino/esp32/secrets.h
+          arduino-cli compile --fqbn esp32:esp32:esp32 firmware/arduino/esp32/estufa-infrarrojos
 
   docker:
     name: Build and run Docker image
