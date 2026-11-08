@@ -71,7 +71,7 @@ class StatePersistenceSuite extends CatsEffectSuite {
     }
   }
 
-  test("StatePersistence loads legacy feature flags with Grey water disabled") {
+  test("StatePersistence ignores legacy feature flags") {
     val legacyStateJson = someState.asJson
       .mapObject(
         _.add(
@@ -94,12 +94,9 @@ class StatePersistenceSuite extends CatsEffectSuite {
 
     sut.use { statePersistence =>
       statePersistence.loadState.map { loadedState =>
-        val expectedState = someState
-          .modify(_.featureFlags)
-          .setTo(State.FeatureFlags())
         assertEquals(
           loadedState,
-          Right(expectedState)
+          Right(someState)
         )
       }
     }

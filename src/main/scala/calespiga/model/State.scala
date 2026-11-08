@@ -2,7 +2,6 @@ package calespiga.model
 
 import calespiga.model.State.CarCharger
 import calespiga.model.State.Fans
-import calespiga.model.State.FeatureFlags
 import calespiga.model.State.GardenWatering
 import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
@@ -17,7 +16,6 @@ import io.circe.generic.auto._
 import sttp.tapir.Schema
 
 case class State(
-    featureFlags: FeatureFlags = FeatureFlags(),
     temperatures: Temperatures = Temperatures(),
     fans: Fans = Fans(),
     heater: Heater = Heater(),
@@ -34,9 +32,6 @@ object State {
 
   given Decoder[State] = Decoder.instance { cursor =>
     for {
-      featureFlags <- cursor.getOrElse[FeatureFlags]("featureFlags")(
-        FeatureFlags()
-      )
       temperatures <- cursor.getOrElse[Temperatures]("temperatures")(
         Temperatures()
       )
@@ -57,7 +52,6 @@ object State {
       grid <- cursor.getOrElse[Grid]("grid")(Grid())
       carCharger <- cursor.getOrElse[CarCharger]("carCharger")(CarCharger())
     } yield State(
-      featureFlags,
       temperatures,
       fans,
       heater,
@@ -302,20 +296,4 @@ object State {
       chargingStatus: Option[CarChargerChargingStatus] = None
   )
 
-  case class FeatureFlags(
-      greyWaterEnabled: Boolean = false,
-      gardenWateringEnabled: Boolean = false
-  )
-  object FeatureFlags:
-    given Decoder[FeatureFlags] = Decoder.instance { cursor =>
-      for {
-        greyWaterEnabled <-
-          cursor.get[Option[Boolean]]("greyWaterEnabled")
-        gardenWateringEnabled <-
-          cursor.get[Option[Boolean]]("gardenWateringEnabled")
-      } yield FeatureFlags(
-        greyWaterEnabled.getOrElse(false),
-        gardenWateringEnabled.getOrElse(false)
-      )
-    }
 }
