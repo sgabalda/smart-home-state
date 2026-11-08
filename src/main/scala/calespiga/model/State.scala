@@ -7,6 +7,7 @@ import calespiga.model.State.GreyWater
 import calespiga.model.State.Grid
 import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
+import calespiga.model.State.Pond
 import calespiga.model.State.PondPump
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
@@ -23,6 +24,7 @@ case class State(
     greyWater: GreyWater = GreyWater(),
     gardenWatering: GardenWatering = GardenWatering(),
     pondPump: PondPump = PondPump(),
+    pond: Pond = Pond(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     carCharger: CarCharger = CarCharger()
@@ -45,6 +47,7 @@ object State {
         GardenWatering()
       )
       pondPump <- cursor.getOrElse[PondPump]("pondPump")(PondPump())
+      pond <- cursor.getOrElse[Pond]("pond")(Pond())
       powerManagement <-
         cursor.getOrElse[PowerManagement]("powerManagement")(
           PowerManagement()
@@ -59,6 +62,7 @@ object State {
       greyWater,
       gardenWatering,
       pondPump,
+      pond,
       powerManagement,
       grid,
       carCharger
@@ -185,6 +189,11 @@ object State {
       lastCommandSent: Option[Boolean] = None,
       lastSyncing: Option[java.time.Instant] = None,
       online: Option[OfflineOnlineSignal] = None
+  )
+  case class Pond(
+      percentage: Option[Double] = None,
+      liters: Option[Double] = None,
+      height: Option[Double] = None
   )
 
   case class PowerManagement(
