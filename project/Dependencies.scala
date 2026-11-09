@@ -26,7 +26,7 @@ object Dependencies {
 
     val quicklens = "1.9.15"
 
-    val sttp = "4.1.0"
+    val sttp = "4.1.1"
 
     val tapir = "1.14.1"
   }
