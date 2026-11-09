@@ -19,6 +19,20 @@ arduino-cli lib install \
 arduino-cli compile --fqbn arduino:avr:uno firmware/arduino/uno/electronica
 ```
 
+The sketches under /arduino/nano target an Arduino Nano. They use `UIPEthernet` and
+`PubSubClient`; the AVR platform provides the watchdog header. For example:
+
+```sh
+arduino-cli core update-index
+arduino-cli core install arduino:avr@1.8.6
+arduino-cli lib install \
+  UIPEthernet@2.0.12 \
+  PubSubClient@2.8.0 \
+  OneWire@2.3.8 \
+  DallasTemperature@4.0.6 \
+arduino-cli compile --fqbn arduino:avr:nano firmware/arduino/nano/bassa
+```
+
 The `estufa-infrarrojos` sketch targets an ESP32. Install the Espressif board
 index, the ESP32 platform, and its MQTT library before compiling:
 
@@ -32,11 +46,10 @@ arduino-cli lib install PubSubClient@2.8.0
 arduino-cli compile --fqbn esp32:esp32:esp32 firmware/arduino/esp32/estufa-infrarrojos
 ```
 
-Format sketches locally with clang-format 18.1.8:
+Format sketches locally with clang-format 18.1.8. For example:
 
 ```sh
 clang-format -i --style=file firmware/arduino/uno/electronica/electronica.ino
-clang-format -i --style=file firmware/arduino/esp32/estufa-infrarrojos/estufa-infrarrojos.ino
 ```
 
 CI checks formatting for every `.ino` file under `firmware` with the same
