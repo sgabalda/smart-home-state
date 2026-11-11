@@ -18,14 +18,15 @@ import calespiga.processor.utils.CommandActions
 import com.softwaremill.quicklens.*
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 private[pondPump] object PondCirculationControlProcessor {
 
   val SCHEDULE_ID = "pond-circulation-schedule"
-  private val MINUTES_PER_DAY = 24 * 60
 
   private final case class Impl(
       config: PondPumpConfig,
@@ -41,14 +42,19 @@ private[pondPump] object PondCirculationControlProcessor {
       commandToMessage = PondCirculationCommand.toString
     )
 
-    private def isWithinSchedule(state: State, timestamp: Instant): Boolean = {
-      val hour = timestamp.atZone(zone).getHour
+    private def isWithinSchedule(state: State, hour: Int): Boolean = {
       val startHour = state.pondCirculation.startHour
       val endHour = state.pondCirculation.endHour
 
       if startHour <= endHour then hour >= startHour && hour <= endHour
       else hour >= startHour || hour <= endHour
     }
+
+    private def isWithinSchedule(
+        state: State,
+        timestamp: Instant
+    ): Boolean =
+      isWithinSchedule(state, timestamp.atZone(zone).getHour)
 
     private def desiredCommand(
         state: State,
@@ -85,19 +91,90 @@ private[pondPump] object PondCirculationControlProcessor {
         state: State,
         timestamp: Instant
     ): Option[Instant] = {
-      val currentCommand = desiredCommand(state, timestamp)
-      var candidate =
-        timestamp.truncatedTo(ChronoUnit.MINUTES).plus(1, ChronoUnit.MINUTES)
-      var remaining = MINUTES_PER_DAY * 3
-      var transition: Option[Instant] = None
+      val localNow = timestamp.atZone(zone).toLocalDateTime
+      val localDate = localNow.toLocalDate
+      val onMinutes = state.pondCirculation.cadencePercentage / 10
+      val command = desiredCommand(state, timestamp)
 
-      while remaining > 0 && transition.isEmpty do
-        if desiredCommand(state, candidate) != currentCommand then
-          transition = Some(candidate)
-        candidate = candidate.plus(1, ChronoUnit.MINUTES)
-        remaining -= 1
+      def futureInstant(localTime: LocalDateTime): Option[Instant] = {
+        val offsets = zone.getRules.getValidOffsets(localTime)
+        val instants =
+          if offsets.isEmpty then List(localTime.atZone(zone).toInstant)
+          else offsets.asScala.map(localTime.toInstant).toList
+        instants.filter(_.isAfter(timestamp)).minOption
+      }
 
-      transition
+      def nextScheduledStart: Option[Instant] =
+        (0L to 2L)
+          .flatMap { day =>
+            val start = LocalDateTime.of(
+              localDate.plusDays(day),
+              LocalTime.of(state.pondCirculation.startHour, 0)
+            )
+            futureInstant(start)
+          }
+          .find(candidate => desiredCommand(state, candidate) != Stop)
+
+      val scheduleTransition = command match
+        case DepuradoraCommand if onMinutes < 10 =>
+          val cutoffMinute = (localNow.getMinute / 10) * 10 + onMinutes
+          futureInstant(
+            localNow
+              .withMinute(cutoffMinute)
+              .withSecond(0)
+              .withNano(0)
+          )
+
+        case DepuradoraCommand =>
+          val startHour = state.pondCirculation.startHour
+          val endHour = state.pondCirculation.endHour
+          if startHour == 0 && endHour == 23 then None
+          else {
+            val endDate =
+              if startHour > endHour && localNow.getHour > endHour then
+                localDate.plusDays(1)
+              else localDate
+            val endMinuteOfDay = (endHour + 1) % 24
+            val endDateAdjusted =
+              if endHour == 23 then endDate.plusDays(1) else endDate
+            futureInstant(
+              LocalDateTime.of(
+                endDateAdjusted,
+                LocalTime.of(endMinuteOfDay, 0)
+              )
+            )
+          }
+
+        case Stop if isWithinSchedule(state, timestamp) =>
+          val nextBoundaryMinute = (localNow.getMinute / 10 + 1) * 10
+          val nextBoundary =
+            if nextBoundaryMinute < 60 then
+              localNow
+                .withMinute(nextBoundaryMinute)
+                .withSecond(0)
+                .withNano(0)
+            else
+              localNow
+                .plusHours(1)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0)
+
+          futureInstant(nextBoundary) match
+            case Some(candidate) if desiredCommand(state, candidate) != Stop =>
+              Some(candidate)
+            case _ => nextScheduledStart
+
+        case Stop => nextScheduledStart
+
+        case _ => None
+
+      val clockTransition =
+        Option(zone.getRules.nextTransition(timestamp))
+          .map(_.getInstant)
+          .filter(candidate => desiredCommand(state, candidate) != command)
+
+      (scheduleTransition.toList ++ clockTransition.toList).minOption
     }
 
     private def scheduleAction(

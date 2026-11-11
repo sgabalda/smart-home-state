@@ -85,6 +85,33 @@ class PondCirculationControlProcessorSuite extends FunSuite {
     assert(actions.contains(scheduledTransition(7.minutes)))
   }
 
+  test("schedule turns off at cadence cutoff and schedules the next cycle") {
+    val state = State()
+      .modify(_.pondCirculation.cadencePercentage)
+      .setTo(10)
+      .modify(_.pondCirculation.lastCommandSent)
+      .setTo(Some(PondCirculationCommand.Depuradora))
+    val (_, actions) =
+      processor.process(state, ScheduleTransition, now.plusSeconds(5 * 60))
+
+    assert(expectedCommand("stop").subsetOf(actions))
+    assert(actions.contains(scheduledTransition(5.minutes)))
+  }
+
+  test("full cadence schedules the end of the inclusive end hour") {
+    val state = State()
+      .modify(_.pondCirculation.cadencePercentage)
+      .setTo(100)
+    val (_, actions) = processor.process(
+      state,
+      Event.System.StartupEvent,
+      Instant.parse("2023-08-17T16:42:00Z")
+    )
+
+    assert(expectedCommand("depuradora").subsetOf(actions))
+    assert(actions.contains(scheduledTransition(78.minutes)))
+  }
+
   test("the end hour is inclusive, including the final ten-minute cycle") {
     val (onState, onActions) = processor.process(
       State(),
