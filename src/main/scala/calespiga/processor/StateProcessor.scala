@@ -9,7 +9,7 @@ import calespiga.processor.greyWater.GreyWaterProcessor
 import calespiga.processor.grid.GridProcessor
 import calespiga.processor.heater.HeaterProcessor
 import calespiga.processor.infraredStove.InfraredStoveProcessor
-import calespiga.processor.pondPump.PondPumpProcessor
+import calespiga.processor.pond.PondProcessor
 import calespiga.processor.power.PowerProcessor
 import calespiga.processor.temperatures.TemperaturesProcessor
 import cats.effect.IO
@@ -79,10 +79,11 @@ object StateProcessor {
         config.syncDetector
       ).toEffectful,
       GardenWateringProcessor(config.gardenWatering, zoneId).toEffectful,
-      PondPumpProcessor(
+      PondProcessor(
         config.pondPump,
         config.offlineDetector,
-        config.syncDetector
+        config.syncDetector,
+        zoneId
       ).toEffectful,
       GridProcessor(config.grid).toEffectful,
       CarChargerProcessor(

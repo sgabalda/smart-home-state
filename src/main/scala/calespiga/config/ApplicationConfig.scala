@@ -232,10 +232,18 @@ final case class PondPumpConfig(
     resendInterval: FiniteDuration,
     statusItem: String,
     syncStatusItem: String,
-    onlineStatusItem: String,
+    controllerOnlineStatusItem: String,
     percentageItem: String,
     litersItem: String,
-    heightItem: String
+    heightItem: String,
+    circulationMqttTopicForCommand: String,
+    circulationModeItem: String,
+    circulationStatusItem: String,
+    circulationStartHourItem: String,
+    circulationEndHourItem: String,
+    circulationCadenceItem: String,
+    circulationScheduleDescriptionItem: String,
+    circulationSyncStatusItem: String
 ) derives ConfigReader
 
 final case class GridConfig(

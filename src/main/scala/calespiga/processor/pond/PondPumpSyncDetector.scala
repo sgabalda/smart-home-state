@@ -1,4 +1,4 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.config.SyncDetectorConfig
 import calespiga.model.Event
@@ -10,7 +10,7 @@ import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
 import java.time.Instant
 
-private[pondPump] object PondPumpSyncDetector {
+private[pond] object PondPumpSyncDetector {
 
   def apply(
       config: SyncDetectorConfig,

@@ -1,7 +1,9 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.model.Action
 import calespiga.model.Event
+import calespiga.model.Event.PondCirculation.ModeChanged
+import calespiga.model.Event.PondCirculation.StatusReported as CirculationStatusReported
 import calespiga.model.Event.PondPump.HeightReported
 import calespiga.model.Event.PondPump.LitersReported
 import calespiga.model.Event.PondPump.PercentageReported
@@ -13,15 +15,17 @@ import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.OfflineDetector
 import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
+import java.time.ZoneId
 import munit.FunSuite
 
-class PondPumpProcessorSuite extends FunSuite {
+class PondProcessorSuite extends FunSuite {
 
   private val config = ProcessorConfigHelper.pondPumpConfig
-  private val processor = PondPumpProcessor(
+  private val processor = PondProcessor(
     config,
     ProcessorConfigHelper.offlineDetectorConfig,
-    ProcessorConfigHelper.syncDetectorConfig
+    ProcessorConfigHelper.syncDetectorConfig,
+    ZoneId.systemDefault()
   )
   private val now = java.time.Instant.parse("2023-08-17T10:00:00Z")
   private val commandId = config.id + "-command"
@@ -84,7 +88,7 @@ class PondPumpProcessorSuite extends FunSuite {
     assert(
       actions.contains(
         Action.SetUIItemValue(
-          config.onlineStatusItem,
+          config.controllerOnlineStatusItem,
           ProcessorConfigHelper.offlineDetectorConfig.onlineText
         )
       )
@@ -95,6 +99,42 @@ class PondPumpProcessorSuite extends FunSuite {
           offlineId,
           Action.SendFeedbackEvent(Event.System.OfflineDetected(offlineId)),
           ProcessorConfigHelper.offlineDetectorConfig.timeoutDuration
+        )
+      )
+    )
+  }
+
+  test("circulation reports also mark the shared pond controller online") {
+    val (newState, actions) =
+      processor.process(
+        State(),
+        CirculationStatusReported("preparing_off"),
+        now
+      )
+
+    assertEquals(
+      newState.pondPump.online,
+      Some(OfflineOnlineSignal.Online)
+    )
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.controllerOnlineStatusItem,
+          ProcessorConfigHelper.offlineDetectorConfig.onlineText
+        )
+      )
+    )
+  }
+
+  test("pond aggregate includes circulation synchronization") {
+    val (_, actions) =
+      processor.process(State(), ModeChanged("diposit"), now)
+
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.circulationSyncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncingText
         )
       )
     )
@@ -130,7 +170,7 @@ class PondPumpProcessorSuite extends FunSuite {
     assertEquals(actions, Set.empty)
   }
 
-  test("offline timeout marks the pond-pump controller offline") {
+  test("offline timeout marks the pond controller offline") {
     val (newState, actions) =
       processor.process(
         State(),
@@ -146,7 +186,7 @@ class PondPumpProcessorSuite extends FunSuite {
       actions,
       Set[Action](
         Action.SetUIItemValue(
-          config.onlineStatusItem,
+          config.controllerOnlineStatusItem,
           ProcessorConfigHelper.offlineDetectorConfig.offlineText
         )
       )
