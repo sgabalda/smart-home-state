@@ -4,15 +4,18 @@ import calespiga.config.OfflineDetectorConfig
 import calespiga.config.PondPumpConfig
 import calespiga.config.SyncDetectorConfig
 import calespiga.processor.SingleProcessor
+import java.time.ZoneId
 
 object PondPumpProcessor {
 
   def apply(
       config: PondPumpConfig,
       offlineConfig: OfflineDetectorConfig,
-      syncConfig: SyncDetectorConfig
+      syncConfig: SyncDetectorConfig,
+      zone: ZoneId
   ): SingleProcessor =
-    PondPumpControlProcessor(config)
+    PondCirculationControlProcessor(config, zone)
+      .andThen(PondPumpControlProcessor(config))
       .andThen(PondMeasurementsProcessor(config))
       .andThen(
         PondPumpOfflineDetector(

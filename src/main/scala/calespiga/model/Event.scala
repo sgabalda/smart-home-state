@@ -213,6 +213,29 @@ object Event {
     case class HeightReported(height: Double) extends PondPumpEvent
   }
 
+  object PondCirculation {
+    sealed trait PondCirculationEvent extends EventData
+
+    @InputEventMqtt("bassa/circulacio/status")
+    case class StatusReported(status: String) extends PondCirculationEvent
+
+    @InputEventOHItem("BassaCirculacioModeSHS")
+    case class ModeChanged(mode: String) extends PondCirculationEvent
+
+    @InputEventOHItem("BassaCirculacioHoraIniciSHS")
+    case class StartHourChanged(hour: Int) extends PondCirculationEvent
+
+    @InputEventOHItem("BassaCirculacioHoraFiSHS")
+    case class EndHourChanged(hour: Int) extends PondCirculationEvent
+
+    @InputEventOHItem("BassaCirculacioCadenciaSHS")
+    case class CadenceChanged(percentage: Int) extends PondCirculationEvent
+
+    case object ScheduleTransition
+        extends FeedbackEventData
+        with PondCirculationEvent
+  }
+
   object Grid {
     sealed trait GridData extends EventData
 

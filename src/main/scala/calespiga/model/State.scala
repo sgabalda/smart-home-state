@@ -8,6 +8,7 @@ import calespiga.model.State.Grid
 import calespiga.model.State.Heater
 import calespiga.model.State.InfraredStove
 import calespiga.model.State.Pond
+import calespiga.model.State.PondCirculation
 import calespiga.model.State.PondPump
 import calespiga.model.State.PowerManagement
 import calespiga.model.State.Temperatures
@@ -25,6 +26,7 @@ case class State(
     gardenWatering: GardenWatering = GardenWatering(),
     pondPump: PondPump = PondPump(),
     pond: Pond = Pond(),
+    pondCirculation: PondCirculation = PondCirculation(),
     powerManagement: PowerManagement = PowerManagement(),
     grid: Grid = Grid(),
     carCharger: CarCharger = CarCharger()
@@ -48,6 +50,9 @@ object State {
       )
       pondPump <- cursor.getOrElse[PondPump]("pondPump")(PondPump())
       pond <- cursor.getOrElse[Pond]("pond")(Pond())
+      pondCirculation <- cursor.getOrElse[PondCirculation]("pondCirculation")(
+        PondCirculation()
+      )
       powerManagement <-
         cursor.getOrElse[PowerManagement]("powerManagement")(
           PowerManagement()
@@ -63,6 +68,7 @@ object State {
       gardenWatering,
       pondPump,
       pond,
+      pondCirculation,
       powerManagement,
       grid,
       carCharger
@@ -195,6 +201,42 @@ object State {
       liters: Option[Double] = None,
       height: Option[Double] = None
   )
+  case class PondCirculation(
+      selectedMode: PondCirculationMode = PondCirculationMode.Depuradora,
+      lastCommandSent: Option[PondCirculationCommand] = None,
+      status: Option[PondCirculationStatus] = None,
+      startHour: Int = 10,
+      endHour: Int = 17,
+      cadencePercentage: Int = 30
+  )
+  object PondCirculation {
+    given Decoder[PondCirculation] = Decoder.instance { cursor =>
+      val defaults = PondCirculation()
+      for {
+        selectedMode <- cursor.getOrElse[PondCirculationMode](
+          "selectedMode"
+        )(defaults.selectedMode)
+        lastCommandSent <- cursor.getOrElse[Option[PondCirculationCommand]](
+          "lastCommandSent"
+        )(defaults.lastCommandSent)
+        status <- cursor.getOrElse[Option[PondCirculationStatus]]("status")(
+          defaults.status
+        )
+        startHour <- cursor.getOrElse[Int]("startHour")(defaults.startHour)
+        endHour <- cursor.getOrElse[Int]("endHour")(defaults.endHour)
+        cadencePercentage <- cursor.getOrElse[Int]("cadencePercentage")(
+          defaults.cadencePercentage
+        )
+      } yield PondCirculation(
+        selectedMode,
+        lastCommandSent,
+        status,
+        startHour,
+        endHour,
+        cadencePercentage
+      )
+    }
+  }
 
   case class PowerManagement(
       production: PowerProduction = PowerProduction(),

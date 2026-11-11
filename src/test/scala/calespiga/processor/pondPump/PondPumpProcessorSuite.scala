@@ -13,6 +13,7 @@ import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.OfflineDetector
 import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
+import java.time.ZoneId
 import munit.FunSuite
 
 class PondPumpProcessorSuite extends FunSuite {
@@ -21,7 +22,8 @@ class PondPumpProcessorSuite extends FunSuite {
   private val processor = PondPumpProcessor(
     config,
     ProcessorConfigHelper.offlineDetectorConfig,
-    ProcessorConfigHelper.syncDetectorConfig
+    ProcessorConfigHelper.syncDetectorConfig,
+    ZoneId.systemDefault()
   )
   private val now = java.time.Instant.parse("2023-08-17T10:00:00Z")
   private val commandId = config.id + "-command"

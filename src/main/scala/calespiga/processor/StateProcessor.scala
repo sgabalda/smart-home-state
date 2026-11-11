@@ -82,7 +82,8 @@ object StateProcessor {
       PondPumpProcessor(
         config.pondPump,
         config.offlineDetector,
-        config.syncDetector
+        config.syncDetector,
+        zoneId
       ).toEffectful,
       GridProcessor(config.grid).toEffectful,
       CarChargerProcessor(

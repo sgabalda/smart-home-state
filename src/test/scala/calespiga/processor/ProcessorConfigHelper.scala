@@ -124,7 +124,14 @@ object ProcessorConfigHelper {
     onlineStatusItem = "pond/pump/onlineStatus",
     percentageItem = "pond/percentage",
     litersItem = "pond/liters",
-    heightItem = "pond/height"
+    heightItem = "pond/height",
+    circulationMqttTopicForCommand = "bassa/circulacio/set",
+    circulationModeItem = "pond/circulation/mode",
+    circulationStatusItem = "pond/circulation/status",
+    circulationStartHourItem = "pond/circulation/startHour",
+    circulationEndHourItem = "pond/circulation/endHour",
+    circulationCadenceItem = "pond/circulation/cadence",
+    circulationScheduleDescriptionItem = "pond/circulation/schedule"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
