@@ -205,6 +205,7 @@ object State {
       selectedMode: PondCirculationMode = PondCirculationMode.Depuradora,
       lastCommandSent: Option[PondCirculationCommand] = None,
       status: Option[PondCirculationStatus] = None,
+      lastSyncing: Option[java.time.Instant] = None,
       startHour: Int = 10,
       endHour: Int = 17,
       cadencePercentage: Int = 30
@@ -222,6 +223,9 @@ object State {
         status <- cursor.getOrElse[Option[PondCirculationStatus]]("status")(
           defaults.status
         )
+        lastSyncing <- cursor.getOrElse[Option[java.time.Instant]](
+          "lastSyncing"
+        )(defaults.lastSyncing)
         startHour <- cursor.getOrElse[Int]("startHour")(defaults.startHour)
         endHour <- cursor.getOrElse[Int]("endHour")(defaults.endHour)
         cadencePercentage <- cursor.getOrElse[Int]("cadencePercentage")(
@@ -231,6 +235,7 @@ object State {
         selectedMode,
         lastCommandSent,
         status,
+        lastSyncing,
         startHour,
         endHour,
         cadencePercentage

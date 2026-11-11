@@ -1,4 +1,4 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.config.PondPumpConfig
 import calespiga.model.Action
@@ -10,7 +10,7 @@ import calespiga.model.State
 import calespiga.processor.SingleProcessor
 import com.softwaremill.quicklens.*
 
-private[pondPump] object PondMeasurementsProcessor {
+private[pond] object PondMeasurementsProcessor {
 
   private final case class Impl(config: PondPumpConfig)
       extends SingleProcessor {

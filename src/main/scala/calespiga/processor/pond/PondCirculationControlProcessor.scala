@@ -1,4 +1,4 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.config.PondPumpConfig
 import calespiga.model.Action
@@ -24,7 +24,7 @@ import java.time.ZoneId
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 
-private[pondPump] object PondCirculationControlProcessor {
+private[pond] object PondCirculationControlProcessor {
 
   val SCHEDULE_ID = "pond-circulation-schedule"
 

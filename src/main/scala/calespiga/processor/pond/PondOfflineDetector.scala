@@ -1,4 +1,4 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.config.OfflineDetectorConfig
 import calespiga.model.Event
@@ -11,7 +11,7 @@ import calespiga.processor.SingleProcessor
 import calespiga.processor.utils.OfflineDetector
 import com.softwaremill.quicklens.*
 
-private[pondPump] object PondPumpOfflineDetector {
+private[pond] object PondOfflineDetector {
 
   private val eventMatcher: Event.EventData => Boolean = {
     case StatusReported(status)

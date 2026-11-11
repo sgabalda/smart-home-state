@@ -1,4 +1,4 @@
-package calespiga.processor.pondPump
+package calespiga.processor.pond
 
 import calespiga.model.Action
 import calespiga.model.Event
@@ -9,6 +9,7 @@ import calespiga.model.PondCirculationStatus
 import calespiga.model.State
 import calespiga.processor.ProcessorConfigHelper
 import calespiga.processor.utils.CommandActions
+import calespiga.processor.utils.SyncDetector
 import com.softwaremill.quicklens.*
 import io.circe.generic.auto.*
 import io.circe.parser.decode
@@ -23,6 +24,13 @@ class PondCirculationControlProcessorSuite extends FunSuite {
   private val config = ProcessorConfigHelper.pondPumpConfig
   private val processor =
     PondCirculationControlProcessor(config, ZoneId.of("UTC"))
+  private val processorWithSync = processor.andThen(
+    PondCirculationSyncDetector(
+      ProcessorConfigHelper.syncDetectorConfig,
+      config.id + "-circulation",
+      config.circulationSyncStatusItem
+    )
+  )
   private val now = Instant.parse("2023-08-17T10:00:00Z")
   private val commandId =
     config.id + "-circulation" + CommandActions.COMMAND_ACTION_SUFFIX
@@ -208,6 +216,63 @@ class PondCirculationControlProcessorSuite extends FunSuite {
         )
       )
     }
+  }
+
+  test("circulation commands and status reports update the sync indicator") {
+    val (commandState, commandActions) =
+      processorWithSync.process(State(), ModeChanged("diposit"), now)
+
+    assert(
+      commandActions.contains(
+        Action.SetUIItemValue(
+          config.circulationSyncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncingText
+        )
+      )
+    )
+    assertEquals(commandState.pondCirculation.lastSyncing, Some(now))
+
+    val (syncedState, statusActions) = processorWithSync.process(
+      commandState,
+      StatusReported("diposit"),
+      now.plusSeconds(5)
+    )
+
+    assertEquals(syncedState.pondCirculation.lastSyncing, None)
+    assert(
+      statusActions.contains(
+        Action.SetUIItemValue(
+          config.circulationSyncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncText
+        )
+      )
+    )
+    assert(
+      statusActions.contains(
+        Action.Cancel(
+          config.id + "-circulation" + SyncDetector.ID_SUFFIX
+        )
+      )
+    )
+  }
+
+  test("transitional circulation status remains out of sync") {
+    val state = State()
+      .modify(_.pondCirculation.lastCommandSent)
+      .setTo(Some(PondCirculationCommand.Diposit))
+
+    val (newState, actions) =
+      processorWithSync.process(state, StatusReported("preparing_diposit"), now)
+
+    assertEquals(newState.pondCirculation.lastSyncing, Some(now))
+    assert(
+      actions.contains(
+        Action.SetUIItemValue(
+          config.circulationSyncStatusItem,
+          ProcessorConfigHelper.syncDetectorConfig.syncingText
+        )
+      )
+    )
   }
 
   test("invalid circulation statuses are ignored") {

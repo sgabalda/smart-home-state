@@ -121,7 +121,7 @@ object ProcessorConfigHelper {
     resendInterval = 20.seconds,
     statusItem = "pond/pump/status",
     syncStatusItem = "pond/pump/syncStatus",
-    onlineStatusItem = "pond/pump/onlineStatus",
+    controllerOnlineStatusItem = "pond/controller/onlineStatus",
     percentageItem = "pond/percentage",
     litersItem = "pond/liters",
     heightItem = "pond/height",
@@ -131,7 +131,8 @@ object ProcessorConfigHelper {
     circulationStartHourItem = "pond/circulation/startHour",
     circulationEndHourItem = "pond/circulation/endHour",
     circulationCadenceItem = "pond/circulation/cadence",
-    circulationScheduleDescriptionItem = "pond/circulation/schedule"
+    circulationScheduleDescriptionItem = "pond/circulation/schedule",
+    circulationSyncStatusItem = "pond/circulation/syncStatus"
   )
 
   val powerAvailableProcessorConfig: PowerAvailableProcessorConfig =
