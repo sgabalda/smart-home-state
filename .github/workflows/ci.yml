@@ -29,7 +29,9 @@ jobs:
               - 'build.sbt'
               - 'project/plugins.sbt'
               - 'project/build.properties'
-              - 'Dockerfile'
+              - 'backend/Dockerfile'
+              - 'frontend/Dockerfile'
+              - '.dockerignore'
 
   test:
     name: Run Format, Compile and Test
@@ -69,6 +71,19 @@ jobs:
 
       - name: Run tests
         run: sbt test
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Generate API types and typecheck frontend
+        run: |
+          npm ci --prefix frontend
+          npm --prefix frontend run sync-types
+          npm --prefix frontend run typecheck
 
   firmware:
     name: Compile Arduino Uno, Nano, and ESP32 firmware
@@ -158,13 +173,24 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          file: backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build Docker image for smoke test
-        run: docker build --tag smart-home-state:ci .
+      - name: Build multi-platform frontend Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: frontend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Build backend Docker image for smoke test
+        run: docker build --file backend/Dockerfile --tag smart-home-state:ci .
 
       - name: Run Docker image
         run: |
@@ -181,6 +207,31 @@ jobs:
           running=$(docker inspect --format '{{.State.Running}}' "$container_name")
           test "$running" = true
           docker stop "$container_name"
+
+      - name: Build frontend Docker image for smoke test
+        run: docker build --file frontend/Dockerfile --tag smart-home-state-frontend:ci .
+
+      - name: Run frontend Docker image
+        run: |
+          set -euo pipefail
+
+          container_name=smart-home-state-frontend-ci
+          cleanup() {
+            docker logs "$container_name" || true
+            docker rm --force "$container_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run --detach --name "$container_name" --publish 127.0.0.1:18080:80 smart-home-state-frontend:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/ | grep -q '<div id="root"></div>'; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Frontend container did not serve the expected application HTML" >&2
+          exit 1
 
   required-checks:
     name: Format, Compile and Test

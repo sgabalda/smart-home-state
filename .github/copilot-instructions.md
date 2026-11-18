@@ -35,7 +35,7 @@
 - **Build**: Use `sbt compile` to build the project.
 - **Test**: Run `sbt test` for all tests. Test reports are output to `target/test-reports/`.
 - **Run**: Use `sbt run` to start the application.
-- **Docker**: Use `docker-compose.yml` and `Dockerfile` for containerized deployment.
+- **Docker**: Use `docker-compose.yml`, `backend/Dockerfile`, and `frontend/Dockerfile` for containerized deployment.
 
 ## Project-Specific Patterns & Conventions
 
@@ -90,4 +90,4 @@
 ## References
 
 - See `README.md` for high-level project motivation and goals.
-- See `docker-compose.yml` and `Dockerfile` for deployment details.
+- See `docker-compose.yml`, `backend/Dockerfile`, and `frontend/Dockerfile` for deployment details.

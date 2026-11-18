@@ -1,6 +1,6 @@
 services:
   smart-home-state:
-    image: ghcr.io/sgabalda/smart-home-state:stable
+    image: ghcr.io/sgabalda/smart-home-state:${SHS_VERSION:-stable}
     container_name: smart-home-state
     restart: unless-stopped
 
@@ -19,11 +19,6 @@ services:
     # Network configuration
     network_mode: host # Use host networking for easier MQTT/OpenHAB access
 
-    # Health check
-    # docker and watchtower do not restart the container on health check failure,
-    # but it can be used to monitor the container status. If needed, an external script
-    # can be created to restart the container based on its health status, such as a cron job.
-    # * * * * * docker ps -q -f health=unhealthy | xargs --no-run-if-empty docker restart
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
@@ -39,30 +34,35 @@ services:
         reservations:
           memory: 384M
 
-    # Labels for Watchtower
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  # Watchtower for automatic updates
+  frontend:
+    image: ghcr.io/sgabalda/smart-home-state-frontend:${SHS_VERSION:-stable}
+    container_name: smart-home-state-frontend
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      smart-home-state:
+        condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
   watchtower:
     image: ghcr.io/nicholas-fedor/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
-
     environment:
-      - WATCHTOWER_CLEANUP=true # Remove old images
-      - WATCHTOWER_POLL_INTERVAL=300 # Check every 5 minutes
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_ROLLING_RESTART=true # Zero-downtime updates
-      - WATCHTOWER_LABEL_ENABLE=true # Only watch labeled containers
-      - WATCHTOWER_NOTIFICATION_URL=${NOTIFICATION_EMAIL_URL}
+      - WATCHTOWER_ROLLING_RESTART=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_NOTIFICATION_URL=${NOTIFICATION_EMAIL_URL:-}
       - WATCHTOWER_NOTIFICATIONS_DELAY=2
       - WATCHTOWER_NOTIFICATION_TITLE_TAG=${NOTIFICATION_EMAIL_SUBJECT_TAG:-[Smart Home]}
-
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
-    # Only monitor containers with the watchtower.enable label
 
 networks:
   default:

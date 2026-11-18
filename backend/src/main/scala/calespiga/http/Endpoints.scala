@@ -3,6 +3,8 @@ package calespiga.http
 import calespiga.HealthStatusManager
 import calespiga.config.HttpServerConfig
 import calespiga.model.State
+import calespiga.shared.ApiContracts
+import calespiga.shared.SystemStatus
 import cats.effect._
 import io.circe.generic.auto._
 import org.http4s._
@@ -49,8 +51,12 @@ object Endpoints {
       }
     }
 
+    val systemStatusEndpointLogic = ApiContracts.systemStatusEndpoint.serverLogicSuccess[IO] { _ =>
+      IO.pure(SystemStatus("Hello from Smart Home State", 0.0))
+    }
+
     Http4sServerInterpreter[IO]().toRoutes(
-      List(stateEndpointLogic, healthEndpointLogic)
+      List(stateEndpointLogic, healthEndpointLogic, systemStatusEndpointLogic)
     )
 
   def apply(

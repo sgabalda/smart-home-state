@@ -16,7 +16,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  BACKEND_IMAGE: ${{ github.repository }}
+  FRONTEND_IMAGE: ${{ github.repository }}-frontend
 
 jobs:
   manual-deploy:
@@ -41,56 +42,69 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check whether ref is a Git tag
+      - name: Determine image tag
         id: ref-type
         env:
           DEPLOY_REF: ${{ github.event.inputs.ref }}
         run: |
           if git ls-remote --exit-code --refs origin "refs/tags/$DEPLOY_REF" >/dev/null; then
             echo "is_tag=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$DEPLOY_REF" >> "$GITHUB_OUTPUT"
           else
+            safe_ref=$(printf '%s' "$DEPLOY_REF" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_.-]+/-/g' | sed -E 's/^[.-]+|[.-]+$//g' | cut -c1-80)
             echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "tag=manual-${safe_ref}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Extract metadata
-        id: meta
-        if: steps.ref-type.outputs.is_tag != 'true'
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=stable
-            type=raw,value=manual-${{ github.event.inputs.ref }}-${{ github.run_number }}
-
-      - name: Use existing tagged image
-        if: steps.ref-type.outputs.is_tag == 'true'
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          IMAGE_TAG: ${{ github.event.inputs.ref }}
-        run: docker buildx imagetools create --tag "$IMAGE:stable" "$IMAGE:$IMAGE_TAG"
-
-      - name: Build and push Docker image
+      - name: Build and push backend image
         uses: docker/build-push-action@v7
         if: steps.ref-type.outputs.is_tag != 'true'
         with:
           context: .
+          file: backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ steps.ref-type.outputs.tag }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v7
+        if: steps.ref-type.outputs.is_tag != 'true'
+        with:
+          context: .
+          file: frontend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.ref-type.outputs.tag }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Promote matching images to stable
+        env:
+          IMAGE_TAG: ${{ steps.ref-type.outputs.tag }}
+        run: |
+          docker buildx imagetools inspect "${REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}" >/dev/null
+          docker buildx imagetools inspect "${REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}" >/dev/null
+          docker buildx imagetools create \
+            --tag "${REGISTRY}/${BACKEND_IMAGE}:stable" \
+            "${REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+          docker buildx imagetools create \
+            --tag "${REGISTRY}/${FRONTEND_IMAGE}:stable" \
+            "${REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
 
       - name: Summary
+        env:
+          DEPLOY_REF: ${{ github.event.inputs.ref }}
+          DEPLOY_REASON: ${{ github.event.inputs.reason }}
+          IMAGE_TAG: ${{ steps.ref-type.outputs.tag }}
         run: |
-          echo "🚀 Manual deployment completed"
-          echo "📍 Deployed ref: ${{ github.event.inputs.ref }}"
-          echo "📝 Reason: ${{ github.event.inputs.reason }}"
-          echo "📦 Docker images published:"
-          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable"
           if [ "${{ steps.ref-type.outputs.is_tag }}" = "true" ]; then
-            echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.ref }} (existing image)"
+            echo "Promoted existing images for release tag $DEPLOY_REF"
           else
-            echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:manual-${{ github.event.inputs.ref }}-${{ github.run_number }}"
+            echo "Built and promoted matching images from ref $DEPLOY_REF"
           fi
-          echo "🔄 Watchtower will automatically deploy the new stable image to your Raspberry Pi"
+          echo "Reason: $DEPLOY_REASON"
+          echo "  - ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:stable (source $IMAGE_TAG)"
+          echo "  - ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:stable (source $IMAGE_TAG)"
+          echo "Watchtower will deploy the updated stable images."

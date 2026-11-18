@@ -1,286 +1,86 @@
 # Raspberry Pi Deployment Guide
 
-This guide will help you set up your Raspberry Pi to automatically deploy and update the smart-home-state application using Docker and Watchtower.
+The GitHub release workflow builds and publishes two multi-platform images:
 
-## Deployment Strategy
+- `ghcr.io/sgabalda/smart-home-state:<release-tag>` (backend)
+- `ghcr.io/sgabalda/smart-home-state-frontend:<release-tag>` (frontend)
 
-This project uses a **controlled deployment approach** with three types of workflows:
+Both images are built from the same commit and published with the same tag. The release workflow promotes both `stable` tags only after publishing both versioned images. Compose selects both using the single `SHS_VERSION` value in `.env` (default: `stable`), and Watchtower monitors both services. The Raspberry Pi only needs Docker and the Compose file; it does not need the repository source or a local build toolchain.
 
-### 🔄 **Automatic Workflows:**
-
-- **CI (Continuous Integration):** Runs tests on every commit to `main`
-- **Release:** Triggers when you create a GitHub release, deploys as `stable` tag
-- **Watchtower:** Automatically updates your Pi when `stable` tag changes
-
-### 🎯 **Manual Control:**
-
-- **Manual Deploy:** GitHub workflow you can trigger to deploy any branch/tag/commit as `stable`
-- **Rollback:** Use manual deploy to rollback to any previous version
-
-### 🏷️ **Image Tags:**
-
-- `stable` - What runs on your Pi (controlled deployments only)
-- `v1.0.0`, `v1.1.0` - Release versions (semantic versioning)
-- `manual-*` - Manual deployment tracking
-
-**Result: Only intentional releases get deployed automatically, with easy rollback via GitHub UI (no SSH required).**
+Release version tags must not be overwritten. Releases are automatically deployed when Watchtower detects the updated `stable` tags (polling every five minutes).
 
 ## Prerequisites
 
-- Raspberry Pi 3B+ (1GB RAM) or newer
-- Raspberry Pi OS (64-bit preferred for better Docker performance)
-- Internet connection
-- SSH access to your Pi
-- OpenHAB API token
-- MQTT broker details
+- Raspberry Pi 3B+ or newer with Docker Engine and Docker Compose v2
+- An OpenHAB instance and MQTT broker accessible to the Pi
+- An OpenHAB API token
+- A published release with both images available in GHCR
 
-## Step 1: Install Docker on Raspberry Pi
+If GHCR requires authentication for either package, log in on the Pi with a GitHub token that has `read:packages`:
 
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
+```sh
+echo "$GHCR_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 ```
 
-# Install Docker
+For unauthenticated pulls, make both container packages public in their GitHub Packages settings.
 
-Follow instructions on https://docs.docker.com/engine/install/
+## Initial deployment
 
-NOTE: if the RPI is doing router functionality (e.g. VPN), take into account
-that installing it will add rules to the firewall, check https://docs.docker.com/engine/network/packet-filtering-firewalls/
+Create a deployment directory and download the Compose file and environment template:
 
-# Check docker installation
-
-```bash
-docker --version
-docker compose --version
-```
-
-## Step 2: Set up the Application
-
-1. **Create application directory:**
-
-```bash
+```sh
 mkdir -p ~/smart-home-state
 cd ~/smart-home-state
-```
-
-2. **Download docker-compose.yml:**
-
-```bash
-wget https://raw.githubusercontent.com/sgabalda/smart-home-state/main/docker-compose.yml
-```
-
-3. **Create data directories:**
-
-```bash
+curl -fsSLO https://raw.githubusercontent.com/sgabalda/smart-home-state/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/sgabalda/smart-home-state/main/.env.template
+cp .env.template .env
 mkdir -p data logs
 ```
 
-and give permissions to the files
+Configure the MQTT and OpenHAB values in `.env` for your installation, especially `MQTT_BROKER_HOST`, `OPENHAB_HOST`, and `OPENHAB_API_TOKEN`. Leave `SHS_VERSION=stable` for automatic updates. Optionally set it to a published release tag to pin both services.
 
-4. **Configure environment variables (IMPORTANT for security):**
+Pull both images and start the services:
 
-```bash
-# Copy the template and edit with your secure values
-cp .env.template .env
-nano .env
-```
-
-5. **(Optional) set up cron to restart unhealthy containers to try to autoheal**
-
-add a cronjob that restarts unhealthy containers:
-
-```cron
-* * * * * docker ps -q -f health=unhealthy | xargs --no-run-if-empty docker restart
-```
-
-**Required configuration in .env:**
-
-```bash
-# MQTT Configuration
-MQTT_BROKER_HOST=your-mqtt-broker
-MQTT_CLIENT_ID=smart-home-state
-
-# OpenHAB Configuration
-OPENHAB_HOST=your-openhab-server
-OPENHAB_API_TOKEN=your_secret_api_token_here
-
-# Email notifications for updates (optional but recommended)
-NOTIFICATION_EMAIL_URL=smtp://user@example.com:secret@smtp.example.com:587/?fromaddress=sender@example.com&toaddresses=recipient@example.com&encryption=ExplicitTLS&usestarttls=yes
-NOTIFICATION_EMAIL_SUBJECT_TAG=[Smart Home]
-
-# Optional: Adjust log level
-STATE_PERSISTENCE_INTERVAL=10 seconds
-```
-
-### Setting up Gmail App Password
-
-To use Gmail for notifications, you need to create an App Password:
-
-1. **Enable 2-Step Verification:**
-   - Go to [Google Account Security](https://myaccount.google.com/security)
-   - Under "Signing in to Google", enable "2-Step Verification" if not already enabled
-
-2. **Generate App Password:**
-   - Go to [App passwords](https://myaccount.google.com/apppasswords)
-   - Select "Mail" as the app
-   - Copy the generated 16-character password (without spaces)
-   - Use this to build the URL with the format smtp://${USER}:${PASSWORD}@smtp.gmail.com:587/?fromaddress=${FROM}&toaddresses=${TO}&encryption=ExplicitTLS&usestarttls=yes&timeout=30s
-
-**Security Note:** Never commit the `.env` file to version control. It contains sensitive credentials.
-
-## Step 3: Initial Deployment
-
-1. **Start the application:**
-
-```bash
-docker compose up -d
-```
-
-2. **Check logs:**
-
-```bash
-# View application logs
-docker compose logs -f smart-home-state
-
-# View watchtower logs
-docker compose logs -f watchtower
-```
-
-3. **Verify containers are running:**
-
-```bash
+```sh
+docker compose pull
+docker compose up -d --remove-orphans
 docker compose ps
 ```
 
-## Step 4: Configure Automatic Updates
+The Nginx frontend serves HTTP on port 80 and proxies `/api` requests to the backend on port 8081. Both containers use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow the local Nginx proxy. Forward router port 80 to the Pi's port 80 for HTTP access.
 
-Watchtower is already configured in the docker-compose.yml to:
+HTTPS and Let's Encrypt are not configured by this Compose setup. Do not expose the HTTP service publicly until HTTPS termination and the appropriate router/firewall rules are configured.
 
-- Check for new images every 5 minutes
-- Automatically pull and restart with new versions
-- Clean up old images to save space
-- Only update containers with the `watchtower.enable` label
+## Deploying a release
 
-## Step 5: Performance Optimization for Pi 3B+
+1. Publish a GitHub release with a new tag.
+2. The **Release** workflow publishes both versioned images, then promotes both `stable` tags.
+3. Watchtower detects the updated images and deploys them automatically.
 
-The Pi 3B+ has limited resources (1GB RAM), so consider these optimizations:
+Watchtower updates containers sequentially, not as an atomic pair. Keep API changes backward-compatible across the short transition while one service may be on the new version and the other on the old version.
 
-### Memory Management
+## Rollback
 
-```bash
-# Monitor memory usage
-free -h
-docker stats
+For an immediate rollback, pin both services to the previous release by setting `SHS_VERSION` to that release tag, then run:
 
-# If needed, increase swap
-sudo dphys-swapfile swapoff
-sudo nano /etc/dphys-swapfile  # Set CONF_SWAPSIZE=1024
-sudo dphys-swapfile setup
-sudo dphys-swapfile swapon
+```sh
+docker compose pull
+docker compose up -d
 ```
 
-### Reduce Watchtower Check Frequency
+The application state remains in the `data/` bind mount. Keep backups of `data/`, `.env`, and `docker-compose.yml`.
 
-If the Pi struggles, you can reduce update checks:
+To resume automatic deployments after pinning, set `SHS_VERSION=stable`.
 
-```bash
-# Edit docker-compose.yml to check every 30 minutes instead of 5
-sed -i 's/WATCHTOWER_POLL_INTERVAL=300/WATCHTOWER_POLL_INTERVAL=1800/' docker-compose.yml
-docker-compose restart watchtower
-```
+The **Manual Deploy** GitHub Actions workflow also promotes a matching pair to `stable`. For a Git tag, it reuses the already-published backend and frontend images; for a branch or commit, it builds both images first. After both source images exist, it promotes both `stable` tags and Watchtower deploys them. No Raspberry Pi login is needed.
 
-## Step 6: Using the Deployment Workflows
+Versioned tags are immutable by deployment convention, not enforced by GHCR. Do not republish a release tag.
 
-### 🚀 **Normal Deployment (Releases):**
+## Monitoring
 
-1. **Merge your changes** to `main` branch (triggers CI tests)
-2. **Create a GitHub release:**
-   - Go to your repository → Releases → "Create a new release"
-   - Choose a tag (e.g., `v1.0.0`, `v1.1.0`)
-   - Add release notes
-   - Click "Publish release"
-3. **Automatic deployment:** Release workflow builds and pushes as `stable`
-4. **Watchtower deploys:** Your Pi automatically updates within 5 minutes
-
-### 🔄 **Manual Deployment/Rollback:**
-
-1. **Go to GitHub Actions** in your repository
-2. **Select "Manual Deploy" workflow**
-3. **Click "Run workflow"**
-4. **Specify:**
-   - **Ref:** Branch (`main`), tag (`v1.0.0`), or commit SHA (`abc123`)
-   - **Reason:** Description (e.g., "Rollback due to issue X")
-5. **Watchtower deploys:** Your Pi updates automatically
-
-### 📊 **Examples:**
-
-```bash
-# Deploy latest main branch
-Ref: main
-Reason: Deploy latest features
-
-# Rollback to previous release
-Ref: v1.0.0
-Reason: Rollback due to bug in v1.1.0
-
-# Deploy specific commit
-Ref: abc123def
-Reason: Hotfix for critical issue
-```
-
-## Step 7: Monitoring and Maintenance
-
-```bash
-# Live logs
-docker-compose logs -f smart-home-state
-
-# Last 100 lines
-docker-compose logs --tail=100 smart-home-state
-```
-
-### Check Application Status
-
-```bash
-# Container status
-docker-compose ps
-
-# Resource usage
+```sh
+docker compose ps
+docker compose logs -f smart-home-state
+docker compose logs -f frontend
 docker stats
 ```
-
-### Manual Updates (if needed)
-
-```bash
-# Pull latest image and restart
-docker-compose pull && docker-compose up -d
-```
-
-### Backup Configuration
-
-```bash
-# Backup your configuration and state
-tar -czf backup-$(date +%Y%m%d).tar.gz data/ .env docker-compose.yml
-```
-
-## Troubleshooting
-
-### Container Won't Start
-
-1. Check logs: `docker-compose logs smart-home-state`
-2. Verify configuration: `cat data/application.conf`
-3. Check resource usage: `free -h` and `df -h`
-
-### Watchtower Not Updating
-
-1. Check watchtower logs: `docker-compose logs watchtower`
-2. Verify container labels: `docker inspect smart-home-state | grep watchtower`
-3. Test manual pull: `docker pull ghcr.io/sgabalda/smart-home-state:stable`
-
-### Network Issues
-
-1. If using host networking, ensure ports aren't conflicting
-2. Check MQTT/OpenHAB connectivity from container:
-   ```bash
-   docker exec smart-home-state netcat -zv mqtt-broker 1883
-   ```
