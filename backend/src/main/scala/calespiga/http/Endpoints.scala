@@ -51,9 +51,10 @@ object Endpoints {
       }
     }
 
-    val systemStatusEndpointLogic = ApiContracts.systemStatusEndpoint.serverLogicSuccess[IO] { _ =>
-      IO.pure(SystemStatus("Hello from Smart Home State", 0.0))
-    }
+    val systemStatusEndpointLogic =
+      ApiContracts.systemStatusEndpoint.serverLogicSuccess[IO] { _ =>
+        IO.pure(SystemStatus("Hello from Smart Home State", 0.0))
+      }
 
     Http4sServerInterpreter[IO]().toRoutes(
       List(stateEndpointLogic, healthEndpointLogic, systemStatusEndpointLogic)
