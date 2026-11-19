@@ -8,15 +8,14 @@ WORKDIR /app
 # Copy build files first (for better caching)
 COPY build.sbt ./
 COPY project/ ./project/
+COPY shared/ ./shared/
+COPY backend/ ./backend/
 
 # Download dependencies (this layer will be cached if build.sbt doesn't change)
 RUN sbt update
 
-# Copy source code
-COPY src/ ./src/
-
 # Build the application
-RUN sbt ";clean;compile;stage"
+RUN sbt ";clean;backend/compile;backend/stage"
 
 # Stage 2: Create runtime image
 FROM eclipse-temurin:25-jre-jammy AS runtime
@@ -32,7 +31,7 @@ RUN apt-get update && apt-get install -y curl && \
 WORKDIR /app
 
 # Copy application from builder stage
-COPY --from=builder /app/target/universal/stage/ ./
+COPY --from=builder /app/backend/target/universal/stage/ ./
 
 # Create directories for application data
 RUN mkdir -p /app/data /app/logs && \

@@ -29,9 +29,19 @@ object Dependencies {
     val sttp = "4.1.3"
 
     val tapir = "1.14.1"
+
+    val apispec = "0.12.1"
   }
 
-  val dependencies: Seq[ModuleID] = Seq(
+  val sharedDependencies: Seq[ModuleID] = Seq(
+    "io.circe" %% "circe-generic" % Versions.circe,
+    "com.softwaremill.sttp.tapir" %% "tapir-core" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % Versions.tapir,
+    "com.softwaremill.sttp.apispec" %% "openapi-circe" % Versions.apispec
+  )
+
+  val backendDependencies: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-effect" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-kernel" % Versions.cats_effect,
     "org.typelevel" %% "cats-effect-std" % Versions.cats_effect,
@@ -53,11 +63,10 @@ object Dependencies {
     "com.softwaremill.sttp.client4" %% "core" % Versions.sttp,
     "com.softwaremill.sttp.client4" %% "cats" % Versions.sttp,
     "com.softwaremill.sttp.client4" %% "fs2" % Versions.sttp,
-    "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % Versions.tapir,
-    "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Versions.tapir
+    "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % Versions.tapir
   )
 
-  val testing: Seq[ModuleID] = Seq(
+  val backendTesting: Seq[ModuleID] = Seq(
     "org.typelevel" %% "munit-cats-effect" % Versions.munit,
     "org.typelevel" %% "cats-effect-testkit" % Versions.cats_effect
   ).map(_ % Test)

@@ -12,6 +12,8 @@ README.md
 
 # Build artifacts
 target/
+**/node_modules/
+frontend/dist/
 project/target/
 project/project/target/
 
@@ -21,7 +23,7 @@ logs/
 state.json
 
 # Docker files (not needed in image)
-Dockerfile
+backend/Dockerfile
 docker-compose.yml
 .env*
 
