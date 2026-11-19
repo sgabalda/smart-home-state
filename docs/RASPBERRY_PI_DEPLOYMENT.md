@@ -5,14 +5,14 @@ The GitHub release workflow builds and publishes two multi-platform images:
 - `ghcr.io/sgabalda/smart-home-state:<release-tag>` (backend)
 - `ghcr.io/sgabalda/smart-home-state-frontend:<release-tag>` (frontend)
 
-Both images are built from the same commit and published with the same tag. The release workflow promotes both `stable` tags only after publishing both versioned images. Compose selects both using the single `SHS_VERSION` value in `.env` (default: `stable`), and Watchtower monitors both services. The Raspberry Pi only needs Docker and the Compose file; it does not need the repository source or a local build toolchain.
+Both application images are built from the same commit and published with the same tag. The release workflow promotes both `stable` tags only after publishing both versioned images. Compose selects both using the single `SHS_VERSION` value in `.env` (default: `stable`), and Watchtower monitors both application services. The Raspberry Pi only needs Docker and the Compose file; it does not need the repository source or a local build toolchain.
 
 Release version tags must not be overwritten. Releases are automatically deployed when Watchtower detects the updated `stable` tags (polling every five minutes).
 
 ## Prerequisites
 
 - Raspberry Pi 3B+ or newer with Docker Engine and Docker Compose v2
-- An OpenHAB instance and MQTT broker accessible to the Pi
+- An OpenHAB instance accessible to the Pi
 - An OpenHAB API token
 - A published release with both images available in GHCR
 
@@ -33,19 +33,30 @@ mkdir -p ~/smart-home-state
 cd ~/smart-home-state
 curl -fsSLO https://raw.githubusercontent.com/sgabalda/smart-home-state/main/docker-compose.yml
 curl -fsSLO https://raw.githubusercontent.com/sgabalda/smart-home-state/main/.env.template
+mkdir -p mosquitto
+curl -fsSL \
+  https://raw.githubusercontent.com/sgabalda/smart-home-state/main/mosquitto/mosquitto.conf \
+  -o mosquitto/mosquitto.conf
 cp .env.template .env
 mkdir -p data logs
 ```
 
-Configure the MQTT and OpenHAB values in `.env` for your installation, especially `MQTT_BROKER_HOST`, `OPENHAB_HOST`, and `OPENHAB_API_TOKEN`. Leave `SHS_VERSION=stable` for automatic updates. Optionally set it to a published release tag to pin both services.
+Configure the MQTT and OpenHAB values in `.env` for your installation, especially `MQTT_BROKER_HOST`, `OPENHAB_HOST`, and `OPENHAB_API_TOKEN`. Leave `MQTT_BROKER_HOST=localhost` to use the bundled Mosquitto broker. Leave `SHS_VERSION=stable` for automatic updates. Optionally set it to a published release tag to pin both application services.
 
-Pull both images and start the services:
+Pull the images and start the services:
 
 ```sh
 docker compose pull
 docker compose up -d --remove-orphans
 docker compose ps
 ```
+
+Compose starts an anonymous, non-TLS MQTT listener on port 1883 and advertises
+the host as `mqtt-broker.local` over mDNS. Restrict access to the trusted LAN;
+do not expose port 1883 to the internet. The Nano and Uno Ethernet sketches do
+not support mDNS, so they continue to use `192.168.2.113`; assign that address
+to the Raspberry Pi (or update their broker IPs) for those boards to connect.
+The ESP32 sketch resolves `mqtt-broker.local` using mDNS.
 
 The Nginx frontend serves HTTP on port 80 and proxies `/api` requests to the backend on port 8081. Both containers use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow the local Nginx proxy. Forward router port 80 to the Pi's port 80 for HTTP access.
 

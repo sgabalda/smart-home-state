@@ -68,7 +68,7 @@
 
 #define ETHERNET_MAC {0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0xEF}
 #define ETHERNET_LOCAL_IP IPAddress(192, 168, 2, 75)
-#define MQTT_BROKER_IP IPAddress(192, 168, 2, 114)
+#define MQTT_BROKER_IP IPAddress(192, 168, 2, 113)
 #define MQTT_BROKER_PORT 1883
 
 byte mac[] = ETHERNET_MAC;

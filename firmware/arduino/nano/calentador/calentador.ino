@@ -23,7 +23,7 @@
 // Networking details
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02}; // Ethernet shield (W5100) MAC address
 IPAddress ip(192, 168, 2, 100);                    // Ethernet shield (W5100) IP address
-IPAddress server(192, 168, 2, 114);                // MTTQ server IP address
+IPAddress server(192, 168, 2, 113);                // MQTT broker IP address
 
 EthernetClient ethClient;
 PubSubClient client(ethClient);
