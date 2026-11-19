@@ -1,4 +1,5 @@
 #include <../secrets.h>
+#include <ESPmDNS.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
 
@@ -8,8 +9,6 @@
 #define MAX_TIME_BETWEEN_ORDERS                                                                    \
   3 * 60 * 1000 // 3 minutes, if the MQTT goes nuts, turn off the heater just in case
 #define STATUS_REPORT_INTERVAL 5000
-
-const char *const mqtt_server = "192.168.2.114";
 
 constexpr byte relayON = HIGH;
 constexpr byte relayOFF = LOW;
@@ -36,7 +35,6 @@ void setup() {
   Serial.begin(9600);
 
   setup_wifi();
-  client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
 }
 
@@ -58,6 +56,10 @@ void setup_wifi() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+  if (!MDNS.begin("estufa-infrarrojos")) {
+    Serial.println("Error starting mDNS");
+  }
 }
 
 void callback(char *topic, byte *payload, unsigned int length) {
@@ -91,6 +93,14 @@ void callback(char *topic, byte *payload, unsigned int length) {
 }
 
 void reconnect() {
+  const IPAddress brokerAddress = MDNS.queryHost("mqtt-broker");
+  if (brokerAddress == IPAddress(0, 0, 0, 0)) {
+    Serial.println("MQTT broker mqtt-broker.local not found; retrying in 5 seconds");
+    delay(5000);
+    return;
+  }
+  client.setServer(brokerAddress, 1883);
+
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
