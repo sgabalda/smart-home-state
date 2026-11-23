@@ -6,7 +6,7 @@ object Dependencies {
 
     val circe = "0.14.17"
 
-    val fs2 = "3.14.0"
+    val fs2 = "3.16.0"
 
     val fs2_mqtt = "1.0.1"
 
