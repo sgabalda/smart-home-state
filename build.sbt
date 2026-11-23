@@ -43,7 +43,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "smart-home-state-root",
     publish / skip := true,
-    generateTsTypes := Def.taskDyn {
+    generateTsTypes := Def.uncached {
       val repoRoot = baseDirectory.value
       val openApiFile = repoRoot / "frontend" / "target" / "openapi.json"
       val generatedTypes =
@@ -53,33 +53,41 @@ lazy val root = (project in file("."))
 
       IO.createDirectory(openApiFile.getParentFile)
       IO.createDirectory(generatedTypes.getParentFile)
-      (shared / Compile / runMain)
-        .toTask(
-          s" calespiga.shared.ApiTypesGenerator ${openApiFile.getAbsolutePath}"
+      val classpath =
+        (shared / Compile / fullClasspath).value.map(entry =>
+          fileConverter.value.toPath(entry.data)
         )
-        .map { _ =>
-          if (!generator.exists) {
-            sys.error(
-              "openapi-typescript is missing; run `npm --prefix frontend install` first"
-            )
-          }
+      val scalaRunner = (shared / Compile / runner).value
+      scalaRunner
+        .run(
+          "calespiga.shared.ApiTypesGenerator",
+          classpath,
+          Seq(openApiFile.toPath.toString),
+          streams.value.log
+        )
+        .get
 
-          val exitCode = Process(
-            Seq(
-              generator.getAbsolutePath,
-              openApiFile.getAbsolutePath,
-              "--output",
-              generatedTypes.getAbsolutePath
-            ),
-            repoRoot
-          ).!
-          if (exitCode != 0)
-            sys.error(s"openapi-typescript failed with exit code $exitCode")
+      if (!generator.exists) {
+        sys.error(
+          "openapi-typescript is missing; run `npm --prefix frontend install` first"
+        )
+      }
 
-          IO.append(
-            generatedTypes,
-            "\nexport type SystemStatus = components[\"schemas\"][\"SystemStatus\"];\n"
-          )
-        }
-    }.value
+      val exitCode = Process(
+        Seq(
+          generator.getAbsolutePath,
+          openApiFile.getAbsolutePath,
+          "--output",
+          generatedTypes.getAbsolutePath
+        ),
+        repoRoot
+      ).!
+      if (exitCode != 0)
+        sys.error(s"openapi-typescript failed with exit code $exitCode")
+
+      IO.append(
+        generatedTypes,
+        "\nexport type SystemStatus = components[\"schemas\"][\"SystemStatus\"];\n"
+      )
+    }
   )
