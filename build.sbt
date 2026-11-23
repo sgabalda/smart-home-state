@@ -10,6 +10,7 @@ lazy val generateTsTypes =
 lazy val shared = (project in file("shared"))
   .settings(
     name := "smart-home-state-shared",
+    Compile / run / fork := false,
     libraryDependencies ++= Dependencies.sharedDependencies,
     scalacOptions := scalacOptions.value
       .filterNot(_ == "-Xfatal-warnings") :+ "-Werror"
