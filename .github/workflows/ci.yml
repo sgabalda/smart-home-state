@@ -31,6 +31,7 @@ jobs:
               - 'project/build.properties'
               - 'backend/Dockerfile'
               - 'frontend/Dockerfile'
+              - 'frontend/nginx.conf'
               - '.dockerignore'
 
   test:
@@ -222,7 +223,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          docker run --detach --name "$container_name" --publish 127.0.0.1:18080:80 smart-home-state-frontend:ci
+          docker run --detach --name "$container_name" --publish 127.0.0.1:18080:8888 smart-home-state-frontend:ci
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:18080/ | grep -q '<div id="root"></div>'; then
               exit 0

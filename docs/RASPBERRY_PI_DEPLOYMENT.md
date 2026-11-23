@@ -58,7 +58,7 @@ not support mDNS, so they continue to use `192.168.2.113`; assign that address
 to the Raspberry Pi (or update their broker IPs) for those boards to connect.
 The ESP32 sketch resolves `mqtt-broker.local` using mDNS.
 
-The Nginx frontend serves HTTP on port 80 and proxies `/api` requests to the backend on port 8081. Both containers use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow the local Nginx proxy. Forward router port 80 to the Pi's port 80 for HTTP access.
+The Nginx frontend serves HTTP on port 8888 and proxies `/api` requests to the backend on port 8081. Both containers use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow the local Nginx proxy. Forward router port 80 to the Pi's port 8888 for HTTP access.
 
 HTTPS and Let's Encrypt are not configured by this Compose setup. Do not expose the HTTP service publicly until HTTPS termination and the appropriate router/firewall rules are configured.
 
