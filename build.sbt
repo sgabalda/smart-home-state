@@ -44,7 +44,7 @@ lazy val root = (project in file("."))
     publish / skip := true,
     generateTsTypes := Def.taskDyn {
       val repoRoot = baseDirectory.value
-      val openApiFile = (shared / Compile / target).value / "openapi.json"
+      val openApiFile = repoRoot / "frontend" / "target" / "openapi.json"
       val generatedTypes =
         repoRoot / "frontend" / "src" / "generated" / "api-types.ts"
       val generator =
