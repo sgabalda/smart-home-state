@@ -41,7 +41,7 @@ docker compose up -d --remove-orphans
 
 Release deployment is automatic: Watchtower checks for updated image tags every five minutes. To pin or roll back both services, set `SHS_VERSION` to the same published release tag, then run `docker compose pull && docker compose up -d`. Set it back to `stable` to resume automatic deployments.
 
-The frontend is served on port 80; Nginx proxies `/api` to the backend on port 8081. The backend and frontend use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow that localhost proxy. Forward router port 80 to the Raspberry Pi's port 80 to access the UI over HTTP. Configure HTTPS and Let's Encrypt before exposing it publicly; HTTPS termination is not included yet.
+The frontend is served on port 8888; Nginx proxies `/api` to the backend on port 8081. The backend and frontend use host networking to preserve the backend's existing access to MQTT/OpenHAB and allow that localhost proxy. Forward router port 80 to the Raspberry Pi's port 8888 to access the UI over HTTP. Configure HTTPS and Let's Encrypt before exposing it publicly; HTTPS termination is not included yet.
 
 The release tags are immutable by convention; the mutable `stable` tags are promoted only after both release images are available. Watchtower updates the services sequentially, so there may be a short interval where one container is on the new release and the other is still on the previous release. Keep API changes backward-compatible across that interval.
 
