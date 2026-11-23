@@ -54,9 +54,8 @@ lazy val root = (project in file("."))
       IO.createDirectory(openApiFile.getParentFile)
       IO.createDirectory(generatedTypes.getParentFile)
       val classpath =
-        (shared / Compile / fullClasspath).value.map(entry =>
-          fileConverter.value.toPath(entry.data)
-        )
+        (shared / Compile / fullClasspath).value
+          .map(entry => fileConverter.value.toPath(entry.data))
       val scalaRunner = (shared / Compile / runner).value
       scalaRunner
         .run(
