@@ -85,7 +85,7 @@ services:
       - WATCHTOWER_NOTIFICATIONS_DELAY=2
       - WATCHTOWER_NOTIFICATION_TITLE_TAG=${NOTIFICATION_EMAIL_SUBJECT_TAG:-[Smart Home]}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_SOCKET_LOCATION}docker.sock:/var/run/docker.sock
 
 networks:
   default:
